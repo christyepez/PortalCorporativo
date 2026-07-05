@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: portal-sqlserver
+    environment:
+      ACCEPT_EULA: 'Y'
+      # Definir credenciales mediante archivo .env local o Docker secrets.
+    ports:
+      - '1433:1433'
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  redis:
+    image: redis:7
+    container_name: portal-redis
+    ports:
+      - '6379:6379'
+
+  minio:
+    image: minio/minio:latest
+    container_name: portal-minio
+    command: server /data --console-address ':9001'
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio-data:/data
+
+  seq:
+    image: datalust/seq:latest
+    container_name: portal-seq
+    environment:
+      ACCEPT_EULA: 'Y'
+    ports:
+      - '5341:80'
+
+  # Kafka parametrizado para activación futura con profile kafka.
+  # No se activa en la primera etapa.
+
+volumes:
+  sqlserver-data:
+  minio-data:
