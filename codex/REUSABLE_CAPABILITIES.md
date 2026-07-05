@@ -2,6 +2,21 @@
 
 Este documento es el inventario base que otros repositorios deben consultar antes de crear componentes nuevos.
 
+## Repositorio comun de agentes
+
+```text
+https://github.com/christyepez/CodexCommonAgents
+```
+
+Codex debe usar este archivo junto con:
+
+```text
+CodexCommonAgents/AGENTS.md
+CodexCommonAgents/registry/reusable-portal-apis.md
+CodexCommonAgents/registry/do-not-duplicate.md
+CodexCommonAgents/playbooks/portal-first-implementation.md
+```
+
 ## Regla central
 
 PortalCorporativo es la plataforma transversal. Los repositorios de dominio como `Financiero`, `CRM` u otros proyectos deben reutilizar, extender o adaptar estas capacidades antes de crear componentes propios.
