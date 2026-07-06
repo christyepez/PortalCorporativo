@@ -1,0 +1,143 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: portal-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SQL_PASSWORD}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - portal-net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${SQL_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7
+    container_name: portal-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - portal-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  seq:
+    image: datalust/seq:latest
+    container_name: portal-seq
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - portal-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: portal-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - portal-net
+
+  portal-api:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: portal-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PortalCorporativoDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+      Seq__Url: "http://seq"
+      Redis__ConnectionString: "redis:6379"
+      Storage__Minio__Endpoint: "minio:9000"
+      Storage__Minio__AccessKey: "${MINIO_ROOT_USER}"
+      Storage__Minio__SecretKey: "${MINIO_ROOT_PASSWORD}"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seq:
+        condition: service_started
+      minio:
+        condition: service_started
+    ports:
+      - "5001:8080"
+    networks:
+      - portal-net
+
+  financiero-api:
+    build:
+      context: ../../../Financiero
+      dockerfile: Dockerfile
+    container_name: financiero-api
+    profiles:
+      - financiero
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=FinancieroDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+      Portal__GatewayBaseUrl: "http://portal-api:8080"
+      Seq__Url: "http://seq"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      portal-api:
+        condition: service_started
+      seq:
+        condition: service_started
+    ports:
+      - "5010:8080"
+    networks:
+      - portal-net
+
+  crm-api:
+    build:
+      context: ../../../CRM
+      dockerfile: Dockerfile
+    container_name: crm-api
+    profiles:
+      - crm
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=CrmDb;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=True"
+      Portal__GatewayBaseUrl: "http://portal-api:8080"
+      Seq__Url: "http://seq"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      portal-api:
+        condition: service_started
+      seq:
+        condition: service_started
+    ports:
+      - "5020:8080"
+    networks:
+      - portal-net
+
+volumes:
+  sqlserver_data:
+  seq_data:
+  minio_data:
+
+networks:
+  portal-net:
+    driver: bridge
