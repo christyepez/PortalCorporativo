@@ -1,0 +1,10 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
+using Portal.BuildingBlocks;
+using Portal.Notification.Api;
+using Portal.Notification.Infrastructure;
+var builder=WebApplication.CreateBuilder(args);builder.AddPortalFoundation("Portal.Notification.Api");builder.Services.AddNotificationFoundation(builder.Configuration);builder.Services.AddHealthChecks().AddDbContextCheck<NotificationDbContext>();
+var secret=builder.Configuration["Jwt:Secret"]??throw new InvalidOperationException("Jwt:Secret is required.");builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x=>x.TokenValidationParameters=new(){ValidateIssuer=true,ValidIssuer=builder.Configuration["Jwt:Issuer"],ValidateAudience=true,ValidAudience=builder.Configuration["Jwt:Audience"],ValidateIssuerSigningKey=true,IssuerSigningKey=new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),ValidateLifetime=true});builder.Services.AddPortalPermissionAuthorization();
+var app=builder.Build();app.UsePortalFoundation();app.UseAuthentication();app.UseAuthorization();app.MapHealthChecks("/health",new HealthCheckOptions());app.MapNotificationEndpoints();app.Run();public partial class Program;

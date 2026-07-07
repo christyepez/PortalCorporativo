@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Portal.Menu.Domain\Portal.Menu.Domain.csproj" />
+    <ProjectReference Include="..\Portal.Menu.Contracts\Portal.Menu.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\building-blocks\src\Portal.BuildingBlocks\Portal.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
