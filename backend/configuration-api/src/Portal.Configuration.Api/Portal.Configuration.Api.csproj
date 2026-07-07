@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Portal.Configuration.Application\Portal.Configuration.Application.csproj" />
+    <ProjectReference Include="..\Portal.Configuration.Infrastructure\Portal.Configuration.Infrastructure.csproj" />
+    <ProjectReference Include="..\Portal.Configuration.Contracts\Portal.Configuration.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\building-blocks\src\Portal.BuildingBlocks\Portal.BuildingBlocks.csproj" />
+  </ItemGroup>
+  <ItemGroup><PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" /><PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.20" /></ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

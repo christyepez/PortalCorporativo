@@ -1,0 +1,10 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
+using Portal.BuildingBlocks;
+using Portal.Configuration.Api;
+using Portal.Configuration.Infrastructure;
+var builder = WebApplication.CreateBuilder(args); builder.AddPortalFoundation("Portal.Configuration.Api"); builder.Services.AddConfigurationFoundation(builder.Configuration); builder.Services.AddHealthChecks().AddDbContextCheck<ConfigurationDbContext>();
+var secret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret is required."); builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x => x.TokenValidationParameters = new() { ValidateIssuer=true, ValidIssuer=builder.Configuration["Jwt:Issuer"], ValidateAudience=true, ValidAudience=builder.Configuration["Jwt:Audience"], ValidateIssuerSigningKey=true, IssuerSigningKey=new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)), ValidateLifetime=true }); builder.Services.AddPortalPermissionAuthorization();
+var app=builder.Build(); app.UsePortalFoundation(); app.UseAuthentication(); app.UseAuthorization(); app.MapHealthChecks("/health", new HealthCheckOptions()); app.MapConfigurationEndpoints(); app.Run();

@@ -1,44 +1,272 @@
-version: '3.9'
+x-portal-api: &portal-api
+  restart: unless-stopped
+  environment: &portal-environment
+    ASPNETCORE_ENVIRONMENT: Development
+    Seq__ServerUrl: http://seq:5341
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+    interval: 10s
+    timeout: 3s
+    retries: 10
+    start_period: 15s
 
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: portal-sqlserver
     environment:
-      ACCEPT_EULA: 'Y'
-      # Definir credenciales mediante archivo .env local o Docker secrets.
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env}
     ports:
-      - '1433:1433'
+      - "${SQLSERVER_PORT:-1433}:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
 
   redis:
-    image: redis:7
-    container_name: portal-redis
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     ports:
-      - '6379:6379'
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   minio:
     image: minio/minio:latest
-    container_name: portal-minio
-    command: server /data --console-address ':9001'
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - minio-data:/data
 
   seq:
-    image: datalust/seq:latest
-    container_name: portal-seq
+    image: datalust/seq:2024.3
     environment:
-      ACCEPT_EULA: 'Y'
+      ACCEPT_EULA: "Y"
     ports:
-      - '5341:80'
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - seq-data:/data
 
-  # Kafka parametrizado para activación futura con profile kafka.
-  # No se activa en la primera etapa.
+  security-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: security-api/src/Portal.Security.Api/Portal.Security.Api.csproj
+        ASSEMBLY_NAME: Portal.Security.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__SecurityDb: Server=sqlserver,1433;Database=PortalSecurity;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Security__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  configuration-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: configuration-api/src/Portal.Configuration.Api/Portal.Configuration.Api.csproj
+        ASSEMBLY_NAME: Portal.Configuration.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__ConfigurationDb: Server=sqlserver,1433;Database=PortalConfiguration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Configuration__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  menu-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: menu-api/src/Portal.Menu.Api/Portal.Menu.Api.csproj
+        ASSEMBLY_NAME: Portal.Menu.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__MenuDb: Server=sqlserver,1433;Database=PortalMenu;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Menu__InitializeDatabase: "true"
+      Security__BaseUrl: http://security-api:8080
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      security-api:
+        condition: service_healthy
+
+  audit-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: audit-api/src/Portal.Audit.Api/Portal.Audit.Api.csproj
+        ASSEMBLY_NAME: Portal.Audit.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__AuditDb: Server=sqlserver,1433;Database=PortalAudit;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Audit__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  notification-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: notification-api/src/Portal.Notification.Api/Portal.Notification.Api.csproj
+        ASSEMBLY_NAME: Portal.Notification.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__NotificationDb: Server=sqlserver,1433;Database=PortalNotification;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Notification__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  notification-worker:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: workers/src/Portal.Notification.Worker/Portal.Notification.Worker.csproj
+        ASSEMBLY_NAME: Portal.Notification.Worker
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__NotificationDb: Server=sqlserver,1433;Database=PortalNotification;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Notification__InitializeDatabase: "false"
+      Worker__Enabled: "true"
+      Worker__PollIntervalSeconds: ${NOTIFICATION_POLL_SECONDS:-5}
+      Worker__MaxAttempts: ${NOTIFICATION_MAX_ATTEMPTS:-5}
+    depends_on:
+      notification-api:
+        condition: service_healthy
+
+  catalog-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: catalog-api/src/Portal.Catalog.Api/Portal.Catalog.Api.csproj
+        ASSEMBLY_NAME: Portal.Catalog.Api
+
+  content-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: content-api/src/Portal.Content.Api/Portal.Content.Api.csproj
+        ASSEMBLY_NAME: Portal.Content.Api
+
+  integration-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: integration-api/src/Portal.Integration.Api/Portal.Integration.Api.csproj
+        ASSEMBLY_NAME: Portal.Integration.Api
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__IntegrationDb: Server=sqlserver,1433;Database=PortalIntegration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Integration__InitializeDatabase: "true"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  integration-worker:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: workers/src/Portal.Integration.Worker/Portal.Integration.Worker.csproj
+        ASSEMBLY_NAME: Portal.Integration.Worker
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__IntegrationDb: Server=sqlserver,1433;Database=PortalIntegration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Integration__InitializeDatabase: "false"
+      Worker__Enabled: "false"
+      Worker__Transport: Disabled
+    depends_on:
+      integration-api:
+        condition: service_healthy
+
+  reporting-api:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: reporting-api/src/Portal.Reporting.Api/Portal.Reporting.Api.csproj
+        ASSEMBLY_NAME: Portal.Reporting.Api
+
+  api-gateway:
+    <<: *portal-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.api
+      args:
+        PROJECT_PATH: api-gateway/src/Portal.ApiGateway/Portal.ApiGateway.csproj
+        ASSEMBLY_NAME: Portal.ApiGateway
+    environment:
+      <<: *portal-environment
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      security-api:
+        condition: service_healthy
+      configuration-api:
+        condition: service_healthy
+      menu-api:
+        condition: service_healthy
+      audit-api:
+        condition: service_healthy
+      notification-api:
+        condition: service_healthy
 
 volumes:
   sqlserver-data:
   minio-data:
+  seq-data:

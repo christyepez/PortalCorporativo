@@ -1,0 +1,10 @@
+namespace Portal.Notification.Contracts;
+public sealed record CreateTemplateRequest(string Code,string Subject,string Body,string[] AllowedVariables,int DefaultChannel);
+public sealed record UpdateTemplateRequest(string Subject,string Body,string[] AllowedVariables,int DefaultChannel);
+public sealed record TemplateResponse(Guid Id,string Code,string Subject,string Body,string[] AllowedVariables,int DefaultChannel,int Version,bool IsActive);
+public sealed record SendNotificationRequest(string TemplateCode,string[] Recipients,Dictionary<string,string>? Variables,int? Channel,string IdempotencyKey,string? MetadataJson);
+public sealed record ScheduleNotificationRequest(string TemplateCode,string[] Recipients,Dictionary<string,string>? Variables,int? Channel,string IdempotencyKey,string? MetadataJson,DateTimeOffset ScheduledAtUtc);
+public sealed record NotificationStatusResponse(Guid Id,string TemplateCode,int Channel,int Status,int AttemptCount,DateTimeOffset CreatedAtUtc,DateTimeOffset? ScheduledAtUtc,DateTimeOffset? SentAtUtc,DateTimeOffset? FailedAtUtc,string? LastError,string CorrelationId);
+public sealed record NotificationRequestedV1(Guid MessageId,string TemplateCode,string CorrelationId);
+public sealed record NotificationSentV1(Guid MessageId,string CorrelationId);
+public sealed record NotificationFailedV1(Guid MessageId,string Error,string CorrelationId);
