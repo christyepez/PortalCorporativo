@@ -6,7 +6,7 @@ services:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "${SQL_PASSWORD}"
     ports:
-      - "1433:1433"
+      - "${SQLSERVER_PORT:-21433}:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql
     networks:
@@ -22,7 +22,7 @@ services:
     image: redis:7
     container_name: portal-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6380}:6379"
     networks:
       - portal-net
     healthcheck:
@@ -37,7 +37,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
     ports:
-      - "5341:80"
+      - "${SEQ_PORT:-5342}:80"
     volumes:
       - seq_data:/data
     networks:
@@ -51,8 +51,8 @@ services:
       MINIO_ROOT_USER: "${MINIO_ROOT_USER}"
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9002}:9000"
+      - "${MINIO_CONSOLE_PORT:-9003}:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -81,7 +81,7 @@ services:
       minio:
         condition: service_started
     ports:
-      - "5001:8080"
+      - "${PORTAL_API_PORT:-8082}:8080"
     networks:
       - portal-net
 
@@ -105,7 +105,7 @@ services:
       seq:
         condition: service_started
     ports:
-      - "5010:8080"
+      - "${FINANCIERO_API_PORT:-8083}:8080"
     networks:
       - portal-net
 
@@ -129,7 +129,7 @@ services:
       seq:
         condition: service_started
     ports:
-      - "5020:8080"
+      - "${CRM_API_PORT:-8084}:8080"
     networks:
       - portal-net
 
