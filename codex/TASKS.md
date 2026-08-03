@@ -259,6 +259,50 @@ Status: implemented in branch `portal-sprint14-secret-provider-preparation`.
 - NextGate: `PortalSprint15NotificationProviderPreparation`.
 - PR title: `docs: add portal sprint14 secret provider preparation`.
 
+## Portal Sprint 15 - Notification Provider Preparation
+
+Status: implemented in branch `portal-sprint15-notification-provider-preparation`.
+
+- Task: preparar estrategia y contratos de Notification Provider NonProduction sin activar envio real.
+- Base main commit: `e77477e75a4619445b6abad468d62216ecffe546`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint12DockerFullStackReviewed: `true`.
+- Sprint14SecretProviderReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- NotificationProviderPreparationAttempted: `true`.
+- NotificationProviderStrategyPrepared: `true`.
+- NotificationProviderBoundaryPrepared: `true`.
+- NotificationProviderContractPrepared: `true`.
+- NotificationConsumerDeliveryContractPrepared: `true`.
+- NotificationSecretBoundaryPrepared: `true`.
+- PlaceholderNotificationProviderDocumented: `true`.
+- NotificationLifecyclePrepared: `true`.
+- NotificationIdempotencyPrepared: `true`.
+- NotificationRetryPolicyPrepared: `true`.
+- RealEmailProviderConfigured: `false`.
+- RealSmtpConfigured: `false`.
+- RealSmsProviderConfigured: `false`.
+- RealPushProviderConfigured: `false`.
+- RealWebhookProviderConfigured: `false`.
+- RealNotificationProviderCredentialsPresent: `false`.
+- RealNotificationSendingEnabled: `false`.
+- ExternalApiCallsEnabled: `false`.
+- SecretProviderReadiness: `PreparedNonProductionOnly`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- FrontendShellBuildable: `true`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- NotificationProviderReadiness: `PreparedNonProductionOnly`.
+- NextGate: `PortalSprint16ExternalConsumerOnboardingPreparation`.
+- PR title: `docs: add portal sprint15 notification provider preparation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
