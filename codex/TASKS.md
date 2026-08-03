@@ -208,3 +208,36 @@ Status: implemented in branch `portal-sprint-p7-deployment-hardening-baseline`.
 - ProductionDeploymentReadiness: `HardeningPreparedNotProductionReady`.
 - NextGate: `PortalSprintP8PortalClosureGate`.
 - PR title: `docs: add portal sprint p7 deployment hardening baseline`.
+
+## Portal Sprint P8 - Portal Closure Gate
+
+Status: implemented in branch `portal-sprint-p8-portal-closure-gate`.
+
+- Task: cierre formal de baseline Portal P1-P8 y decision GO/NO-GO.
+- Base main commit: `2a806ef06ed5eac98670d9542763e1d3e6dadd45`.
+- PortalSprintP8ClosureGateExists: `true`.
+- PortalBaselineClosed: `true`.
+- PortalP1CurrentStateGateComplete: `true`.
+- PortalP2DeploymentBaselineComplete: `true`.
+- PortalP3AuthSsoSessionBaselineComplete: `true`.
+- PortalP4MenuPermissionsNavigationBaselineComplete: `true`.
+- PortalP5AuditConfigurationNotificationBaselineComplete: `true`.
+- PortalP6IntegrationShellExternalModulesBaselineComplete: `true`.
+- PortalP7DeploymentHardeningBaselineComplete: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- PortalBaselineReadyForControlledRuntimeValidation: `true`.
+- RuntimeDockerUpValidated: `PendingControlledEnvironment`.
+- HealthChecksValidated: `PendingControlledEnvironment`.
+- SmokeTestsValidated: `PendingControlledEnvironment`.
+- FrontendShellBuildable: `false`.
+- FrontendShellBuildBlockedReason: `No buildable frontend package manifest found`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderProductionConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmOnboardingReadiness: `ContractPreparedNotRuntimeEnabled`.
+- FinancialOnboardingReadiness: `ContractPreparedNotRuntimeEnabled`.
+- RecommendedNextStage: `PortalControlledRuntimeValidation`.
+- NextGate: `PortalSprint9ControlledRuntimeValidation`.
+- PR title: `docs: close portal baseline with sprint p8 closure gate`.
