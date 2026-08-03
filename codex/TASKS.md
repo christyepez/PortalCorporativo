@@ -219,6 +219,46 @@ Status: implemented in branch `portal-sprint13-controlled-auth-integration-prepa
 - NextGate: `PortalSprint14SecretProviderPreparation`.
 - PR title: `docs: add portal sprint13 controlled auth integration preparation`.
 
+## Portal Sprint 14 - Secret Provider Preparation
+
+Status: implemented in branch `portal-sprint14-secret-provider-preparation`.
+
+- Task: preparar estrategia y contratos de Secret Provider NonProduction sin activar proveedor real.
+- Base main commit: `9da10d7c5c4c4d2bca542bea40e2e8f2d609beae`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint12DockerFullStackReviewed: `true`.
+- Sprint13ControlledAuthReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- SecretProviderPreparationAttempted: `true`.
+- SecretProviderStrategyPrepared: `true`.
+- SecretNamingConventionPrepared: `true`.
+- SecretLifecyclePrepared: `true`.
+- SecretProviderContractPrepared: `true`.
+- SecretInventoryPrepared: `true`.
+- PlaceholderFallbackDocumented: `true`.
+- RealSecretProviderConfigured: `false`.
+- AzureKeyVaultConfigured: `false`.
+- AwsSecretsManagerConfigured: `false`.
+- GcpSecretManagerConfigured: `false`.
+- HashiCorpVaultConfigured: `false`.
+- RealSecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- ClientSecretRealConfigured: `false`.
+- SsoOidcProductionConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- FrontendShellBuildable: `true`.
+- BrowserTokenStorageDetected: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SecretProviderReadiness: `PreparedNonProductionOnly`.
+- NextGate: `PortalSprint15NotificationProviderPreparation`.
+- PR title: `docs: add portal sprint14 secret provider preparation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
