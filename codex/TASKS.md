@@ -154,3 +154,27 @@ Status: implemented in branch `portal-sprint-p5-audit-configuration-notification
 - AuditConfigurationNotificationReadiness: `BaselinePreparedNotProductionReady`.
 - NextGate: `PortalSprintP6IntegrationShellExternalModulesBaseline`.
 - PR title: `docs: add portal sprint p5 audit configuration notification baseline`.
+
+## Portal Sprint P6 - Integration Shell / External Modules Baseline
+
+Status: implemented in branch `portal-sprint-p6-integration-shell-external-modules-baseline`.
+
+- Task: baseline documental y validación controlada de Integration Shell / módulos externos.
+- Base main commit: `47b2dd75b2640527d1c28e23748eebfb4509ff5a`.
+- PortalSprintP6IntegrationShellExternalModulesBaselineExists: `true`.
+- IntegrationShellBaselineReviewed: `true`.
+- ExternalModuleOnboardingContractPrepared: `true`.
+- GatewayExternalModuleBoundaryReviewed: `true`.
+- ConsumerModuleBoundaryReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- ProductiveExternalModuleRuntimeEnabled: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- RealCrmRuntimeCouplingPresent: `false`.
+- RealFinancialRuntimeCouplingPresent: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- CrmModuleOnboardingReadiness: `ContractPreparedNotRuntimeEnabled`.
+- FinancialModuleOnboardingReadiness: `ContractPreparedNotRuntimeEnabled`.
+- IntegrationShellReadiness: `BaselinePreparedNotProductionReady`.
+- NextGate: `PortalSprintP7DeploymentHardeningBaseline`.
+- PR title: `docs: add portal sprint p6 integration shell external modules baseline`.
