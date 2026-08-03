@@ -31,3 +31,27 @@
 - Retención automatizada de Audit, HA/observabilidad avanzada y E2E completos.
 
 Detalle y orden: `docs/coordination/sprint-02-roadmap.md`.
+
+## Portal Sprint P1 - Current State Gate
+
+Status: implemented in branch `portal-sprint-p1-current-state-gate`.
+
+- Task: Current State Gate y preparación de despliegue.
+- Base main commit: `c9963b20020fc78014949cf3e29a58235ac260c6`.
+- ProductionActivationDecision: `NoGo`.
+- PortalDeploymentReadiness: `NotReady`.
+- AuthReadiness: `PendingValidation`.
+- SsoReadiness: `PendingValidation`.
+- MenuReadiness: `PendingValidation`.
+- PermissionsReadiness: `PendingValidation`.
+- AuditReadiness: `PendingValidation`.
+- NotificationReadiness: `PendingValidation`.
+- ConfigurationReadiness: `PendingValidation`.
+- DockerReadiness: `PendingValidation`.
+- HealthCheckReadiness: `PendingValidation`.
+- BuildReadiness: `PendingValidation`.
+- TestReadiness: `PendingValidation`.
+- CrmIntegrationReadiness: `PendingPortalBaseline`.
+- FinancialIntegrationReadiness: `PendingPortalBaseline`.
+- NextGate: `PortalSprintP2ControlledDeploymentBaseline`.
+- PR title: `docs: add portal sprint p1 current state gate`.
