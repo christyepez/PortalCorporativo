@@ -128,3 +128,29 @@ Status: implemented in branch `portal-sprint-p4-menu-permissions-navigation-base
 - MenuPermissionReadiness: `BaselinePreparedNotProductionReady`.
 - NextGate: `PortalSprintP5AuditConfigurationNotificationBaseline`.
 - PR title: `docs: add portal sprint p4 menu permissions navigation baseline`.
+
+## Portal Sprint P5 - Audit / Configuration / Notification Baseline
+
+Status: implemented in branch `portal-sprint-p5-audit-configuration-notification-baseline`.
+
+- Task: baseline documental y validación controlada de auditoría, configuración y notificaciones.
+- Base main commit: `506ed3d8588b9952680563afadfa254d9b2d9e56`.
+- ProductionActivationDecision: `NoGo`.
+- AuditBaselineReviewed: `true`.
+- ConfigurationBaselineReviewed: `true`.
+- NotificationBaselineReviewed: `true`.
+- AuditFoundationPresent: `true`.
+- ConfigurationFoundationPresent: `true`.
+- NotificationFoundationPresent: `true`.
+- NotificationWorkerPresent: `true`.
+- IntegrationWorkerPresent: `true`.
+- CorrelationLoggingFoundationPresent: `true`.
+- RealNotificationSendingEnabled: `false`.
+- RealSmtpConfigured: `false`.
+- RealSmsProviderConfigured: `false`.
+- RealPushProviderConfigured: `false`.
+- CrmCrosscuttingReadiness: `PendingPortalConsumerContract`.
+- FinancialCrosscuttingReadiness: `PendingPortalConsumerContract`.
+- AuditConfigurationNotificationReadiness: `BaselinePreparedNotProductionReady`.
+- NextGate: `PortalSprintP6IntegrationShellExternalModulesBaseline`.
+- PR title: `docs: add portal sprint p5 audit configuration notification baseline`.
