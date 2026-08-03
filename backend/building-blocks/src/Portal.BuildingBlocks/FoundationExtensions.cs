@@ -35,6 +35,7 @@ public static class FoundationExtensions
         {
             Predicate = _ => false
         });
+        app.MapHealthChecks("/health");
         app.MapHealthChecks("/health/ready");
         return app;
     }
