@@ -77,3 +77,29 @@ Status: implemented in branch `portal-sprint-p2-controlled-deployment-baseline`.
 - FinancialIntegrationReadiness: `PendingPortalRuntimeBaseline`.
 - NextGate: `PortalSprintP3AuthSsoSessionBaseline`.
 - PR title: `docs: add portal sprint p2 controlled deployment baseline`.
+
+## Portal Sprint P3 - Auth / SSO / Session Baseline
+
+Status: implemented in branch `portal-sprint-p3-auth-sso-session-baseline`.
+
+- Task: baseline documental y validación controlada de Auth, SSO y sesión.
+- Base main commit: `948101a7ba14b810b5b0b627e4a21fa48e0d51d3`.
+- ProductionActivationDecision: `NoGo`.
+- SsoProductionActivationDecision: `NoGo`.
+- JwtFoundationPresent: `true`.
+- PermissionPoliciesPresent: `true`.
+- OidcProviderConfiguredForProduction: `false`.
+- RealClientSecretsPresent: `false`.
+- RealTokensPresent: `false`.
+- RealCertificatesPresent: `false`.
+- PrivateUrlsPresent: `false`.
+- TokenStorageInLocalStorageAllowed: `false`.
+- TokenStorageInSessionStorageAllowed: `false`.
+- CookiesPolicyPendingValidation: `true`.
+- SessionTimeoutPolicyPendingValidation: `true`.
+- LogoutFlowPendingValidation: `true`.
+- CrmAuthIntegrationReadiness: `PendingPortalAuthContract`.
+- FinancialAuthIntegrationReadiness: `PendingPortalAuthContract`.
+- AuthSsoReadiness: `BaselinePreparedNotProductionReady`.
+- NextGate: `PortalSprintP4MenuPermissionsNavigationBaseline`.
+- PR title: `docs: add portal sprint p3 auth sso session baseline`.

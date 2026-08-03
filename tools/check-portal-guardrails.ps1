@@ -36,6 +36,8 @@ $scanFiles = foreach ($scanRoot in $scanRoots) {
 
 $suspicious = $scanFiles |
   Select-String -Pattern 'BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY|BEGIN CERTIFICATE|password\s*=\s*(?!\$\{|CHANGE_ME|.*Local_Only)|secret\s*=\s*(?!\$\{|CHANGE_ME|.*Local_Only)|https://(?!github\.com|localhost)' -ErrorAction SilentlyContinue
+$suspicious = $suspicious |
+  Where-Object { -not ($_.Path -like (Join-Path $Root 'tools\*.ps1') -and $_.Line -match 'Select-String|-match') }
 if ($suspicious) {
   Add-Failure ('Potential secret/private URL patterns found. Review before committing.')
 }
