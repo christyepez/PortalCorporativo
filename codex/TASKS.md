@@ -553,6 +553,45 @@ Status: implemented in branch `portal-sprint20-controlled-consumer-runtime-pilot
 - NextGate: `PortalSprint21PortalToCrmContractAlignmentGate`.
 - PR title: `docs: add portal sprint20 controlled consumer runtime pilot planning`.
 
+## Portal Sprint 21 - Portal to CRM Contract Alignment Gate
+
+Status: implemented in branch `portal-sprint21-portal-to-crm-contract-alignment-gate`.
+
+- Task: cerrar gate documental de alineación contractual Portal↔CRM sin activar runtime.
+- Base main commit: `ebdedcb309182c23abfc9a294e80bcb0ec002631`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint20ControlledConsumerRuntimePilotReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- PortalToCrmContractAlignmentAttempted: `true`.
+- PortalToCrmAlignmentMatrixPrepared: `true`.
+- CrmComplianceChecklistPrepared: `true`.
+- PortalToCrmKnownGapsPrepared: `true`.
+- CrmP2EntryCriteriaPrepared: `true`.
+- FutureRuntimePilotExitCriteriaPrepared: `true`.
+- PortalToCrmHandoffPlanPrepared: `true`.
+- CrmRepositoryModified: `false`.
+- ProductiveCrmGatewayRoutesEnabled: `false`.
+- ProductiveCrmNavigationEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- CrmServiceInPortalCompose: `false`.
+- SharedDatabaseWithCrmPresent: `false`.
+- CrossDomainMigrationsPresent: `false`.
+- RealCrmPrivateUrlsPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- RealSecretProviderConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- RealObservabilityProviderConfigured: `false`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- RealDataPresent: `false`.
+- ControlledNonProductionDeploymentReadiness: `PackagePreparedNonProductionOnly`.
+- OperationalObservabilityReadiness: `PreparedNonProductionOnly`.
+- PortalToCrmContractAlignmentReadiness: `ReadyForCrmP2Planning`.
+- NextGate: `CrmSprint10P2CommonDbControlledActivationPlan`.
+- PR title: `docs: add portal sprint21 portal to crm contract alignment gate`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
