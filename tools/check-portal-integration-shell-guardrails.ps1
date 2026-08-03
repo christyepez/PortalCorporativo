@@ -26,7 +26,10 @@ $runtimeRoots = @(
 $runtimeFiles = foreach ($runtimeRoot in $runtimeRoots) {
   if (Test-Path $runtimeRoot -PathType Container) {
     Get-ChildItem -Path $runtimeRoot -Recurse -File -ErrorAction SilentlyContinue |
-      Where-Object { $_.FullName -notmatch '\\(bin|obj|node_modules|\.git)\\' }
+      Where-Object {
+        $_.FullName -notmatch '\\(bin|obj|node_modules|dist|\.angular|\.git)\\' -and
+        $_.Name -notin @('package-lock.json')
+      }
   }
   else {
     Get-Item $runtimeRoot
