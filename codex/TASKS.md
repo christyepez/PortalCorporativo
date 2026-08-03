@@ -178,3 +178,33 @@ Status: implemented in branch `portal-sprint-p6-integration-shell-external-modul
 - IntegrationShellReadiness: `BaselinePreparedNotProductionReady`.
 - NextGate: `PortalSprintP7DeploymentHardeningBaseline`.
 - PR title: `docs: add portal sprint p6 integration shell external modules baseline`.
+
+## Portal Sprint P7 - Deployment Hardening Baseline
+
+Status: implemented in branch `portal-sprint-p7-deployment-hardening-baseline`.
+
+- Task: baseline documental y validación controlada de hardening de despliegue.
+- Base main commit: `1728e52d813308914c137b81b103b0600b4d3e86`.
+- PortalSprintP7DeploymentHardeningBaselineExists: `true`.
+- DeploymentHardeningBaselineReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- ProductionReadinessChecklistPrepared: `true`.
+- RollbackRunbookPrepared: `true`.
+- RecoveryRunbookPrepared: `true`.
+- ObservabilityRunbookPrepared: `true`.
+- HealthReadinessRunbookPrepared: `true`.
+- DockerComposeConfigValidated: `true`.
+- DotnetBuildValidated: `true`.
+- DotnetTestsValidated: `true`.
+- RuntimeDockerUpValidated: `PendingControlledEnvironment`.
+- HealthChecksValidated: `PendingControlledEnvironment`.
+- SmokeTestsValidated: `PendingControlledEnvironment`.
+- SecretsPresent: `false`.
+- EnvRealFileCreated: `false`.
+- RealCertificatesPresent: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- ProductionDeploymentReadiness: `HardeningPreparedNotProductionReady`.
+- NextGate: `PortalSprintP8PortalClosureGate`.
+- PR title: `docs: add portal sprint p7 deployment hardening baseline`.
