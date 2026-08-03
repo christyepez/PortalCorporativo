@@ -347,6 +347,63 @@ Status: implemented in branch `portal-sprint16-external-consumer-onboarding-prep
 - NextGate: `PortalSprint17NonProductionReleaseCandidateGate`.
 - PR title: `docs: add portal sprint16 external consumer onboarding preparation`.
 
+## Portal Sprint 17 - NonProduction Release Candidate Gate
+
+Status: implemented in branch `portal-sprint17-nonproduction-release-candidate-gate`.
+
+- Task: cerrar Release Candidate Gate para despliegue NonProduction controlado.
+- Base main commit: `df38eb2f4e41365e9a2ab5b3bdf348341aa5c8be`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint9ControlledRuntimeReviewed: `true`.
+- Sprint10FrontendShellReviewed: `true`.
+- Sprint11HealthSmokeReviewed: `true`.
+- Sprint12DockerFullStackReviewed: `true`.
+- Sprint13ControlledAuthReviewed: `true`.
+- Sprint14SecretProviderReviewed: `true`.
+- Sprint15NotificationProviderReviewed: `true`.
+- Sprint16ExternalConsumerOnboardingReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- NonProductionReleaseCandidateAttempted: `true`.
+- DockerComposeConfigValidated: `true`.
+- DockerFullStackBuildValidated: `true`.
+- DockerFullStackUpValidated: `true`.
+- DockerServicesHealthyValidated: `true`.
+- GenericHealthEndpointValidated: `true`.
+- LiveHealthEndpointValidated: `true`.
+- ReadyHealthEndpointValidated: `true`.
+- CleanStackSmokeValidated: `true`.
+- ExistingStackSmokeValidated: `true`.
+- RollbackStopValidated: `true`.
+- StackStoppedAfterValidation: `true`.
+- BackendBuildValidated: `true`.
+- BackendTestsValidated: `true`.
+- FrontendShellBuildable: `true`.
+- FrontendTestValidated: `true`.
+- FrontendLintValidated: `true`.
+- ControlledAuthReadiness: `PreparedNonProductionOnly`.
+- SecretProviderReadiness: `PreparedNonProductionOnly`.
+- NotificationProviderReadiness: `PreparedNonProductionOnly`.
+- ExternalConsumerOnboardingReadiness: `PreparedContractOnly`.
+- SsoOidcProductionConfigured: `false`.
+- RealSecretProviderConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- RealNotificationSendingEnabled: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- NonProductionReleaseCandidateReadiness: `ReadyForControlledNonProductionDeploymentPackage`.
+- NextGate: `PortalSprint18ControlledNonProductionDeploymentPackage`.
+- PR title: `docs: add portal sprint17 nonproduction release candidate gate`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
