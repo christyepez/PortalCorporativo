@@ -55,3 +55,25 @@ Status: implemented in branch `portal-sprint-p1-current-state-gate`.
 - FinancialIntegrationReadiness: `PendingPortalBaseline`.
 - NextGate: `PortalSprintP2ControlledDeploymentBaseline`.
 - PR title: `docs: add portal sprint p1 current state gate`.
+
+## Portal Sprint P2 - Controlled Deployment Baseline
+
+Status: implemented in branch `portal-sprint-p2-controlled-deployment-baseline`.
+
+- Task: baseline controlado de despliegue local/NonProduction.
+- Base main commit: `572d792b0e195024895f0156790ef344745ff6f0`.
+- ProductionActivationDecision: `NoGo`.
+- NonProductionDeploymentBaselineApproved: `true`.
+- PortalDeploymentReadiness: `BaselinePreparedNotProductionReady`.
+- DockerComposeConfigValidated: `true`.
+- DotnetBuildValidated: `true`.
+- DotnetTestsValidated: `true`.
+- FrontendBuildValidated: `false`.
+- FrontendBuildBlockedReason: `No buildable frontend package manifest found`.
+- RuntimeDockerUpValidated: `PendingValidation`.
+- HealthChecksValidated: `PendingRuntime`.
+- SmokeTestsValidated: `PendingRuntime`.
+- CrmIntegrationReadiness: `PendingPortalRuntimeBaseline`.
+- FinancialIntegrationReadiness: `PendingPortalRuntimeBaseline`.
+- NextGate: `PortalSprintP3AuthSsoSessionBaseline`.
+- PR title: `docs: add portal sprint p2 controlled deployment baseline`.
