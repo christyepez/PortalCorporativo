@@ -511,6 +511,48 @@ Status: implemented in branch `portal-sprint19-operational-observability-prepara
 - NextGate: `PortalSprint20ControlledConsumerRuntimePilotPlanning`.
 - PR title: `docs: add portal sprint19 operational observability preparation`.
 
+## Portal Sprint 20 - Controlled Consumer Runtime Pilot Planning
+
+Status: implemented in branch `portal-sprint20-controlled-consumer-runtime-pilot-planning`.
+
+- Task: planificar piloto controlado runtime consumidor con CRM como candidato y Financiero como consumidor futuro.
+- Base main commit: `7f2ea8ae0ddbac32481f9883886b2c65b5e5a69b`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint18ControlledNonProductionDeploymentReviewed: `true`.
+- Sprint19OperationalObservabilityReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- ControlledConsumerRuntimePilotPlanningAttempted: `true`.
+- CrmRuntimePilotPlanPrepared: `true`.
+- CrmRuntimePilotChecklistPrepared: `true`.
+- CrmRuntimePilotExitCriteriaPrepared: `true`.
+- ConsumerRuntimePilotRollbackPrepared: `true`.
+- ConsumerRuntimePilotObservabilityPrepared: `true`.
+- ConsumerRuntimePilotContractMinimumsPrepared: `true`.
+- FinancialFutureConsumerDecisionPrepared: `true`.
+- CrmRepositoryModified: `false`.
+- FinancialRepositoryModified: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- RealSecretProviderConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- RealObservabilityProviderConfigured: `false`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ControlledNonProductionDeploymentReadiness: `PackagePreparedNonProductionOnly`.
+- OperationalObservabilityReadiness: `PreparedNonProductionOnly`.
+- ControlledConsumerRuntimePilotReadiness: `PlannedContractOnly`.
+- NextGate: `PortalSprint21PortalToCrmContractAlignmentGate`.
+- PR title: `docs: add portal sprint20 controlled consumer runtime pilot planning`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
