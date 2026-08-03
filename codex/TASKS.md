@@ -303,6 +303,50 @@ Status: implemented in branch `portal-sprint15-notification-provider-preparation
 - NextGate: `PortalSprint16ExternalConsumerOnboardingPreparation`.
 - PR title: `docs: add portal sprint15 notification provider preparation`.
 
+## Portal Sprint 16 - External Consumer Onboarding Preparation
+
+Status: implemented in branch `portal-sprint16-external-consumer-onboarding-preparation`.
+
+- Task: preparar onboarding externo contract-only para CRM, Financiero y futuros consumidores.
+- Base main commit: `0f17995230377180b54183730ee028c409df9852`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint12DockerFullStackReviewed: `true`.
+- Sprint13ControlledAuthReviewed: `true`.
+- Sprint14SecretProviderReviewed: `true`.
+- Sprint15NotificationProviderReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- ExternalConsumerOnboardingPreparationAttempted: `true`.
+- ExternalConsumerOnboardingStrategyPrepared: `true`.
+- CrmOnboardingChecklistPrepared: `true`.
+- FinancialOnboardingChecklistPrepared: `true`.
+- ConsumerModuleContractPrepared: `true`.
+- ConsumerNavigationContractPrepared: `true`.
+- ConsumerSecurityContractPrepared: `true`.
+- ConsumerAuditConfigurationNotificationContractPrepared: `true`.
+- ConsumerDatabaseBoundaryPrepared: `true`.
+- ConsumerDeploymentBoundaryPrepared: `true`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- CrmRepositoryModified: `false`.
+- FinancialRepositoryModified: `false`.
+- RealPrivateUrlsPresent: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- RealDataPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderReadiness: `PreparedNonProductionOnly`.
+- NotificationProviderReadiness: `PreparedNonProductionOnly`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- FrontendShellBuildable: `true`.
+- ExternalConsumerOnboardingReadiness: `PreparedContractOnly`.
+- NextGate: `PortalSprint17NonProductionReleaseCandidateGate`.
+- PR title: `docs: add portal sprint16 external consumer onboarding preparation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
