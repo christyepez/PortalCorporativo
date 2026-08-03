@@ -32,6 +32,40 @@
 
 Detalle y orden: `docs/coordination/sprint-02-roadmap.md`.
 
+## Portal Sprint 9 - Controlled Runtime Validation
+
+Status: implemented in branch `portal-sprint9-controlled-runtime-validation`.
+
+- Task: validación runtime controlada no productiva después del cierre P1-P8.
+- Base main commit: `2f83b0c4271fc23326afd8d1c8c3bd0552e12e8a`.
+- PortalBaselineClosedReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- ControlledRuntimeValidationAttempted: `true`.
+- DockerComposeConfigValidated: `true`.
+- RuntimeDockerUpValidated: `true`.
+- HealthChecksValidated: `false`.
+- HealthChecksBlockedReason: `/health/live` y `/health/ready` responden 200, pero `/health` responde 404.
+- SmokeTestsValidated: `false`.
+- SmokeTestsBlockedReason: smoke Sprint 1 no es idempotente con stack ya levantado y reportó fallo de autorización en endpoint protegido.
+- GatewayRuntimeValidated: `true`.
+- PortalApisRuntimeValidated: `true`.
+- WorkersRuntimeValidated: `true`.
+- CorrelationLoggingValidated: `true`.
+- RollbackStopValidated: `true`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderProductionConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- ControlledRuntimeReadiness: `PartialBlocked`.
+- NextGate: `PortalSprint10FrontendShellBuildabilityBaseline`.
+- PR title: `docs: add portal sprint9 controlled runtime validation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
