@@ -457,6 +457,60 @@ Status: implemented in branch `portal-sprint18-controlled-nonproduction-deployme
 - NextGate: `PortalSprint19OperationalObservabilityPreparation`.
 - PR title: `docs: add portal sprint18 controlled nonproduction deployment package`.
 
+## Portal Sprint 19 - Operational Observability Preparation
+
+Status: implemented in branch `portal-sprint19-operational-observability-preparation`.
+
+- Task: preparar observabilidad operativa NonProduction controlada.
+- Base main commit: `20234fe094d57841884243dfddb6d4cfd1295b12`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint18ControlledNonProductionDeploymentReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- OperationalObservabilityPreparationAttempted: `true`.
+- ObservabilityStrategyPrepared: `true`.
+- LoggingCorrelationPrepared: `true`.
+- MetricsPrepared: `true`.
+- FutureTracingPrepared: `true`.
+- HealthMonitoringPrepared: `true`.
+- LogReviewChecklistPrepared: `true`.
+- FutureAlertingPrepared: `true`.
+- IncidentTriageRunbookPrepared: `true`.
+- NonProductionSloSlaPrepared: `true`.
+- FutureDashboardPrepared: `true`.
+- LocalSeqObservabilityValidated: `true`.
+- RealApplicationInsightsConfigured: `false`.
+- RealDatadogConfigured: `false`.
+- RealNewRelicConfigured: `false`.
+- RealPrometheusGrafanaConfigured: `false`.
+- RealSiemConfigured: `false`.
+- RealExternalAlertsConfigured: `false`.
+- ObservabilityConnectionStringsPresent: `false`.
+- ControlledNonProductionDeploymentReadiness: `PackagePreparedNonProductionOnly`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- BackendBuildValidated: `true`.
+- BackendTestsValidated: `true`.
+- FrontendShellBuildable: `true`.
+- FrontendTestValidated: `true`.
+- FrontendLintValidated: `true`.
+- SsoOidcProductionConfigured: `false`.
+- RealSecretProviderConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- OperationalObservabilityReadiness: `PreparedNonProductionOnly`.
+- NextGate: `PortalSprint20ControlledConsumerRuntimePilotPlanning`.
+- PR title: `docs: add portal sprint19 operational observability preparation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
