@@ -95,6 +95,41 @@ Status: implemented in branch `portal-sprint10-frontend-shell-buildability-basel
 - NextGate: `PortalSprint11HealthSmokeHardeningBaseline`.
 - PR title: `feat: add portal sprint10 frontend shell buildability baseline`.
 
+## Portal Sprint 11 - Health Smoke Hardening Baseline
+
+Status: implemented in branch `portal-sprint11-health-smoke-hardening-baseline`.
+
+- Task: normalizar health y endurecer smoke runtime NonProduction.
+- Base main commit: `436e0a499939e0b14a8cd85523d0d88dfcb41940`.
+- PortalBaselineClosedReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- HealthSmokeHardeningAttempted: `true`.
+- GenericHealthEndpointValidated: `true`.
+- LiveHealthEndpointValidated: `true`.
+- ReadyHealthEndpointValidated: `true`.
+- SmokeScriptIdempotencyAttempted: `true`.
+- CleanStackSmokeValidated: `true`.
+- ExistingStackSmokeValidated: `true`.
+- ProtectedEndpointSmokeHandled: `true`.
+- SmokeTestsValidated: `true`.
+- SmokeTestsBlockedReason: `none`.
+- RuntimeDockerUpValidated: `true`.
+- RollbackStopValidated: `true`.
+- FrontendShellBuildable: `true`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderProductionConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- HealthSmokeReadiness: `ValidatedNonProductionOnly`.
+- NextGate: `PortalSprint12DockerFullStackRuntimeValidation`.
+- PR title: `feat: add portal sprint11 health smoke hardening baseline`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
