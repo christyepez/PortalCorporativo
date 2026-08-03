@@ -130,6 +130,58 @@ Status: implemented in branch `portal-sprint11-health-smoke-hardening-baseline`.
 - NextGate: `PortalSprint12DockerFullStackRuntimeValidation`.
 - PR title: `feat: add portal sprint11 health smoke hardening baseline`.
 
+## Portal Sprint 12 - Docker Full Stack Runtime Validation
+
+Status: implemented in branch `portal-sprint12-docker-full-stack-runtime-validation`.
+
+- Task: validar full stack Docker completo del Portal en modo NonProduction controlado.
+- Base main commit: `299a41a16f138eab6c326cb4ce18dc80fa36ab15`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint10FrontendShellReviewed: `true`.
+- Sprint11HealthSmokeReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- DockerComposeConfigValidated: `true`.
+- DockerFullStackBuildAttempted: `true`.
+- DockerFullStackBuildValidated: `true`.
+- DockerFullStackUpValidated: `true`.
+- DockerServicesHealthyValidated: `true`.
+- SqlServerContainerValidated: `true`.
+- SeqContainerValidated: `true`.
+- SecurityApiContainerValidated: `true`.
+- ConfigurationApiContainerValidated: `true`.
+- MenuApiContainerValidated: `true`.
+- AuditApiContainerValidated: `true`.
+- NotificationApiContainerValidated: `true`.
+- NotificationWorkerContainerValidated: `true`.
+- ApiGatewayContainerValidated: `true`.
+- GenericHealthEndpointValidated: `true`.
+- LiveHealthEndpointValidated: `true`.
+- ReadyHealthEndpointValidated: `true`.
+- CleanStackSmokeValidated: `true`.
+- ExistingStackSmokeValidated: `true`.
+- ProtectedEndpointSmokeHandled: `true`.
+- LogsReviewed: `true`.
+- CriticalRuntimeErrorsDetected: `false`.
+- RollbackStopValidated: `true`.
+- StackStoppedAfterValidation: `true`.
+- FrontendShellBuildable: `true`.
+- FrontendTestValidated: `true`.
+- FrontendLintValidated: `true`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderProductionConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- NextGate: `PortalSprint13ControlledAuthIntegrationPreparation`.
+- PR title: `feat: add portal sprint12 docker full stack runtime validation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
