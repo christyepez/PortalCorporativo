@@ -182,6 +182,43 @@ Status: implemented in branch `portal-sprint12-docker-full-stack-runtime-validat
 - NextGate: `PortalSprint13ControlledAuthIntegrationPreparation`.
 - PR title: `feat: add portal sprint12 docker full stack runtime validation`.
 
+## Portal Sprint 13 - Controlled Auth Integration Preparation
+
+Status: implemented in branch `portal-sprint13-controlled-auth-integration-preparation`.
+
+- Task: preparar integración Auth controlada NonProduction sin activar SSO/OIDC real.
+- Base main commit: `99ff5191560655cf686922286a5f320c51e2c0b0`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint12DockerFullStackReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- ControlledAuthPreparationAttempted: `true`.
+- AuthIntegrationContractPrepared: `true`.
+- ClaimsPermissionsContractPrepared: `true`.
+- SsoOidcFutureBoundaryPrepared: `true`.
+- SsoOidcProductionConfigured: `false`.
+- RealClientIdConfigured: `false`.
+- RealClientSecretConfigured: `false`.
+- RealIssuerConfigured: `false`.
+- RealAuthorityConfigured: `false`.
+- BrowserTokenStorageDetected: `false`.
+- TokenStorageInLocalStorageAllowed: `false`.
+- TokenStorageInSessionStorageAllowed: `false`.
+- GatewayAuthorizationPolicyPresent: `true`.
+- SecurityPermissionsFoundationPresent: `true`.
+- DockerFullStackReadiness: `ValidatedNonProductionOnly`.
+- FrontendShellBuildable: `true`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- ControlledAuthReadiness: `PreparedNonProductionOnly`.
+- NextGate: `PortalSprint14SecretProviderPreparation`.
+- PR title: `docs: add portal sprint13 controlled auth integration preparation`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
