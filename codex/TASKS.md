@@ -66,6 +66,35 @@ Status: implemented in branch `portal-sprint9-controlled-runtime-validation`.
 - NextGate: `PortalSprint10FrontendShellBuildabilityBaseline`.
 - PR title: `docs: add portal sprint9 controlled runtime validation`.
 
+## Portal Sprint 10 - Frontend Shell Buildability Baseline
+
+Status: implemented in branch `portal-sprint10-frontend-shell-buildability-baseline`.
+
+- Task: crear baseline Angular buildable para el Frontend Shell del Portal.
+- Base main commit: `bbbd135ce4645595a4d82a0ccb49d0e292876de9`.
+- PortalBaselineClosedReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- FrontendShellBuildabilityAttempted: `true`.
+- FrontendPackageManifestPresent: `true`.
+- FrontendShellBuildable: `true`.
+- FrontendShellBuildBlockedReason: `none`.
+- FrontendTestValidated: `true`.
+- FrontendLintValidated: `true`.
+- TokenStorageInLocalStorageAllowed: `false`.
+- TokenStorageInSessionStorageAllowed: `false`.
+- BrowserTokenStorageDetected: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- CrmNavigationRuntimeEnabled: `false`.
+- FinancialNavigationRuntimeEnabled: `false`.
+- SsoOidcProductionConfigured: `false`.
+- SecretProviderProductionConfigured: `false`.
+- RealPrivateApiUrlsPresent: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- FrontendShellReadiness: `BuildableNonProductionShell`.
+- NextGate: `PortalSprint11HealthSmokeHardeningBaseline`.
+- PR title: `feat: add portal sprint10 frontend shell buildability baseline`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.

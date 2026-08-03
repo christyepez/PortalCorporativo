@@ -1,0 +1,50 @@
+<main class="shell">
+  <header class="shell__header">
+    <div>
+      <p class="eyebrow">NonProduction Shell Baseline</p>
+      <h1>{{ title }}</h1>
+    </div>
+    <span class="status">{{ readiness }}</span>
+  </header>
+
+  <section class="shell__body">
+    <aside class="shell__sidebar" aria-label="Portal shell modules">
+      <h2>Portal</h2>
+      <nav>
+        @for (module of modules; track module.label) {
+          <button type="button" [class.disabled]="!module.enabled" [disabled]="!module.enabled">
+            <span>{{ module.label }}</span>
+            <small>{{ module.status }}</small>
+          </button>
+        }
+      </nav>
+    </aside>
+
+    <section class="shell__content" aria-label="Portal shell content">
+      <p class="eyebrow">Buildability gate</p>
+      <h2>Shell base listo para compilar</h2>
+      <p>
+        Esta vista entrega layout mínimo para header, menú lateral, área de contenido y estado del portal.
+        No habilita navegación externa ni integra módulos consumidores en runtime.
+      </p>
+      <div class="card-grid">
+        <article>
+          <strong>API base</strong>
+          <span>{{ apiBasePath }}</span>
+        </article>
+        <article>
+          <strong>Credenciales del navegador</strong>
+          <span>No usadas en esta línea base</span>
+        </article>
+        <article>
+          <strong>Módulos externos</strong>
+          <span>Deshabilitados hasta gate posterior</span>
+        </article>
+      </div>
+    </section>
+  </section>
+
+  <footer class="shell__footer">
+    Portal Sprint 10 · Frontend Shell Buildability Baseline · ProductionActivationDecision: NoGo
+  </footer>
+</main>

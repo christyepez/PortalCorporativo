@@ -1,0 +1,141 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #172033;
+  background: linear-gradient(135deg, #f6f8fc 0%, #eef4ff 100%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__header,
+.shell__footer {
+  padding: 1.25rem 1.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid #dde5f3;
+}
+
+.shell__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.shell__header h1,
+.shell__content h2 {
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: #52627a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status {
+  border-radius: 999px;
+  background: #e8f4ef;
+  color: #176647;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.shell__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+}
+
+.shell__sidebar {
+  padding: 1.5rem;
+  background: #12213a;
+  color: #ffffff;
+}
+
+.shell__sidebar h2 {
+  margin: 0 0 1rem;
+}
+
+.shell__sidebar nav {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.shell__sidebar button {
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.85rem;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.shell__sidebar button.disabled {
+  opacity: 0.55;
+}
+
+.shell__sidebar span,
+.shell__sidebar small {
+  display: block;
+}
+
+.shell__sidebar small {
+  margin-top: 0.25rem;
+  color: #b8c7df;
+}
+
+.shell__content {
+  padding: 2rem;
+}
+
+.shell__content p {
+  max-width: 760px;
+  line-height: 1.65;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.card-grid article {
+  border: 1px solid #dde5f3;
+  border-radius: 1rem;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(23, 32, 51, 0.06);
+}
+
+.card-grid strong,
+.card-grid span {
+  display: block;
+}
+
+.card-grid span {
+  margin-top: 0.4rem;
+  color: #52627a;
+}
+
+.shell__footer {
+  border-top: 1px solid #dde5f3;
+  border-bottom: 0;
+  color: #52627a;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  .shell__body {
+    grid-template-columns: 1fr;
+  }
+}
