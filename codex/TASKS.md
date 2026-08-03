@@ -103,3 +103,28 @@ Status: implemented in branch `portal-sprint-p3-auth-sso-session-baseline`.
 - AuthSsoReadiness: `BaselinePreparedNotProductionReady`.
 - NextGate: `PortalSprintP4MenuPermissionsNavigationBaseline`.
 - PR title: `docs: add portal sprint p3 auth sso session baseline`.
+
+## Portal Sprint P4 - Menu / Permissions / Navigation Baseline
+
+Status: implemented in branch `portal-sprint-p4-menu-permissions-navigation-baseline`.
+
+- Task: baseline documental y validación controlada de menú, permisos y navegación.
+- Base main commit: `43fe3fba7acebcf64f25c099de63b5f1890f13ba`.
+- ProductionActivationDecision: `NoGo`.
+- MenuBaselineReviewed: `true`.
+- PermissionsBaselineReviewed: `true`.
+- NavigationBaselineReviewed: `true`.
+- MenuFoundationPresent: `true`.
+- SecurityPermissionsFoundationPresent: `true`.
+- PermissionPoliciesPresent: `true`.
+- GatewayAuthorizationPolicyPresent: `true`.
+- ConsumerModuleNavigationContractPrepared: `true`.
+- CrmNavigationReadiness: `PendingPortalConsumerContract`.
+- FinancialNavigationReadiness: `PendingPortalConsumerContract`.
+- ProductiveExternalModuleNavigationEnabled: `false`.
+- RealRoutesPresent: `false`.
+- PrivateUrlsPresent: `false`.
+- RealUserRoleDataPresent: `false`.
+- MenuPermissionReadiness: `BaselinePreparedNotProductionReady`.
+- NextGate: `PortalSprintP5AuditConfigurationNotificationBaseline`.
+- PR title: `docs: add portal sprint p4 menu permissions navigation baseline`.
