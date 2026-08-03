@@ -404,6 +404,59 @@ Status: implemented in branch `portal-sprint17-nonproduction-release-candidate-g
 - NextGate: `PortalSprint18ControlledNonProductionDeploymentPackage`.
 - PR title: `docs: add portal sprint17 nonproduction release candidate gate`.
 
+## Portal Sprint 18 - Controlled NonProduction Deployment Package
+
+Status: implemented in branch `portal-sprint18-controlled-nonproduction-deployment-package`.
+
+- Task: preparar paquete controlado de despliegue NonProduction basado en el Release Candidate Sprint 17.
+- Base main commit: `395624a0f998655d75be269af0d8c5b6a684813e`.
+- PortalBaselineClosedReviewed: `true`.
+- Sprint17NonProductionReleaseCandidateReviewed: `true`.
+- ProductionActivationDecision: `NoGo`.
+- PortalProductionReady: `false`.
+- ControlledNonProductionDeploymentPackageAttempted: `true`.
+- DeploymentPackagePrepared: `true`.
+- DeploymentRunbookPrepared: `true`.
+- ValidationRunbookPrepared: `true`.
+- RollbackRunbookPrepared: `true`.
+- EnvGuidePrepared: `true`.
+- ServicePortMatrixPrepared: `true`.
+- CommandMatrixPrepared: `true`.
+- OptionalWrapperScriptsPrepared: `true`.
+- DockerComposeConfigValidated: `true`.
+- DockerFullStackBuildValidated: `true`.
+- DockerFullStackUpValidated: `true`.
+- DockerServicesHealthyValidated: `true`.
+- GenericHealthEndpointValidated: `true`.
+- LiveHealthEndpointValidated: `true`.
+- ReadyHealthEndpointValidated: `true`.
+- ExistingStackSmokeValidated: `true`.
+- RollbackStopValidated: `true`.
+- StackStoppedAfterValidation: `true`.
+- BackendBuildValidated: `true`.
+- BackendTestsValidated: `true`.
+- FrontendShellBuildable: `true`.
+- FrontendTestValidated: `true`.
+- FrontendLintValidated: `true`.
+- SsoOidcProductionConfigured: `false`.
+- RealSecretProviderConfigured: `false`.
+- RealNotificationProvidersConfigured: `false`.
+- RealNotificationSendingEnabled: `false`.
+- ProductiveExternalNavigationEnabled: `false`.
+- ProductiveExternalGatewayRoutesEnabled: `false`.
+- ExternalModuleRuntimeEnabled: `false`.
+- CrmRuntimeCouplingEnabled: `false`.
+- FinancialRuntimeCouplingEnabled: `false`.
+- SharedDatabaseWithConsumersPresent: `false`.
+- BrowserTokenStorageDetected: `false`.
+- SecretsPresent: `false`.
+- EnvRealFileCommitted: `false`.
+- PrivateUrlsPresent: `false`.
+- RealDataPresent: `false`.
+- ControlledNonProductionDeploymentReadiness: `PackagePreparedNonProductionOnly`.
+- NextGate: `PortalSprint19OperationalObservabilityPreparation`.
+- PR title: `docs: add portal sprint18 controlled nonproduction deployment package`.
+
 ## Portal Sprint P1 - Current State Gate
 
 Status: implemented in branch `portal-sprint-p1-current-state-gate`.
