@@ -1,0 +1,212 @@
+x-portal-api: &portal-api
+  restart: unless-stopped
+  environment: &portal-environment
+    ASPNETCORE_ENVIRONMENT: Production
+    Seq__ServerUrl: http://seq:5341
+  healthcheck:
+    test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+    interval: 10s
+    timeout: 3s
+    retries: 10
+    start_period: 15s
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env}
+    ports:
+      - "${SQLSERVER_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+
+  seq:
+    image: datalust/seq:2024.3
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "${SEQ_PORT:-5341}:80"
+    volumes:
+      - seq-data:/data
+
+  security-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-security-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__SecurityDb: Server=sqlserver,1433;Database=PortalSecurity;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Security__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  configuration-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-configuration-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__ConfigurationDb: Server=sqlserver,1433;Database=PortalConfiguration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Configuration__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  menu-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-menu-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__MenuDb: Server=sqlserver,1433;Database=PortalMenu;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Menu__InitializeDatabase: "true"
+      Security__BaseUrl: http://security-api:8080
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      security-api:
+        condition: service_healthy
+
+  audit-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-audit-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__AuditDb: Server=sqlserver,1433;Database=PortalAudit;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Audit__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  notification-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-notification-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__NotificationDb: Server=sqlserver,1433;Database=PortalNotification;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Notification__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  notification-worker:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-notification-worker:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__NotificationDb: Server=sqlserver,1433;Database=PortalNotification;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Notification__InitializeDatabase: "false"
+      Worker__Enabled: "true"
+      Worker__PollIntervalSeconds: ${NOTIFICATION_POLL_SECONDS:-5}
+      Worker__MaxAttempts: ${NOTIFICATION_MAX_ATTEMPTS:-5}
+    depends_on:
+      notification-api:
+        condition: service_healthy
+
+  catalog-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-catalog-api:${PORTAL_VERSION:-latest}
+
+  content-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-content-api:${PORTAL_VERSION:-latest}
+
+  integration-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-integration-api:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__IntegrationDb: Server=sqlserver,1433;Database=PortalIntegration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Integration__InitializeDatabase: "true"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+  integration-worker:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-integration-worker:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      ConnectionStrings__IntegrationDb: Server=sqlserver,1433;Database=PortalIntegration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Integration__InitializeDatabase: "false"
+      Worker__Enabled: "false"
+      Worker__Transport: Disabled
+    depends_on:
+      integration-api:
+        condition: service_healthy
+
+  reporting-api:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-reporting-api:${PORTAL_VERSION:-latest}
+
+  api-gateway:
+    <<: *portal-api
+    image: christyepez/portal-corporativo-api-gateway:${PORTAL_VERSION:-latest}
+    environment:
+      <<: *portal-environment
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      security-api:
+        condition: service_healthy
+      configuration-api:
+        condition: service_healthy
+      menu-api:
+        condition: service_healthy
+      audit-api:
+        condition: service_healthy
+      notification-api:
+        condition: service_healthy
+
+volumes:
+  sqlserver-data:
+  minio-data:
+  seq-data:
