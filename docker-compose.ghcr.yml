@@ -1,0 +1,37 @@
+services:
+  security-api:
+    image: ghcr.io/christyepez/portal-corporativo-security-api@sha256:db823a3d388c92878f05496e33a97265eb7d1caab45dc135b9d64436deaebddd
+    build: null
+  configuration-api:
+    image: ghcr.io/christyepez/portal-corporativo-configuration-api@sha256:b1325e55773888bc85caada56339232c8f2467a0010e1897c279ce4c640441f2
+    build: null
+  menu-api:
+    image: ghcr.io/christyepez/portal-corporativo-menu-api@sha256:758f19e75fd2b2f915d412f90e840279c4f05d6ad8913f311221664bee580a4c
+    build: null
+  audit-api:
+    image: ghcr.io/christyepez/portal-corporativo-audit-api@sha256:ce9cd243c44756c7af3ba892011964e18488a1a88b926ed4d2c374e041fbec32
+    build: null
+  notification-api:
+    image: ghcr.io/christyepez/portal-corporativo-notification-api@sha256:d9cc10c5cd5d815eaa006230eb4c0f1fdefc228ea381dab2499b13a7aa05b356
+    build: null
+  notification-worker:
+    image: ghcr.io/christyepez/portal-corporativo-notification-worker@sha256:7e18fbbb87efc3f44a1dbd9eeb1bb1b4be26b79b62af6d30eb35e3621f386411
+    build: null
+  catalog-api:
+    image: ghcr.io/christyepez/portal-corporativo-catalog-api@sha256:22ec0cf36e439623f2e03a07994237256da255ab5aac6e1bd778d61a1be21b55
+    build: null
+  content-api:
+    image: ghcr.io/christyepez/portal-corporativo-content-api@sha256:94a563e51b2e086b8c819a0fe5210a78af7168fdad546efb9cf4f898488c04c5
+    build: null
+  integration-api:
+    image: ghcr.io/christyepez/portal-corporativo-integration-api@sha256:1c67d4b08d6e0991148148da54ddddff2dc71ab9cef9c6c96077e1a919393acc
+    build: null
+  integration-worker:
+    image: ghcr.io/christyepez/portal-corporativo-integration-worker@sha256:97a206685786171c28f2586f634d651ed3e1374696dddd2000a3ecaaf0ac10d7
+    build: null
+  reporting-api:
+    image: ghcr.io/christyepez/portal-corporativo-reporting-api@sha256:714250a4ec4b473cf4e2bb3b730ae55e7f4ed7c88e977ab9d58307b090a0ee6f
+    build: null
+  api-gateway:
+    image: ghcr.io/christyepez/portal-corporativo-api-gateway@sha256:95a9d24c9c56d0cdef7bffcc57dbafdc8e98bcd70525145a07d1ba9d67f96c86
+    build: null
