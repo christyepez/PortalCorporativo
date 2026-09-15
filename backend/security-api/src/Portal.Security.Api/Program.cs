@@ -17,6 +17,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health", new HealthCheckOptions());
 app.MapSecurityEndpoints();
+app.MapSecurityRevocationEndpoints();
 app.Run();
 
 public partial class Program;
