@@ -1,4 +1,4 @@
-# Next Codex Task Template
+# Next Codex Task
 
 ## Repository
 
@@ -6,47 +6,48 @@ christyepez/PortalCorporativo
 
 ## Phase
 
-Portal Sprint P2 - Controlled Deployment Baseline
+Portal Functional Roadmap - COMPLETE
 
-## Base Main Commit
+## Current Branch
 
-To be filled after Portal Sprint P1 PR is merged.
+portal-sprint22-functional-backlog-completion
 
-## Branch
+## Objective Status
 
-portal-sprint-p2-controlled-deployment-baseline
+`PortalFunctionalNonProductionObjectiveAchieved = true`
 
-## Commit sugerido
+The Portal functional foundation is complete through Sprint 22. Catalog, Content/File, Reporting, Integration, Angular Shell integration, shared JWT/OIDC validation boundary, permission revocation foundation, Audit retention and CI validation are implemented.
 
-docs: add portal controlled deployment baseline
+## Verified Evidence
 
-## PR title
+- Portal CI run #46: success.
+- Backend build: 0 warnings / 0 errors.
+- Backend tests: 61/61 PASS.
+- Frontend build/test/lint: PASS.
+- Docker Compose validation: PASS.
+- Closure: `docs/releases/portal-sprint-22-functional-backlog-closure.md`.
 
-docs: add portal controlled deployment baseline
+## Next Gate
 
-## Objetivo
+`ExternalProductionActivationInputs`
 
-Crear baseline controlado de despliegue no productivo, validando Docker runtime, health checks, Gateway, Auth/Menu/Configuration/Audit/Notification y smoke seguro sin secretos reales.
+This is not another implementation sprint. Production activation requires external approved inputs:
+
+- Real OIDC/OAuth2 IdP authority and app/client registration.
+- Audience/resource and permission-claim mapping.
+- Redirect/logout URIs and session/revocation policy.
+- Real secret provider and rotation ownership.
+- Production notification/integration providers where required.
+- Production environment/network URLs and deployment approvals.
 
 ## Guardrails
 
-- No producción.
-- No secretos reales.
-- No `.env` versionado.
-- No tokens/certificados/URLs privadas/datos reales.
-- No acoplar Portal directamente a CRM o Financiero.
-- No compartir bases entre dominios.
+- ProductionActivationDecision remains `NoGo` until those external inputs are supplied and validated.
+- Do not commit secrets, private production URLs, certificates or real data.
+- Do not persist browser access tokens.
+- Do not create direct CRM/Financial database coupling.
+- Do not add Kafka/RabbitMQ without a separate measured ADR.
 
-## Validaciones
+## Closure Expected
 
-- `git diff --check`.
-- Build backend.
-- Tests backend.
-- Docker Compose config.
-- Health checks runtime si se habilita ambiente local seguro.
-
-## Cierre esperado
-
-- PR hacia `main`.
-- No merge automático.
-- NextGate documentado.
+Sprint implementation work is complete. Only the external Production Activation Gate remains.
