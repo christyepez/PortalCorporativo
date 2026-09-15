@@ -1,0 +1,55 @@
+name: Portal CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'portal-sprint**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore backend/PortalCorporativo.sln
+      - name: Build
+        run: dotnet build backend/PortalCorporativo.sln -c Release --no-restore
+      - name: Test
+        run: dotnet test backend/PortalCorporativo.sln -c Release --no-build
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+      - run: npm run lint
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docker Compose
+        env:
+          SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
+          REDIS_PASSWORD: portal-local-redis
+          MINIO_ROOT_USER: portal-local
+          MINIO_ROOT_PASSWORD: portal-local-minio
+          JWT_SECRET: portal-local-ci-placeholder-secret-32chars
+        run: docker compose config --quiet
