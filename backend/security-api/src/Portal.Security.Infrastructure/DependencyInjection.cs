@@ -15,6 +15,8 @@ public static class DependencyInjection
         services.AddDbContext<SecurityDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ISecurityStore, EfSecurityStore>();
         services.AddScoped<SecurityService>();
+        services.AddScoped<ISecurityRevocationStore, EfSecurityRevocationStore>();
+        services.AddScoped<SecurityRevocationService>();
         if (configuration.GetValue<bool>("Security:InitializeDatabase"))
             services.AddHostedService<SecurityDatabaseInitializer>();
         return services;
