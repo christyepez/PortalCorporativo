@@ -1,7 +1,7 @@
 <main class="shell">
   <header class="shell__header">
     <div>
-      <p class="eyebrow">NonProduction Shell Baseline</p>
+      <p class="eyebrow">Integrated NonProduction Shell</p>
       <h1>{{ title }}</h1>
     </div>
     <span class="status">{{ readiness }}</span>
@@ -21,11 +21,11 @@
     </aside>
 
     <section class="shell__content" aria-label="Portal shell content">
-      <p class="eyebrow">Buildability gate</p>
-      <h2>Shell base listo para compilar</h2>
+      <p class="eyebrow">Sprint 22 functional completion</p>
+      <h2>Shell integrado con capacidades Portal</h2>
       <p>
-        Esta vista entrega layout mínimo para header, menú lateral, área de contenido y estado del portal.
-        No habilita navegación externa ni integra módulos consumidores en runtime.
+        El cliente Angular consume Security, Menu, Configuration, Catalog y Reporting a través del API Gateway.
+        El token de acceso se mantiene únicamente en memoria: no se usa localStorage ni sessionStorage.
       </p>
       <div class="card-grid">
         <article>
@@ -33,18 +33,18 @@
           <span>{{ apiBasePath }}</span>
         </article>
         <article>
-          <strong>Credenciales del navegador</strong>
-          <span>No usadas en esta línea base</span>
+          <strong>Sesión</strong>
+          <span>Bearer token en memoria; OIDC real pendiente de gate</span>
         </article>
         <article>
-          <strong>Módulos externos</strong>
-          <span>Deshabilitados hasta gate posterior</span>
+          <strong>Runtime</strong>
+          <span>NonProduction controlado; ProductionActivationDecision: NoGo</span>
         </article>
       </div>
     </section>
   </section>
 
   <footer class="shell__footer">
-    Portal Sprint 10 · Frontend Shell Buildability Baseline · ProductionActivationDecision: NoGo
+    Portal Sprint 22 · Functional Backlog Completion · ProductionActivationDecision: NoGo
   </footer>
 </main>
