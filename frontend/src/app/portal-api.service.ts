@@ -3,21 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
 
-export interface PortalMenuItem {
-  readonly id?: string;
-  readonly label?: string;
-  readonly title?: string;
-  readonly route?: string;
-  readonly url?: string;
-  readonly children?: readonly PortalMenuItem[];
-}
-
-export interface PortalConfigurationItem {
-  readonly key?: string;
-  readonly value?: string;
-  readonly moduleCode?: string;
-}
-
 @Injectable({ providedIn: 'root' })
 export class PortalApiService {
   private accessToken: string | null = null;
@@ -34,6 +19,10 @@ export class PortalApiService {
 
   hasAuthenticatedSession(): boolean {
     return this.accessToken !== null;
+  }
+
+  loadUserPermissions(userId: string): Observable<unknown> {
+    return this.http.get(`${environment.apiBasePath}/security/users/${encodeURIComponent(userId)}/permissions`, { headers: this.headers() });
   }
 
   loadMenu(): Observable<unknown> {
