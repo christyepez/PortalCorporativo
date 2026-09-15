@@ -16,6 +16,8 @@ public interface ISecurityStore
     Task<bool> HasRolePermissionAsync(string tenantId, Guid roleId, Guid permissionId, CancellationToken cancellationToken);
     Task<bool> UserHasPermissionAsync(string tenantId, Guid userId, Guid permissionId, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<Permission>> GetUserPermissionsAsync(string tenantId, Guid userId, CancellationToken cancellationToken);
+    Task<bool> RemoveUserRoleAsync(string tenantId, Guid userId, Guid roleId, CancellationToken cancellationToken);
+    Task<bool> RemoveRolePermissionAsync(string tenantId, Guid roleId, Guid permissionId, CancellationToken cancellationToken);
     Task AddAsync<T>(T entity, CancellationToken cancellationToken) where T : class;
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
