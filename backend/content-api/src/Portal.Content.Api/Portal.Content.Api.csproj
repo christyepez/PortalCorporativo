@@ -6,6 +6,9 @@
     <ProjectReference Include="..\Portal.Content.Contracts\Portal.Content.Contracts.csproj" />
     <ProjectReference Include="..\..\..\building-blocks\src\Portal.BuildingBlocks\Portal.BuildingBlocks.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
+  </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

@@ -1,6 +1,9 @@
+import { provideHttpClient } from '@angular/common/http';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 
-bootstrapApplication(AppComponent).catch((error: unknown) => {
+bootstrapApplication(AppComponent, {
+  providers: [provideHttpClient()]
+}).catch((error: unknown) => {
   console.error('Portal shell bootstrap failed', error);
 });

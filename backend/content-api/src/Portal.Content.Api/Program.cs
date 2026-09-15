@@ -1,8 +1,19 @@
 using Portal.BuildingBlocks;
+using Portal.Content.Api;
+using Portal.Content.Application;
+using Portal.Content.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPortalFoundation("Portal.Content.Api");
+builder.Services.AddSingleton<IContentRepository, InMemoryContentRepository>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ContentService>();
+builder.Services.AddPortalJwtAuthentication(builder.Configuration);
+builder.Services.AddPortalPermissionAuthorization();
+
 var app = builder.Build();
 app.UsePortalFoundation();
-app.MapGet("/", () => Results.Ok(new { service = "Portal.Content.Api", status = "bootstrap" }));
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapContentEndpoints();
 app.Run();
