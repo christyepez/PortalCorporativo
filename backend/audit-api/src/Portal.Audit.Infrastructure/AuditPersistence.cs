@@ -12,6 +12,7 @@ namespace Portal.Audit.Infrastructure;
 public sealed class AuditDbContext(DbContextOptions<AuditDbContext> options) : DbContext(options)
 {
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ArchivedAuditLog> ArchivedAuditLogs => Set<ArchivedAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,12 +35,20 @@ public sealed class AuditDbContext(DbContextOptions<AuditDbContext> options) : D
             entity.HasIndex(x => new { x.TenantId, x.Resource, x.Action });
             entity.HasIndex(x => x.CorrelationId);
         });
+        modelBuilder.Entity<ArchivedAuditLog>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TenantId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.SnapshotJson).IsRequired();
+            entity.HasIndex(x => x.OriginalAuditLogId).IsUnique();
+            entity.HasIndex(x => new { x.TenantId, x.OriginalCreatedAtUtc });
+        });
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         if (ChangeTracker.Entries<AuditLog>().Any(x => x.State is EntityState.Modified or EntityState.Deleted))
-            throw new InvalidOperationException("AuditLog is append-only.");
+            throw new InvalidOperationException("AuditLog is append-only; retention must use the transactional archive service.");
         return base.SaveChangesAsync(cancellationToken);
     }
 }
@@ -74,7 +83,10 @@ public static class AuditDependencyInjection
         services.AddDbContext<AuditDbContext>(options => options.UseSqlServer(connection));
         services.AddScoped<IAuditStore, EfAuditStore>();
         services.AddScoped<AuditService>();
+        services.AddScoped<AuditRetentionService>();
+        services.AddSingleton(TimeProvider.System);
         if (configuration.GetValue<bool>("Audit:InitializeDatabase")) services.AddHostedService<AuditDatabaseInitializer>();
+        if (configuration.GetValue<bool>("Audit:Retention:Enabled")) services.AddHostedService<AuditRetentionWorker>();
         return services;
     }
 }
