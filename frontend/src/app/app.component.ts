@@ -15,14 +15,18 @@ interface ShellModule {
 })
 export class AppComponent {
   protected readonly title = 'Portal Corporativo';
-  protected readonly readiness = environment.shellReadiness;
+  protected readonly readiness = 'IntegratedNonProductionShell';
   protected readonly apiBasePath = environment.apiBasePath;
   protected readonly modules: ShellModule[] = [
-    { label: 'Security', status: 'Foundation disponible', enabled: true },
-    { label: 'Configuration', status: 'Foundation disponible', enabled: true },
-    { label: 'Menu', status: 'Foundation disponible', enabled: true },
+    { label: 'Security', status: 'Integrado vía Gateway', enabled: true },
+    { label: 'Configuration', status: 'Integrado vía Gateway', enabled: true },
+    { label: 'Menu', status: 'Integrado vía Gateway', enabled: true },
     { label: 'Audit', status: 'Foundation disponible', enabled: true },
     { label: 'Notification', status: 'Foundation disponible', enabled: true },
-    { label: 'External modules', status: 'Deshabilitado en baseline', enabled: false }
+    { label: 'Catalog', status: 'Foundation funcional', enabled: true },
+    { label: 'Content / File', status: 'Foundation funcional', enabled: true },
+    { label: 'Reporting', status: 'Foundation funcional', enabled: true },
+    { label: 'Integration', status: 'Outbox / Inbox controlado', enabled: true },
+    { label: 'External modules', status: 'Gate independiente', enabled: false }
   ];
 }
