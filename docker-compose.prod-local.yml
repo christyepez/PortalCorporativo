@@ -1,0 +1,136 @@
+# PROD local orchestrator for Portal + CRM + Financiero.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod-local.yml up -d --build
+# Expected sibling repos by default:
+#   ../CRM
+#   ../Financiero
+# Override with CRM_REPO_PATH / FINANCIERO_REPO_PATH when needed.
+
+services:
+  security-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  configuration-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  menu-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  audit-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Audit__Retention__Enabled: "true"
+      Audit__Retention__RetentionDays: ${AUDIT_RETENTION_DAYS:-365}
+
+  notification-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  notification-worker:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  catalog-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  content-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  integration-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  integration-worker:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Worker__Enabled: "false"
+      Worker__Transport: Disabled
+
+  reporting-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+  crm-api:
+    build:
+      context: ${CRM_REPO_PATH:-../CRM}
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      CRM__EnvironmentClassification: LocalProduction
+      CRM__RuntimeMode: LocalProduction
+      CRM__PortalIntegration: Enabled
+      CRM__FinancialIntegration: Enabled
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q ':1F90 ' /proc/net/tcp /proc/net/tcp6"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  financial-api:
+    build:
+      context: ${FINANCIERO_REPO_PATH:-../Financiero}
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__FinancialDb: Server=sqlserver,1433;Database=FinancieroDb;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};Encrypt=true;TrustServerCertificate=true
+      Database__Initialize: "true"
+      Database__RunMigrations: "true"
+      Portal__GatewayBaseUrl: http://api-gateway:8080
+      Portal__UsePortalAudit: "true"
+      Portal__UsePortalNotification: "true"
+      Portal__UsePortalOutbox: "true"
+      Portal__UsePortalConfiguration: "true"
+      FinancialPlatform__TenantId: ${FINANCIAL_TENANT_ID:-default}
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      Seq__ServerUrl: http://seq:5341
+      financial__sri__environment: ${SRI_ENVIRONMENT:-Test}
+      financial__sri__integration__mode: ${SRI_INTEGRATION_MODE:-Development}
+      financial__sri__allowProduction: "false"
+      financial__sri__test__dryRun: "true"
+      financial__sri__test__allowDocumentSend: "false"
+      financial__sri__storage__provider: PortalContentFile
+      financial__sri__storage__portalBaseUrl: http://api-gateway:8080
+      financial__sri__storage__uploadPath: /api/content/documents
+      financial__sri__storage__dryRun: "true"
+      financial__sri__storage__authRequired: "true"
+      financial__secrets__provider: Disabled
+    expose:
+      - "8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  api-gateway:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      crm-api:
+        condition: service_healthy
+      financial-api:
+        condition: service_healthy
+
+networks:
+  default:
+    name: portal-local-network
