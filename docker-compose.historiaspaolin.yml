@@ -1,0 +1,9 @@
+services:
+  api-gateway:
+    networks:
+      - default
+      - portal-local-network
+
+networks:
+  portal-local-network:
+    external: true
