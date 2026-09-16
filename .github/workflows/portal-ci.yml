@@ -46,10 +46,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate Docker Compose
-        env:
+        env: &compose-env
           SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
           REDIS_PASSWORD: portal-local-redis
           MINIO_ROOT_USER: portal-local
           MINIO_ROOT_PASSWORD: portal-local-minio
           JWT_SECRET: portal-local-ci-placeholder-secret-32chars
         run: docker compose config --quiet
+      - name: Validate PROD-local Compose overlay
+        env:
+          SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
+          REDIS_PASSWORD: portal-local-redis
+          MINIO_ROOT_USER: portal-local
+          MINIO_ROOT_PASSWORD: portal-local-minio
+          JWT_SECRET: portal-local-ci-placeholder-secret-32chars
+          CRM_REPO_PATH: .
+          FINANCIERO_REPO_PATH: .
+        run: docker compose -f docker-compose.yml -f docker-compose.prod-local.yml config --quiet
