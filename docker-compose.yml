@@ -186,6 +186,11 @@ services:
       args:
         PROJECT_PATH: catalog-api/src/Portal.Catalog.Api/Portal.Catalog.Api.csproj
         ASSEMBLY_NAME: Portal.Catalog.Api
+    environment:
+      <<: *portal-environment
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
 
   content-api:
     <<: *portal-api
@@ -195,6 +200,11 @@ services:
       args:
         PROJECT_PATH: content-api/src/Portal.Content.Api/Portal.Content.Api.csproj
         ASSEMBLY_NAME: Portal.Content.Api
+    environment:
+      <<: *portal-environment
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
 
   integration-api:
     <<: *portal-api
@@ -208,6 +218,9 @@ services:
       <<: *portal-environment
       ConnectionStrings__IntegrationDb: Server=sqlserver,1433;Database=PortalIntegration;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
       Integration__InitializeDatabase: "true"
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -238,6 +251,11 @@ services:
       args:
         PROJECT_PATH: reporting-api/src/Portal.Reporting.Api/Portal.Reporting.Api.csproj
         ASSEMBLY_NAME: Portal.Reporting.Api
+    environment:
+      <<: *portal-environment
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
 
   api-gateway:
     <<: *portal-api
@@ -254,9 +272,6 @@ services:
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
     ports:
       - "${API_GATEWAY_PORT:-8080}:8080"
-    networks:
-      - default
-      - portal-local-network
     depends_on:
       security-api:
         condition: service_healthy
@@ -268,12 +283,16 @@ services:
         condition: service_healthy
       notification-api:
         condition: service_healthy
+      catalog-api:
+        condition: service_healthy
+      content-api:
+        condition: service_healthy
+      integration-api:
+        condition: service_healthy
+      reporting-api:
+        condition: service_healthy
 
 volumes:
   sqlserver-data:
   minio-data:
   seq-data:
-
-networks:
-  portal-local-network:
-    external: true
