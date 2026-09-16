@@ -1,7 +1,7 @@
 <main class="shell">
   <header class="shell__header">
     <div>
-      <p class="eyebrow">Integrated NonProduction Shell</p>
+      <p class="eyebrow">Local Production Integrated Shell</p>
       <h1>{{ title }}</h1>
     </div>
     <span class="status">{{ readiness }}</span>
@@ -15,17 +15,20 @@
           <button type="button" [class.disabled]="!module.enabled" [disabled]="!module.enabled">
             <span>{{ module.label }}</span>
             <small>{{ module.status }}</small>
+            @if (module.gatewayPath) {
+              <small>{{ module.gatewayPath }}</small>
+            }
           </button>
         }
       </nav>
     </aside>
 
     <section class="shell__content" aria-label="Portal shell content">
-      <p class="eyebrow">Sprint 22 functional completion</p>
-      <h2>Shell integrado con capacidades Portal</h2>
+      <p class="eyebrow">Sprints 23-27 · Local PROD integration</p>
+      <h2>Portal único con módulos integrados detrás del Gateway</h2>
       <p>
-        El cliente Angular consume Security, Menu, Configuration, Catalog y Reporting a través del API Gateway.
-        El token de acceso se mantiene únicamente en memoria: no se usa localStorage ni sessionStorage.
+        Portal Core, CRM, Financiero e HistoriasPaolin comparten una única entrada HTTP mediante el API Gateway.
+        CRM y Financiero no exponen su API directamente al host en el orquestador PROD local.
       </p>
       <div class="card-grid">
         <article>
@@ -33,18 +36,18 @@
           <span>{{ apiBasePath }}</span>
         </article>
         <article>
-          <strong>Sesión</strong>
-          <span>Bearer token en memoria; OIDC real pendiente de gate</span>
+          <strong>Autorización</strong>
+          <span>JWT común Portal; los módulos reciben el mismo bearer token y correlation ID.</span>
         </article>
         <article>
           <strong>Runtime</strong>
-          <span>NonProduction controlado; ProductionActivationDecision: NoGo</span>
+          <span>ASPNETCORE_ENVIRONMENT=Production sobre Docker local; integraciones externas reales permanecen deshabilitadas.</span>
         </article>
       </div>
     </section>
   </section>
 
   <footer class="shell__footer">
-    Portal Sprint 22 · Functional Backlog Completion · ProductionActivationDecision: NoGo
+    Portal · CRM · Financiero · HistoriasPaolin · PROD local
   </footer>
 </main>
