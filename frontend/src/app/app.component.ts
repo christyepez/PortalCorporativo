@@ -5,6 +5,7 @@ interface ShellModule {
   readonly label: string;
   readonly status: string;
   readonly enabled: boolean;
+  readonly gatewayPath?: string;
 }
 
 @Component({
@@ -15,18 +16,21 @@ interface ShellModule {
 })
 export class AppComponent {
   protected readonly title = 'Portal Corporativo';
-  protected readonly readiness = 'IntegratedNonProductionShell';
+  protected readonly readiness = 'LocalProductionIntegratedShell';
   protected readonly apiBasePath = environment.apiBasePath;
   protected readonly modules: ShellModule[] = [
-    { label: 'Security', status: 'Integrado vía Gateway', enabled: true },
-    { label: 'Configuration', status: 'Integrado vía Gateway', enabled: true },
-    { label: 'Menu', status: 'Integrado vía Gateway', enabled: true },
-    { label: 'Audit', status: 'Foundation disponible', enabled: true },
-    { label: 'Notification', status: 'Foundation disponible', enabled: true },
-    { label: 'Catalog', status: 'Foundation funcional', enabled: true },
-    { label: 'Content / File', status: 'Foundation funcional', enabled: true },
-    { label: 'Reporting', status: 'Foundation funcional', enabled: true },
-    { label: 'Integration', status: 'Outbox / Inbox controlado', enabled: true },
-    { label: 'External modules', status: 'Gate independiente', enabled: false }
+    { label: 'Security', status: 'Portal Core', enabled: true, gatewayPath: '/api/security' },
+    { label: 'Configuration', status: 'Portal Core', enabled: true, gatewayPath: '/api/configuration' },
+    { label: 'Menu', status: 'Portal Core', enabled: true, gatewayPath: '/api/menu' },
+    { label: 'Audit', status: 'Portal Core', enabled: true, gatewayPath: '/api/audit' },
+    { label: 'Notification', status: 'Portal Core', enabled: true, gatewayPath: '/api/notifications' },
+    { label: 'Catalog', status: 'Portal Core', enabled: true, gatewayPath: '/api/catalog' },
+    { label: 'Content / File', status: 'Portal Core', enabled: true, gatewayPath: '/api/content' },
+    { label: 'Reporting', status: 'Portal Core', enabled: true, gatewayPath: '/api/reporting' },
+    { label: 'Integration', status: 'Portal Core', enabled: true, gatewayPath: '/api/integration' },
+    { label: 'CRM', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/crm' },
+    { label: 'Financiero', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/financial' },
+    { label: 'HistoriasPaolin', status: 'Integrado por Gateway', enabled: true, gatewayPath: '/api/historiaspaolin' },
+    { label: 'Talento Humano', status: 'Aplicación pendiente', enabled: false }
   ];
 }
