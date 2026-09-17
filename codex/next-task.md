@@ -16,7 +16,7 @@ main
 
 `PortalProdLocalObjectiveAchieved = true`
 
-The Portal functional foundation and the local Production-mode integrated runtime are complete. Portal Core, CRM, Financiero and HistoriasPaolin run behind the Portal Gateway on the shared Docker network.
+The Portal functional foundation and the local Production-mode integrated runtime are complete. Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin run behind the Portal Gateway on the shared Docker network.
 
 ## Verified Evidence
 
@@ -25,7 +25,8 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - CRM readiness through Gateway: PASS.
 - Financiero readiness through Gateway: PASS.
 - HistoriasPaolin readiness through Gateway: PASS.
-- Protected routes without token return 401 for CRM, Financiero and HistoriasPaolin.
+- Talento Humano readiness through Gateway: PASS.
+- Protected routes without token return 401 for CRM, Financiero, Talento Humano and HistoriasPaolin.
 - Runtime stability scan: all integrated containers running with zero restarts and no recent fatal/unhandled/critical errors.
 - CRM runtime: `Production` / `LocalProduction`, PortalIntegration enabled, FinancialIntegration enabled.
 - Financiero runtime: `Production`, Portal Audit/Notification/Outbox/Configuration enabled.
@@ -39,6 +40,7 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - CRM via `/api/crm/**`.
 - Financiero via `/api/financial/**`.
 - HistoriasPaolin via `/api/historiaspaolin/**`.
+- Talento Humano via `/api/hr/**`.
 
 ## Next Gate
 
@@ -58,4 +60,4 @@ Required external inputs include approved OIDC/OAuth2 IdP configuration, secret 
 
 ## Closure Expected
 
-No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on MarketingIndo.
+No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on MarketingIndo. Code/build parity is validated on both MarketingIndo and trabajo; trabajo still requires its own local runtime environment values before starting the full Compose stack.
