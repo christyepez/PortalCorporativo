@@ -61,12 +61,15 @@ Invoke-Check "Portal web root" "$web/" @(200)
 Invoke-Check "Gateway ready" "$base/health/ready" @(200)
 Invoke-Check "CRM ready through Gateway" "$base/api/crm/health/ready" @(200)
 Invoke-Check "Financiero ready through Gateway" "$base/api/financial/health/ready" @(200)
+Invoke-Check "HistoriasPaolin ready through Gateway" "$base/api/historiaspaolin/health/ready" @(200)
 Invoke-Check "CRM protected without token" "$web/api/crm/readiness" @(401)
 Invoke-Check "Financiero protected without token" "$web/api/financial/accounts" @(401)
+Invoke-Check "HistoriasPaolin protected without token" "$web/api/historiaspaolin/api/channels" @(401)
 
-$token = New-LocalJwt @("financial.*")
+$token = New-LocalJwt @("financial.*", "historiaspaolin.channels.view")
 $auth = @{ Authorization = "Bearer $token"; "X-Correlation-ID" = "prod-local-smoke-$([Guid]::NewGuid())" }
 Invoke-Check "CRM protected with Portal JWT" "$web/api/crm/readiness" @(200) $auth
 Invoke-Check "Financiero protected with Portal JWT" "$web/api/financial/accounts" @(200) $auth
+Invoke-Check "HistoriasPaolin protected with Portal JWT" "$web/api/historiaspaolin/api/channels" @(200) $auth
 
 Write-Host "PROD_LOCAL_SMOKE_PASS"
