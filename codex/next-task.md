@@ -6,48 +6,56 @@ christyepez/PortalCorporativo
 
 ## Phase
 
-Portal Functional Roadmap - COMPLETE
+Portal PROD-local Integrated Runtime - COMPLETE
 
 ## Current Branch
 
-portal-sprint22-functional-backlog-completion
+main
 
 ## Objective Status
 
-`PortalFunctionalNonProductionObjectiveAchieved = true`
+`PortalProdLocalObjectiveAchieved = true`
 
-The Portal functional foundation is complete through Sprint 22. Catalog, Content/File, Reporting, Integration, Angular Shell integration, shared JWT/OIDC validation boundary, permission revocation foundation, Audit retention and CI validation are implemented.
+The Portal functional foundation and the local Production-mode integrated runtime are complete. Portal Core, CRM, Financiero and HistoriasPaolin run behind the Portal Gateway on the shared Docker network.
 
 ## Verified Evidence
 
-- Portal CI run #46: success.
-- Backend build: 0 warnings / 0 errors.
-- Backend tests: 61/61 PASS.
-- Frontend build/test/lint: PASS.
-- Docker Compose validation: PASS.
-- Closure: `docs/releases/portal-sprint-22-functional-backlog-closure.md`.
+- Portal Angular web health: PASS.
+- Gateway readiness: PASS.
+- CRM readiness through Gateway: PASS.
+- Financiero readiness through Gateway: PASS.
+- HistoriasPaolin readiness through Gateway: PASS.
+- Protected routes without token return 401 for CRM, Financiero and HistoriasPaolin.
+- Runtime stability scan: all integrated containers running with zero restarts and no recent fatal/unhandled/critical errors.
+- CRM runtime: `Production` / `LocalProduction`, PortalIntegration enabled, FinancialIntegration enabled.
+- Financiero runtime: `Production`, Portal Audit/Notification/Outbox/Configuration enabled.
+- Commit `ff564d2d1ee7255c8abceed4a3d13caac8bdc2a4`: authenticated PROD-local smoke including HistoriasPaolin with `PROD_LOCAL_SMOKE_PASS` on MarketingIndo.
+- Portal CI run #70 on that commit: success.
+- Closure: `docs/releases/portal-prod-local-runtime-closure.md`.
+
+## Integrated Modules
+
+- Portal Core APIs and Angular Shell.
+- CRM via `/api/crm/**`.
+- Financiero via `/api/financial/**`.
+- HistoriasPaolin via `/api/historiaspaolin/**`.
 
 ## Next Gate
 
 `ExternalProductionActivationInputs`
 
-This is not another implementation sprint. Production activation requires external approved inputs:
+This gate is outside the achieved PROD-local objective. It applies only when moving from local Production-mode execution to external/cloud production activation.
 
-- Real OIDC/OAuth2 IdP authority and app/client registration.
-- Audience/resource and permission-claim mapping.
-- Redirect/logout URIs and session/revocation policy.
-- Real secret provider and rotation ownership.
-- Production notification/integration providers where required.
-- Production environment/network URLs and deployment approvals.
+Required external inputs include approved OIDC/OAuth2 IdP configuration, secret provider/rotation ownership, production providers, production network endpoints and deployment approvals.
 
 ## Guardrails
 
-- ProductionActivationDecision remains `NoGo` until those external inputs are supplied and validated.
 - Do not commit secrets, private production URLs, certificates or real data.
+- Keep SRI real production transmission disabled until explicitly approved.
+- Keep CRM/Financial databases bounded by their own contexts; no direct cross-domain DB coupling.
+- Use the Portal Gateway as the host-facing API boundary.
 - Do not persist browser access tokens.
-- Do not create direct CRM/Financial database coupling.
-- Do not add Kafka/RabbitMQ without a separate measured ADR.
 
 ## Closure Expected
 
-Sprint implementation work is complete. Only the external Production Activation Gate remains.
+No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on MarketingIndo.
