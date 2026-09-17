@@ -129,6 +129,17 @@ services:
       financial-api:
         condition: service_healthy
 
+  portal-web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    ports:
+      - "${PORTAL_WEB_PORT:-4200}:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+
 networks:
   default:
     name: portal-local-network
