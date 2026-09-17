@@ -120,6 +120,30 @@ services:
       retries: 10
       start_period: 20s
 
+  hr-api:
+    build:
+      context: ${TTHH_REPO_PATH:-../AppTTHH}
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__HrDb: Server=sqlserver,1433;Database=AppTTHHDb;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};Encrypt=true;TrustServerCertificate=true
+      Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
+      Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
+      Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    expose:
+      - "8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q ':1F90 ' /proc/net/tcp /proc/net/tcp6"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   api-gateway:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
@@ -127,6 +151,8 @@ services:
       crm-api:
         condition: service_healthy
       financial-api:
+        condition: service_healthy
+      hr-api:
         condition: service_healthy
 
   portal-web:
