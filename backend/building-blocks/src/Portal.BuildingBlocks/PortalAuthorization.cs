@@ -23,13 +23,15 @@ public static class PortalPermissions
     public const string ReportingRead = "portal.reporting.read";
     public const string IntegrationManage = "portal.integration.manage";
     public const string IntegrationRead = "portal.integration.read";
+    public const string HrEmployeesView = "hr.employees.view";
+    public const string HrEmployeesManage = "hr.employees.manage";
 
     public static readonly string[] All =
     [
         SecurityManage, ConfigurationManage, ConfigurationRead, MenuManage, MenuRead,
         AuditRead, AuditWrite, NotificationManage, NotificationSend, NotificationRead,
         CatalogManage, CatalogRead, ContentManage, ContentRead, ReportingRead,
-        IntegrationManage, IntegrationRead
+        IntegrationManage, IntegrationRead, HrEmployeesView, HrEmployeesManage
     ];
 }
 
