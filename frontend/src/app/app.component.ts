@@ -31,6 +31,6 @@ export class AppComponent {
     { label: 'CRM', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/crm' },
     { label: 'Financiero', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/financial' },
     { label: 'HistoriasPaolin', status: 'Integrado por Gateway', enabled: true, gatewayPath: '/api/historiaspaolin' },
-    { label: 'Talento Humano', status: 'Aplicación pendiente', enabled: false }
+    { label: 'Talento Humano', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/hr' }
   ];
 }
