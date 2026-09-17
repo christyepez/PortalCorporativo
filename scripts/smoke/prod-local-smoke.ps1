@@ -1,5 +1,6 @@
 param(
     [string]$GatewayBaseUrl = "http://localhost:8080",
+    [string]$WebBaseUrl = "http://localhost:4200",
     [string]$JwtIssuer = $(if ($env:JWT_ISSUER) { $env:JWT_ISSUER } else { "portal-corporativo" }),
     [string]$JwtAudience = $(if ($env:JWT_AUDIENCE) { $env:JWT_AUDIENCE } else { "portal-corporativo-clients" }),
     [string]$JwtSecret = $env:JWT_SECRET
@@ -54,15 +55,18 @@ function Invoke-Check {
 }
 
 $base = $GatewayBaseUrl.TrimEnd('/')
+$web = $WebBaseUrl.TrimEnd('/')
+Invoke-Check "Portal web health" "$web/health" @(200)
+Invoke-Check "Portal web root" "$web/" @(200)
 Invoke-Check "Gateway ready" "$base/health/ready" @(200)
 Invoke-Check "CRM ready through Gateway" "$base/api/crm/health/ready" @(200)
 Invoke-Check "Financiero ready through Gateway" "$base/api/financial/health/ready" @(200)
-Invoke-Check "CRM protected without token" "$base/api/crm/readiness" @(401)
-Invoke-Check "Financiero protected without token" "$base/api/financial/accounts" @(401)
+Invoke-Check "CRM protected without token" "$web/api/crm/readiness" @(401)
+Invoke-Check "Financiero protected without token" "$web/api/financial/accounts" @(401)
 
 $token = New-LocalJwt @("financial.*")
 $auth = @{ Authorization = "Bearer $token"; "X-Correlation-ID" = "prod-local-smoke-$([Guid]::NewGuid())" }
-Invoke-Check "CRM protected with Portal JWT" "$base/api/crm/readiness" @(200) $auth
-Invoke-Check "Financiero protected with Portal JWT" "$base/api/financial/accounts" @(200) $auth
+Invoke-Check "CRM protected with Portal JWT" "$web/api/crm/readiness" @(200) $auth
+Invoke-Check "Financiero protected with Portal JWT" "$web/api/financial/accounts" @(200) $auth
 
 Write-Host "PROD_LOCAL_SMOKE_PASS"
