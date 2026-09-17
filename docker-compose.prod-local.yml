@@ -132,3 +132,11 @@ services:
 networks:
   default:
     name: portal-local-network
+
+volumes:
+  sqlserver-data:
+    name: portalcorporativo-prod-local-sqlserver-data
+  minio-data:
+    name: portalcorporativo-prod-local-minio-data
+  seq-data:
+    name: portalcorporativo-prod-local-seq-data
