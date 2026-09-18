@@ -45,11 +45,11 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 ## Next Gate
 
-`ExternalProductionActivationInputs`
+`ExternalProductionActivationInputReview`
 
-This gate is outside the achieved PROD-local objective. It applies only when moving from local Production-mode execution to external/cloud production activation.
+The non-secret preflight package is implemented under `docs/production` and `scripts/production` and is exercised by Portal CI.
 
-Required external inputs include approved OIDC/OAuth2 IdP configuration, secret provider/rotation ownership, production providers, production network endpoints and deployment approvals.
+The next gate requires approved external values for OIDC/OAuth2 IdP registration, secret-provider ownership and rotation, production network endpoints, operational owners and deployment approvals. No real credential should be committed to the repository.
 
 ## Guardrails
 
@@ -61,4 +61,4 @@ Required external inputs include approved OIDC/OAuth2 IdP configuration, secret 
 
 ## Closure Expected
 
-No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on both `MarketingIndo` and `trabajo`, with full authenticated smoke evidence on each machine. The next executable preparation is the external production activation preflight in `scripts/production/validate-activation-inputs.ps1`; real activation remains blocked until approved external inputs are supplied.
+No additional sprint is required for the PROD-local objective. The integrated runtime is complete on both `MarketingIndo` and `trabajo`, and the external production activation preflight package is prepared and testable. Real activation remains blocked until approved external inputs are supplied and reviewed.

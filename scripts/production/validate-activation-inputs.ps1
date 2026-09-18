@@ -11,7 +11,14 @@ if (-not (Test-Path -LiteralPath $Path)) {
 }
 
 $raw = Get-Content -LiteralPath $Path -Raw
-$data = $raw | ConvertFrom-Json
+try {
+    $data = $raw | ConvertFrom-Json
+}
+catch {
+    Write-Output 'FAIL input-file - invalid JSON'
+    Write-Output 'PRODUCTION_ACTIVATION_PREFLIGHT_NOGO'
+    exit 1
+}
 $failures = [System.Collections.Generic.List[string]]::new()
 
 function Add-Failure([string]$Field, [string]$Reason) {

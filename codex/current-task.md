@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: Portal Sprint P1 - Current State Gate y preparación de despliegue.
+Title: External Production Activation Preflight Package.
 
-Status: completed for PR review.
+Status: implemented and locally validated; pending PR/CI closure.
 
-Codex debe leer esta tarea y ejecutar exactamente respetando los guardrails del repositorio.
+Objective: package the external production activation input validation without enabling cloud production or introducing real credentials.
 
-Reference: Portal Sprint P1 - Current State Gate y preparación de despliegue.
+Evidence: template, operator guide, validator hardening and automated PASS/NOGO self-tests.
 
-Nota: No ejecutar si este archivo no fue actualizado con la tarea vigente.
+Guardrail: a preflight PASS is not production deployment authorization.
