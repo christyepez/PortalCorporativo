@@ -5,8 +5,10 @@ $template = Join-Path $PSScriptRoot '..\..\docs\production\activation-inputs.tem
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('portal-activation-preflight-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
+$shellExe = if (Get-Command pwsh -ErrorAction SilentlyContinue) { 'pwsh' } else { 'powershell' }
+
 function Invoke-Validator([string]$InputPath) {
-    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $validator -Path $InputPath 2>&1
+    $output = & $shellExe -NoProfile -ExecutionPolicy Bypass -File $validator -Path $InputPath 2>&1
     return [pscustomobject]@{
         ExitCode = $LASTEXITCODE
         Output = ($output -join [Environment]::NewLine)
