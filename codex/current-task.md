@@ -2,7 +2,7 @@
 
 Title: External Production Activation Preflight Package.
 
-Status: implemented and locally validated; pending PR/CI closure.
+Status: completed and merged to main. Local self-tests and Portal CI validation passed.
 
 Objective: package the external production activation input validation without enabling cloud production or introducing real credentials.
 
