@@ -41,6 +41,14 @@ jobs:
       - run: npm run test
       - run: npm run lint
 
+  production-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production activation preflight package
+        shell: pwsh
+        run: ./scripts/production/test-validate-activation-inputs.ps1
+
   compose:
     runs-on: ubuntu-latest
     steps:
