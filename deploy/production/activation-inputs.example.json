@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "authority": "https://idp.example.invalid/",
+    "audience": "replace-at-deploy-time",
+    "clientId": "replace-at-deploy-time",
+    "redirectUri": "https://portal.example.invalid/auth/callback",
+    "logoutUri": "https://portal.example.invalid/",
+    "permissionClaim": "permission",
+    "requireHttpsMetadata": true
+  },
+  "secretProvider": {
+    "provider": "replace-at-deploy-time",
+    "owner": "TBD",
+    "rotationOwner": "TBD"
+  },
+  "network": {
+    "sqlServerEndpoint": "replace-at-deploy-time",
+    "redisEndpoint": "replace-at-deploy-time",
+    "objectStorageEndpoint": "replace-at-deploy-time",
+    "observabilityEndpoint": "replace-at-deploy-time"
+  },
+  "operations": {
+    "releaseApprover": "TBD",
+    "incidentOwner": "TBD",
+    "backupOwner": "TBD",
+    "observabilityOwner": "TBD"
+  },
+  "approvals": {
+    "architecture": "Pending",
+    "security": "Pending",
+    "operations": "Pending"
+  },
+  "guardrails": {
+    "realSriTransmission": false,
+    "browserTokenPersistence": false,
+    "secretsInRepository": false
+  }
+}

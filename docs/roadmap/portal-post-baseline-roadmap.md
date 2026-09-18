@@ -1,38 +1,44 @@
 # Portal Post-Baseline Roadmap
 
+## Current state
+
+`PortalProdLocalObjectiveAchieved = true`.
+
+Portal Core, Angular Shell, CRM, Financiero, HistoriasPaolin and Talento Humano are validated behind the Portal Gateway in local Production-mode execution on both `MarketingIndo` and `trabajo`.
+
 ## Recommended next stage
 
-RecommendedNextStage: PortalControlledRuntimeValidation.
+RecommendedNextStage: ExternalProductionActivationInputs.
 
-NextGate: PortalSprint9ControlledRuntimeValidation.
+NextGate: ProductionActivationDecision.
 
-## Stage 1 - Controlled runtime validation
+The previous controlled runtime, frontend shell, consumer onboarding and PROD-local integration stages are complete and must not be reopened unless a regression is detected.
 
-- Start Portal runtime in a controlled non-production environment.
-- Validate `/health`, `/health/live` and `/health/ready`.
-- Run smoke tests with placeholders only.
-- Capture logs, correlation IDs and rollback evidence.
+## Stage 1 - External activation metadata
 
-## Stage 2 - Frontend shell buildability
+- Obtain approved OIDC/OAuth2 authority, audience and client registration metadata.
+- Obtain approved redirect/logout URIs and permission claim mapping.
+- Assign secret-provider, rotation, release, incident, backup and observability ownership.
+- Obtain Architecture, Security and Operations approvals.
+- Keep real credentials and private material outside git.
 
-- Add a buildable frontend shell package if approved.
-- Integrate Menu, Security and Configuration contracts.
-- Keep external navigation disabled until activation gates.
+## Stage 2 - Automated preflight
 
-## Stage 3 - Secret provider
+- Populate a local copy of `deploy/production/activation-inputs.example.json`.
+- Run `scripts/production/validate-activation-inputs.ps1`.
+- Require `PRODUCTION_ACTIVATION_PREFLIGHT_PASS` before an activation review.
 
-- Select secret provider.
-- Move runtime secrets outside repository files.
-- Validate no secret values are exposed through APIs or logs.
+## Stage 3 - Controlled external validation
 
-## Stage 4 - SSO/OIDC
+- Map approved OIDC values to `Jwt__Authority` and `Jwt__Audience` with HTTPS metadata required.
+- Validate Gateway, Security and Angular end-to-end authentication in an approved non-production environment.
+- Validate logout, permission claims, session policy, readiness, smoke and rollback.
+- Keep CRM, Financiero, HistoriasPaolin and Talento Humano external activation subject to the same gate.
 
-- Select provider and flow.
-- Use authorization code with PKCE or approved equivalent.
-- Validate claims, permissions, logout and session policy.
+## Stage 4 - Production activation decision
 
-## Stage 5 - Consumer onboarding
-
-- Onboard CRM and Financiero through Portal contracts.
-- Register resources, permissions, menu metadata and configuration.
-- Activate gateway routes only after health, security and ownership review.
+- Review the production readiness checklist.
+- Verify backup/restore and rollback evidence.
+- Confirm monitoring, alerting and incident ownership.
+- Change `ProductionActivationDecision` only through the approved release process.
+- Real SRI transmission remains a separate explicit approval.
