@@ -1,0 +1,38 @@
+{
+  "identity": {
+    "authority": "https://example.invalid/tenant",
+    "audience": "TBD",
+    "clientId": "TBD",
+    "redirectUri": "https://example.invalid/signin-callback",
+    "logoutUri": "https://example.invalid/signout-callback",
+    "permissionClaim": "permissions",
+    "requireHttpsMetadata": true
+  },
+  "secretProvider": {
+    "provider": "TBD",
+    "owner": "TBD",
+    "rotationOwner": "TBD"
+  },
+  "network": {
+    "sqlServerEndpoint": "TBD",
+    "redisEndpoint": "TBD",
+    "objectStorageEndpoint": "TBD",
+    "observabilityEndpoint": "TBD"
+  },
+  "operations": {
+    "releaseApprover": "TBD",
+    "incidentOwner": "TBD",
+    "backupOwner": "TBD",
+    "observabilityOwner": "TBD"
+  },
+  "approvals": {
+    "architecture": "Pending",
+    "security": "Pending",
+    "operations": "Pending"
+  },
+  "guardrails": {
+    "realSriTransmission": false,
+    "browserTokenPersistence": false,
+    "secretsInRepository": false
+  }
+}
