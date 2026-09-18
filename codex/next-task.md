@@ -30,8 +30,9 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - Runtime stability scan: all integrated containers running with zero restarts and no recent fatal/unhandled/critical errors.
 - CRM runtime: `Production` / `LocalProduction`, PortalIntegration enabled, FinancialIntegration enabled.
 - Financiero runtime: `Production`, Portal Audit/Notification/Outbox/Configuration enabled.
-- Commit `ff564d2d1ee7255c8abceed4a3d13caac8bdc2a4`: authenticated PROD-local smoke including HistoriasPaolin with `PROD_LOCAL_SMOKE_PASS` on MarketingIndo.
-- Portal CI run #70 on that commit: success.
+- Authenticated PROD-local smoke returns `PROD_LOCAL_SMOKE_PASS` on both `trabajo` and `MarketingIndo` for CRM, Financiero, HistoriasPaolin and Talento Humano.
+- Financiero JWT environment parity is merged in `f04d9783ca7dab6f852cb56f8d6110083da1931f`; 145/145 API tests passed and PR #68 CI succeeded.
+- AppTTHH JWT environment parity is merged in `b9d4420d123973bc6896cd8aa0dd38f5a90bd0b2`.
 - Closure: `docs/releases/portal-prod-local-runtime-closure.md`.
 
 ## Integrated Modules
@@ -60,4 +61,4 @@ Required external inputs include approved OIDC/OAuth2 IdP configuration, secret 
 
 ## Closure Expected
 
-No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on MarketingIndo. Code/build parity is validated on both MarketingIndo and trabajo; trabajo still requires its own local runtime environment values before starting the full Compose stack.
+No additional sprint is required for the current objective. The Portal PROD-local integrated runtime is complete and operational on both `MarketingIndo` and `trabajo`, with full authenticated smoke evidence on each machine. The next executable preparation is the external production activation preflight in `scripts/production/validate-activation-inputs.ps1`; real activation remains blocked until approved external inputs are supplied.
