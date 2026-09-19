@@ -46,7 +46,11 @@ if ($ScanLogs) {
     $since = "{0}m" -f $RecentMinutes
     foreach ($id in $ids) {
         $name = (& docker inspect --format '{{.Name}}' $id).TrimStart('/')
-        $hits = @(& docker logs --since $since --tail 100 $id 2>&1 | Select-String -Pattern '(?i)(Unhandled exception|\bFATAL\b|\bCRITICAL\b)')
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $logLines = @(& docker logs --since $since --tail 100 $id 2>&1)
+        $ErrorActionPreference = $previousPreference
+        $hits = @($logLines | Select-String -Pattern '(?i)(Unhandled exception|\bFATAL\b|\bCRITICAL\b)')
         if ($hits.Count -gt 0) { $failures += "$name recentCriticalLogs=$($hits.Count)" }
     }
 }
