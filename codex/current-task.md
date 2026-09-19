@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: Docker Desktop PROD-local lifecycle hardening.
+Title: Docker Desktop PROD-local backup and recovery hardening.
 
-Status: COMPLETE on `trabajo`. Unified up/status/restart/verify/down lifecycle is validated; `MarketingIndo` remains a deferred synchronization target and never blocks implementation.
+Status: COMPLETE on `trabajo`. `MarketingIndo` remains a deferred synchronization target and never blocks implementation.
 
-Objective: operate Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin from the single `portalcorporativo` Docker Compose project.
+Objective: provide repeatable, local SQL Server backup, inventory, isolated restore validation and guarded live recovery for Portal-managed databases.
 
-Evidence: unified HistoriasPaolin services, shared Portal SQL/JWT/network, idempotent local lifecycle scripts, controlled service restart, zero unexpected restart counts and authenticated PROD-local smoke. HistoriasPaolin migration startup was reduced by prebuilding EF artifacts and using `--no-build` at runtime.
+Evidence: 9/9 managed databases backed up with checksum and SHA-256 manifest; all 9 restored in an isolated disposable SQL Server and passed `DBCC CHECKDB`; live restore requires explicit `-Apply` and creates a safety backup by default; post-validation runtime returned `PROD_LOCAL_SMOKE_PASS` and `PORTAL_PROD_LOCAL_VERIFY_PASS` with zero restarts.
 
-Guardrail: deployment remains local through Docker Desktop/Docker Compose; no cloud activation is required.
+Guardrail: backup artifacts remain outside Git, unrelated/historical databases are excluded, real SRI production transmission remains disabled, and deployment stays local through Docker Desktop/Docker Compose.

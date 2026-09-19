@@ -64,6 +64,16 @@ Smoke PROD-local integrado:
 
 El smoke valida Portal web, Gateway, CRM, Financiero, HistoriasPaolin y Talento Humano, incluyendo endpoints públicos de readiness y endpoints protegidos con y sin JWT.
 
+Backup y recuperación local:
+
+```powershell
+./scripts/local/prod-local-backup.ps1
+./scripts/local/prod-local-backup-list.ps1
+./scripts/local/prod-local-backup-validate.ps1
+```
+
+Los respaldos se almacenan fuera de Git en `backups/prod-local`. La validación restaura todas las bases administradas por Portal en un SQL Server temporal aislado y ejecuta `DBCC CHECKDB`. El restore real está protegido por `-Apply`; ver `docs/operations/prod-local-backup-recovery.md`.
+
 ## Consumo desde dominios
 
 Financiero, CRM, HistoriasPaolin, Talento Humano y futuros dominios pasan por Gateway, registran sus recursos/permisos y extienden Menu/Configuration. Adaptan Audit/Notification y mantienen sus datos de dominio en sus propias bases. Nunca consultan bases internas del Portal ni duplican identidad, autorización, menús, configuración, auditoría o notificaciones.

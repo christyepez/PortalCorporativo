@@ -30,7 +30,7 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - Runtime stability scan: all integrated containers running with zero restarts and no recent fatal/unhandled/critical errors.
 - CRM runtime: `Production` / `LocalProduction`, PortalIntegration enabled, FinancialIntegration enabled.
 - Financiero runtime: `Production`, Portal Audit/Notification/Outbox/Configuration enabled.
-- Authenticated PROD-local smoke returns `PROD_LOCAL_SMOKE_PASS` on both `trabajo` and `MarketingIndo` for CRM, Financiero, HistoriasPaolin and Talento Humano.
+- Authenticated PROD-local smoke returns `PROD_LOCAL_SMOKE_PASS` on the primary device `trabajo` for CRM, Financiero, HistoriasPaolin and Talento Humano. `MarketingIndo` is synchronized only when available.
 - Financiero JWT environment parity is merged in `f04d9783ca7dab6f852cb56f8d6110083da1931f`; 145/145 API tests passed and PR #68 CI succeeded.
 - AppTTHH JWT environment parity is merged in `b9d4420d123973bc6896cd8aa0dd38f5a90bd0b2`.
 - Closure: `docs/releases/portal-prod-local-runtime-closure.md`.
@@ -43,17 +43,19 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - HistoriasPaolin via `/api/historiaspaolin/**`.
 - Talento Humano via `/api/hr/**`.
 
-## Completed Gate
+## Completed Gates
 
 `DockerDesktopLocalRuntimeLifecycleHardening = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`: one-command up/status/restart/verify/down, idempotent `up`, authenticated smoke, health/restart validation and optimized HistoriasPaolin migration startup.
+`DockerDesktopLocalRuntimeBackupRecovery = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`, and the persistent SQL runtime now has repeatable backup, retention/inventory, isolated restore validation and guarded live recovery.
 
 ## Next Gate
 
-`DockerDesktopLocalRuntimeBackupRecovery`
+`DockerDesktopLocalRuntimeMaintenanceAutomation`
 
-Add local operational recovery for the persistent runtime: repeatable SQL Server backup/restore, backup inventory/retention, validation of restored databases and a documented recovery path. `MarketingIndo` remains a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required.
+Add operational automation on `trabajo`: backup freshness checks, disk-space guardrails, retention verification, a one-command maintenance report and optional Windows Task Scheduler registration without committing secrets. `MarketingIndo` remains a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -65,4 +67,4 @@ Add local operational recovery for the persistent runtime: repeatable SQL Server
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` with backup/recovery hardening for the persistent local runtime. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` with local maintenance automation and operational guardrails. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
