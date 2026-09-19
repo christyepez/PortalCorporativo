@@ -47,9 +47,9 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `ExternalProductionActivationInputReview`
 
-The non-secret preflight package is implemented under `docs/production` and `scripts/production` and is exercised by Portal CI.
+The non-secret preflight and input-review packages are implemented under `docs/production` and `scripts/production` and are exercised by Portal CI.
 
-The next gate requires approved external values for OIDC/OAuth2 IdP registration, secret-provider ownership and rotation, production network endpoints, operational owners and deployment approvals. No real credential should be committed to the repository.
+The next gate requires an approved external input file to pass preflight, a redacted review report, checklist evidence for identity/secrets/network/operations, and explicit architecture/security/operations approvals. No real credential should be committed to the repository.
 
 ## Guardrails
 

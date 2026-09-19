@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: External Production Activation Preflight Package.
+Title: External Production Activation Input Review Package.
 
-Status: completed and merged to main. Local self-tests and Portal CI validation passed.
+Status: implemented and locally validated; pending PR/CI closure.
 
-Objective: package the external production activation input validation without enabling cloud production or introducing real credentials.
+Objective: formalize the human review gate after production preflight without enabling cloud production or introducing credentials.
 
-Evidence: template, operator guide, validator hardening and automated PASS/NOGO self-tests.
+Evidence: JSON schema, review checklist, redacted review report generator and extended automated tests.
 
-Guardrail: a preflight PASS is not production deployment authorization.
+Guardrail: READY_FOR_REVIEW is not production deployment authorization.

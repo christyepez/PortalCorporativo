@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://portal-corporativo.local/schemas/activation-inputs.schema.json",
+  "title": "Portal External Production Activation Inputs",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["identity", "secretProvider", "network", "operations", "approvals", "guardrails"],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "audience", "clientId", "redirectUri", "logoutUri", "permissionClaim", "requireHttpsMetadata"],
+      "properties": {
+        "authority": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "audience": { "type": "string", "minLength": 1 },
+        "clientId": { "type": "string", "minLength": 1 },
+        "redirectUri": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "logoutUri": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "permissionClaim": { "type": "string", "minLength": 1 },
+        "requireHttpsMetadata": { "const": true }
+      }
+    },
+    "secretProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "owner", "rotationOwner"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "rotationOwner": { "type": "string", "minLength": 1 }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sqlServerEndpoint", "redisEndpoint", "objectStorageEndpoint", "observabilityEndpoint"],
+      "properties": {
+        "sqlServerEndpoint": { "type": "string", "minLength": 1 },
+        "redisEndpoint": { "type": "string", "minLength": 1 },
+        "objectStorageEndpoint": { "type": "string", "minLength": 1 },
+        "observabilityEndpoint": { "type": "string", "minLength": 1 }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["releaseApprover", "incidentOwner", "backupOwner", "observabilityOwner"],
+      "properties": {
+        "releaseApprover": { "type": "string", "minLength": 1 },
+        "incidentOwner": { "type": "string", "minLength": 1 },
+        "backupOwner": { "type": "string", "minLength": 1 },
+        "observabilityOwner": { "type": "string", "minLength": 1 }
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "security", "operations"],
+      "properties": {
+        "architecture": { "enum": ["Pending", "Approved"] },
+        "security": { "enum": ["Pending", "Approved"] },
+        "operations": { "enum": ["Pending", "Approved"] }
+      }
+    },
+    "guardrails": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realSriTransmission", "browserTokenPersistence", "secretsInRepository"],
+      "properties": {
+        "realSriTransmission": { "const": false },
+        "browserTokenPersistence": { "const": false },
+        "secretsInRepository": { "const": false }
+      }
+    }
+  }
+}
