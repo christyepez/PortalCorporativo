@@ -21,13 +21,23 @@ Plataforma transversal agnóstica al giro de negocio. El objetivo PROD-local est
 | Angular Shell | Integrado en PROD-local | REUSE/EXTEND |
 | Health, logging y correlationId | Integrados con consola/Seq | REUSE |
 
-Integraciones de dominio verificadas en PROD-local: CRM, Financiero, HistoriasPaolin y Talento Humano (AppTTHH), todas expuestas mediante el API Gateway. El siguiente gate fuera del alcance local es la activación de IdP/OIDC y demás insumos de producción externa.
+Integraciones de dominio verificadas en PROD-local: CRM, Financiero, HistoriasPaolin y Talento Humano (AppTTHH), todas expuestas mediante el API Gateway. La operación objetivo se mantiene local en Docker Desktop/Docker Compose; no se requiere activación cloud para continuar la evolución del Portal.
 
 ## Ejecución local
 
-Requisitos: Docker Compose v2 y PowerShell. Usar secretos locales no versionados y ejecutar el stack PROD-local con los archivos `docker-compose.yml` y `docker-compose.prod-local.yml`. Los consumidores CRM, Financiero y AppTTHH se resuelven desde rutas de repositorio configurables por variables de entorno.
+Requisitos: Docker Desktop, Docker Compose v2 y PowerShell. Usar secretos locales no versionados y ejecutar el stack PROD-local con los archivos `docker-compose.yml` y `docker-compose.prod-local.yml`. CRM, Financiero, AppTTHH e HistoriasPaolin forman parte del mismo proyecto Compose `portalcorporativo` y se resuelven desde rutas configurables mediante `CRM_REPO_PATH`, `FINANCIERO_REPO_PATH`, `TTHH_REPO_PATH` y `HISTORIASPAOLIN_REPO_PATH`.
 
 Gateway: `http://localhost:8080`; Portal web: `http://localhost:4200`; Seq: `http://localhost:5341`.
+
+Ciclo de vida local unificado:
+
+```powershell
+./scripts/local/prod-local-up.ps1 -Build
+./scripts/local/prod-local-status.ps1
+./scripts/local/prod-local-down.ps1
+```
+
+`prod-local-up.ps1` levanta Portal Core, CRM, Financiero, Talento Humano e HistoriasPaolin dentro del mismo proyecto Docker Compose `portalcorporativo` y la red `portal-local-network`.
 
 Build backend:
 

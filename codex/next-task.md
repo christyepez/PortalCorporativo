@@ -45,11 +45,11 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 ## Next Gate
 
-`ExternalProductionActivationInputReview`
+`DockerDesktopLocalRuntimeLifecycleHardening`
 
-The non-secret preflight and input-review packages are implemented under `docs/production` and `scripts/production` and are exercised by Portal CI.
+The operating target remains local through Docker Desktop/Docker Compose. Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin must run under the single Compose project `portalcorporativo` on `portal-local-network`.
 
-The next gate requires an approved external input file to pass preflight, a redacted review report, checklist evidence for identity/secrets/network/operations, and explicit architecture/security/operations approvals. No real credential should be committed to the repository.
+The next gate is local runtime lifecycle hardening: one-command up/status/down, idempotent rebuild/restart, authenticated smoke, restart/stability checks and synchronization between `trabajo` and `MarketingIndo`. External/cloud activation is not required for the project roadmap.
 
 ## Guardrails
 
@@ -61,4 +61,4 @@ The next gate requires an approved external input file to pass preflight, a reda
 
 ## Closure Expected
 
-No additional sprint is required for the PROD-local objective. The integrated runtime is complete on both `MarketingIndo` and `trabajo`, and the external production activation preflight package is prepared and testable. Real activation remains blocked until approved external inputs are supplied and reviewed.
+The PROD-local objective remains the active operating model. Continue improving the local Docker Desktop runtime, keeping both `trabajo` and `MarketingIndo` synchronized and validating changes with the unified lifecycle scripts plus authenticated smoke. Cloud deployment is outside the current execution path.
