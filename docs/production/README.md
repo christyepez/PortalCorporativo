@@ -7,8 +7,11 @@ It does **not** deploy infrastructure, configure an IdP, rotate secrets, enable 
 ## Files
 
 - `activation-inputs.template.json`: non-secret template. Copy it outside the repository and replace placeholders with approved values.
-- `../../scripts/production/validate-activation-inputs.ps1`: validator used by operators and CI-style checks.
-- `../../scripts/production/test-validate-activation-inputs.ps1`: self-test for PASS/NOGO and sensitive-property rejection.
+- `activation-inputs.schema.json`: machine-readable contract for the permitted non-secret structure.
+- `activation-input-review-checklist.md`: human review and evidence checklist after preflight passes.
+- `../../scripts/production/validate-activation-inputs.ps1`: structural and guardrail validator used by operators and CI-style checks.
+- `../../scripts/production/review-activation-inputs.ps1`: creates a value-redacted review report with input hash, approval states and guardrails.
+- `../../scripts/production/test-validate-activation-inputs.ps1`: self-test for PASS/NOGO, review readiness, report redaction and sensitive-property rejection.
 
 ## Usage
 
@@ -27,6 +30,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\production\validat
 ```
 
 A successful preflight ends with `PRODUCTION_ACTIVATION_PREFLIGHT_PASS`. Missing placeholders, non-HTTPS identity URLs, incomplete approvals, prohibited sensitive properties or disabled guardrails end with `PRODUCTION_ACTIVATION_PREFLIGHT_NOGO`.
+
+After a PASS, create a redacted review artifact outside the repository:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\production\review-activation-inputs.ps1 -Path C:\Temp\portal-activation-inputs.json -ReportPath C:\Temp\portal-activation-review.json
+```
+
+A structurally complete input returns `ACTIVATION_INPUT_REVIEW_READY_FOR_REVIEW`; incomplete input returns `ACTIVATION_INPUT_REVIEW_BLOCKED`. The generated report stores a SHA-256 fingerprint plus approval/guardrail status and intentionally omits endpoint and identifier values.
+
+Use `activation-input-review-checklist.md` to collect human evidence before any deployment-specific change plan is approved.
 
 ## Activation boundary
 

@@ -1,7 +1,9 @@
 $ErrorActionPreference = 'Stop'
 
 $validator = Join-Path $PSScriptRoot 'validate-activation-inputs.ps1'
+$reviewer = Join-Path $PSScriptRoot 'review-activation-inputs.ps1'
 $template = Join-Path $PSScriptRoot '..\..\docs\production\activation-inputs.template.json'
+$schema = Join-Path $PSScriptRoot '..\..\docs\production\activation-inputs.schema.json'
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('portal-activation-preflight-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
@@ -9,6 +11,14 @@ $shellExe = if (Get-Command pwsh -ErrorAction SilentlyContinue) { 'pwsh' } else 
 
 function Invoke-Validator([string]$InputPath) {
     $output = & $shellExe -NoProfile -ExecutionPolicy Bypass -File $validator -Path $InputPath 2>&1
+    return [pscustomobject]@{
+        ExitCode = $LASTEXITCODE
+        Output = ($output -join [Environment]::NewLine)
+    }
+}
+
+function Invoke-Reviewer([string]$InputPath, [string]$ReportPath) {
+    $output = & $shellExe -NoProfile -ExecutionPolicy Bypass -File $reviewer -Path $InputPath -ReportPath $ReportPath 2>&1
     return [pscustomobject]@{
         ExitCode = $LASTEXITCODE
         Output = ($output -join [Environment]::NewLine)
@@ -23,8 +33,14 @@ function Assert-Result($Result, [int]$ExpectedExitCode, [string]$ExpectedMarker,
 }
 
 try {
+    $null = Get-Content -LiteralPath $schema -Raw | ConvertFrom-Json
+    Write-Output 'PASS activation input schema parses'
+
     $templateResult = Invoke-Validator $template
     Assert-Result $templateResult 1 'PRODUCTION_ACTIVATION_PREFLIGHT_NOGO' 'placeholder template is rejected'
+
+    $templateReport = Join-Path $tempRoot 'template-review.json'
+    Assert-Result (Invoke-Reviewer $template $templateReport) 1 'ACTIVATION_INPUT_REVIEW_BLOCKED' 'placeholder template review is blocked'
 
     $validPath = Join-Path $tempRoot 'valid.json'
     $valid = @{
@@ -45,6 +61,18 @@ try {
     }
     $valid | ConvertTo-Json -Depth 8 | Set-Content -Path $validPath -Encoding UTF8
     Assert-Result (Invoke-Validator $validPath) 0 'PRODUCTION_ACTIVATION_PREFLIGHT_PASS' 'complete approved input passes'
+
+    $validReportPath = Join-Path $tempRoot 'valid-review.json'
+    Assert-Result (Invoke-Reviewer $validPath $validReportPath) 0 'ACTIVATION_INPUT_REVIEW_READY_FOR_REVIEW' 'complete approved input is ready for human review'
+    $validReport = Get-Content -LiteralPath $validReportPath -Raw | ConvertFrom-Json
+    if ($validReport.preflightStatus -ne 'Pass' -or $validReport.reviewStatus -ne 'ReadyForHumanReview') {
+        throw 'review report did not preserve expected status'
+    }
+    $reportRaw = Get-Content -LiteralPath $validReportPath -Raw
+    foreach ($prohibitedValue in @('login.contoso.test', 'portal-client-id', 'sql.internal')) {
+        if ($reportRaw -match [regex]::Escape($prohibitedValue)) { throw 'review report leaked an input value' }
+    }
+    Write-Output 'PASS review report excludes input values'
 
     $sensitivePath = Join-Path $tempRoot 'sensitive.json'
     $sensitive = $valid.Clone()
