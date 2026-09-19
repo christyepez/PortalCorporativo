@@ -2,7 +2,7 @@
 
 Title: External Production Activation Input Review Package.
 
-Status: implemented and locally validated; pending PR/CI closure.
+Status: completed and merged to main. Local tests and Portal CI validation passed.
 
 Objective: formalize the human review gate after production preflight without enabling cloud production or introducing credentials.
 
