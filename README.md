@@ -34,6 +34,8 @@ Ciclo de vida local unificado:
 ```powershell
 ./scripts/local/prod-local-up.ps1 -Build
 ./scripts/local/prod-local-status.ps1
+./scripts/local/prod-local-restart.ps1 -Service api-gateway
+./scripts/local/prod-local-verify.ps1
 ./scripts/local/prod-local-down.ps1
 ```
 
@@ -45,7 +47,7 @@ Ejemplo con dos archivos locales:
 ./scripts/local/prod-local-up.ps1 -EnvFile '.env.portal.local','C:\Dev\PortalWorkspace\.env.portal-corporativo'
 ```
 
-`prod-local-up.ps1` levanta Portal Core, CRM, Financiero, Talento Humano e HistoriasPaolin dentro del mismo proyecto Docker Compose `portalcorporativo` y la red `portal-local-network`.
+`prod-local-up.ps1` levanta Portal Core, CRM, Financiero, Talento Humano e HistoriasPaolin dentro del mismo proyecto Docker Compose `portalcorporativo` y la red `portal-local-network`. `prod-local-restart.ps1` permite reiniciar todo el stack o servicios específicos. `prod-local-verify.ps1` valida estado, healthchecks, restart counts y ejecuta el smoke autenticado; `-ScanLogs` agrega revisión opcional de errores críticos recientes.
 
 Build backend:
 

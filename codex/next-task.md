@@ -43,13 +43,17 @@ The Portal functional foundation and the local Production-mode integrated runtim
 - HistoriasPaolin via `/api/historiaspaolin/**`.
 - Talento Humano via `/api/hr/**`.
 
+## Completed Gate
+
+`DockerDesktopLocalRuntimeLifecycleHardening = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`: one-command up/status/restart/verify/down, idempotent `up`, authenticated smoke, health/restart validation and optimized HistoriasPaolin migration startup.
+
 ## Next Gate
 
-`DockerDesktopLocalRuntimeLifecycleHardening`
+`DockerDesktopLocalRuntimeBackupRecovery`
 
-The operating target remains local through Docker Desktop/Docker Compose. Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin must run under the single Compose project `portalcorporativo` on `portal-local-network`.
-
-The next gate is local runtime lifecycle hardening on the primary device `trabajo`: one-command up/status/down, idempotent rebuild/restart, authenticated smoke and restart/stability checks. `MarketingIndo` is a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required for the project roadmap.
+Add local operational recovery for the persistent runtime: repeatable SQL Server backup/restore, backup inventory/retention, validation of restored databases and a documented recovery path. `MarketingIndo` remains a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -61,4 +65,4 @@ The next gate is local runtime lifecycle hardening on the primary device `trabaj
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue implementing, testing and deploying on `trabajo` as the primary Docker Desktop environment. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` with backup/recovery hardening for the persistent local runtime. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
