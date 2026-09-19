@@ -49,7 +49,7 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 The operating target remains local through Docker Desktop/Docker Compose. Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin must run under the single Compose project `portalcorporativo` on `portal-local-network`.
 
-The next gate is local runtime lifecycle hardening: one-command up/status/down, idempotent rebuild/restart, authenticated smoke, restart/stability checks and synchronization between `trabajo` and `MarketingIndo`. External/cloud activation is not required for the project roadmap.
+The next gate is local runtime lifecycle hardening on the primary device `trabajo`: one-command up/status/down, idempotent rebuild/restart, authenticated smoke and restart/stability checks. `MarketingIndo` is a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required for the project roadmap.
 
 ## Guardrails
 
@@ -61,4 +61,4 @@ The next gate is local runtime lifecycle hardening: one-command up/status/down, 
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue improving the local Docker Desktop runtime, keeping both `trabajo` and `MarketingIndo` synchronized and validating changes with the unified lifecycle scripts plus authenticated smoke. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue implementing, testing and deploying on `trabajo` as the primary Docker Desktop environment. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.

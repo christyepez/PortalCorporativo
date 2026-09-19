@@ -21,7 +21,7 @@ Plataforma transversal agnóstica al giro de negocio. El objetivo PROD-local est
 | Angular Shell | Integrado en PROD-local | REUSE/EXTEND |
 | Health, logging y correlationId | Integrados con consola/Seq | REUSE |
 
-Integraciones de dominio verificadas en PROD-local: CRM, Financiero, HistoriasPaolin y Talento Humano (AppTTHH), todas expuestas mediante el API Gateway. La operación objetivo se mantiene local en Docker Desktop/Docker Compose; no se requiere activación cloud para continuar la evolución del Portal.
+Integraciones de dominio verificadas en PROD-local: CRM, Financiero, HistoriasPaolin y Talento Humano (AppTTHH), todas expuestas mediante el API Gateway. La operación objetivo se mantiene local en Docker Desktop/Docker Compose. El equipo `trabajo` es el entorno primario de implementación y validación; `MarketingIndo` se sincroniza posteriormente cuando esté disponible y nunca bloquea el avance.
 
 ## Ejecución local
 
