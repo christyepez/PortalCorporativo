@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: External Production Activation Input Review Package.
+Title: Unified Docker Desktop PROD-local orchestration.
 
-Status: completed and merged to main. Local tests and Portal CI validation passed.
+Status: implemented on `trabajo`; pending PR/CI and replication to `MarketingIndo`.
 
-Objective: formalize the human review gate after production preflight without enabling cloud production or introducing credentials.
+Objective: operate Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin from the single `portalcorporativo` Docker Compose project.
 
-Evidence: JSON schema, review checklist, redacted review report generator and extended automated tests.
+Evidence: unified HistoriasPaolin services, shared Portal SQL/JWT/network, local lifecycle scripts and authenticated PROD-local smoke.
 
-Guardrail: READY_FOR_REVIEW is not production deployment authorization.
+Guardrail: deployment remains local through Docker Desktop/Docker Compose; no cloud activation is required.
