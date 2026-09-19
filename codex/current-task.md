@@ -2,7 +2,7 @@
 
 Title: Unified Docker Desktop PROD-local orchestration.
 
-Status: implemented on `trabajo`; pending PR/CI and replication to `MarketingIndo`.
+Status: implemented and validated on `trabajo`, which is the primary execution environment. `MarketingIndo` replication is deferred and must not block implementation when that device is offline.
 
 Objective: operate Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin from the single `portalcorporativo` Docker Compose project.
 
