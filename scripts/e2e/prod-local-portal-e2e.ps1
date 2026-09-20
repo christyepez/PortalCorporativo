@@ -42,10 +42,23 @@ function Invoke-E2E {
         [string]$Uri,
         [int[]]$ExpectedStatus = @(200),
         [hashtable]$Headers = @{},
-        [string]$Method = "GET"
+        [string]$Method = "GET",
+        [string]$Body = "",
+        [string]$ContentType = "application/json"
     )
     try {
-        $response = Invoke-WebRequest -Uri $Uri -Method $Method -Headers $Headers -UseBasicParsing -TimeoutSec 20
+        $request = @{
+            Uri = $Uri
+            Method = $Method
+            Headers = $Headers
+            UseBasicParsing = $true
+            TimeoutSec = 20
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Body)) {
+            $request.Body = $Body
+            $request.ContentType = $ContentType
+        }
+        $response = Invoke-WebRequest @request
         $status = [int]$response.StatusCode
         $body = [string]$response.Content
         $responseHeaders = $response.Headers
@@ -83,12 +96,15 @@ foreach ($marker in @("Portal Corporativo","CRM","Financiero","HistoriasPaolin",
 Write-Host "PASS Compiled Angular shell module markers"
 
 $readPermissions = @(
+    "portal.security.manage",
     "portal.configuration.read",
     "portal.menu.read",
     "portal.audit.read",
     "portal.notification.read",
     "portal.catalog.read",
+    "portal.catalog.manage",
     "portal.content.read",
+    "portal.content.manage",
     "portal.reporting.read",
     "portal.integration.read",
     "financial.*",
@@ -103,6 +119,10 @@ $insufficientToken = New-LocalJwt @("portal.menu.read")
 $insufficient = @{ Authorization = "Bearer $insufficientToken"; "X-Correlation-ID" = "$correlationId-denied" }
 Invoke-E2E "Permission enforcement denies Catalog without catalog.read" "$web/api/catalog/entries" @(403) $insufficient | Out-Null
 
+Invoke-E2E "Security users list through Portal Web proxy" "$web/api/security/users" @(200) $auth | Out-Null
+Invoke-E2E "Security roles list through Portal Web proxy" "$web/api/security/roles" @(200) $auth | Out-Null
+Invoke-E2E "Security permissions list through Portal Web proxy" "$web/api/security/permissions" @(200) $auth | Out-Null
+Invoke-E2E "Security resources list through Portal Web proxy" "$web/api/security/resources" @(200) $auth | Out-Null
 Invoke-E2E "Menu through Portal Web proxy" "$web/api/menu/modules/portal" @(200) $auth | Out-Null
 Invoke-E2E "Configuration through Portal Web proxy" "$web/api/configuration/scopes/0" @(200) $auth | Out-Null
 Invoke-E2E "Audit through Portal Web proxy" "$web/api/audit/events/?page=1&pageSize=1" @(200) $auth | Out-Null
@@ -116,6 +136,52 @@ Invoke-E2E "CRM navigation/API through Portal Web" "$web/api/crm/readiness" @(20
 Invoke-E2E "Financiero navigation/API through Portal Web" "$web/api/financial/accounts" @(200) $auth | Out-Null
 Invoke-E2E "HistoriasPaolin navigation/API through Portal Web" "$web/api/historiaspaolin/api/channels" @(200) $auth | Out-Null
 Invoke-E2E "Talento Humano navigation/API through Portal Web" "$web/api/hr/employees" @(200) $auth | Out-Null
+
+$catalogCode = "e2e-$([Guid]::NewGuid().ToString('N').Substring(0,12))"
+$catalogCreateBody = @{
+    catalog = "portal-e2e"
+    code = $catalogCode
+    name = "Portal E2E Entry"
+    description = "Runtime lifecycle validation"
+    sortOrder = 10
+} | ConvertTo-Json -Compress
+$catalogCreate = Invoke-E2E "Create Catalog entry through Portal Web" "$web/api/catalog/entries" @(201) $auth "POST" $catalogCreateBody
+$catalogEntry = $catalogCreate.Body | ConvertFrom-Json
+if (-not $catalogEntry.id) { throw "Catalog create response did not return id." }
+Invoke-E2E "Read Catalog entry through Portal Web" "$web/api/catalog/entries/$($catalogEntry.id)" @(200) $auth | Out-Null
+$catalogUpdateBody = @{
+    name = "Portal E2E Entry Updated"
+    description = "Runtime lifecycle validation completed"
+    isActive = $false
+    sortOrder = 20
+} | ConvertTo-Json -Compress
+$catalogUpdate = Invoke-E2E "Update Catalog entry through Portal Web" "$web/api/catalog/entries/$($catalogEntry.id)" @(200) $auth "PUT" $catalogUpdateBody
+if (($catalogUpdate.Body | ConvertFrom-Json).isActive -ne $false) { throw "Catalog update did not persist inactive state." }
+
+$contentBytes = [Text.Encoding]::UTF8.GetBytes("Portal local E2E content $correlationId")
+$contentCreateBody = @{
+    moduleCode = "PORTAL"
+    fileName = "$catalogCode.txt"
+    contentType = "text/plain"
+    content = [Convert]::ToBase64String($contentBytes)
+} | ConvertTo-Json -Compress
+$contentCreate = Invoke-E2E "Create Content document through Portal Web" "$web/api/content/documents" @(201) $auth "POST" $contentCreateBody
+$contentDocument = $contentCreate.Body | ConvertFrom-Json
+if (-not $contentDocument.id) { throw "Content create response did not return id." }
+$contentDownload = Invoke-E2E "Download Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/download" @(200) $auth
+if ($contentDownload.Body -notmatch [regex]::Escape($correlationId)) { throw "Downloaded content does not match uploaded content." }
+Invoke-E2E "Deactivate Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/deactivate" @(204) $auth "POST" | Out-Null
+Invoke-E2E "Inactive Content download is hidden" "$web/api/content/documents/$($contentDocument.id)/download" @(404) $auth | Out-Null
+
+$reportList = Invoke-E2E "List Reporting definitions through Portal Web" "$web/api/reporting/reports" @(200) $auth
+$reportDefinitions = $reportList.Body | ConvertFrom-Json
+if (-not ($reportDefinitions | Where-Object { $_.key -eq "portal-overview" })) { throw "portal-overview report definition is missing." }
+$reportBody = @{ parameters = @{} } | ConvertTo-Json -Compress
+$reportExecution = Invoke-E2E "Execute Portal Overview report through Portal Web" "$web/api/reporting/reports/portal-overview/execute" @(200) $auth "POST" $reportBody
+$report = $reportExecution.Body | ConvertFrom-Json
+if ($report.key -ne "portal-overview" -or -not $report.rows) { throw "Portal Overview report execution payload is invalid." }
+$activityBody = @{ parameters = @{ moduleCode = "PORTAL" } } | ConvertTo-Json -Compress
+Invoke-E2E "Execute Module Activity report through Portal Web" "$web/api/reporting/reports/module-activity/execute" @(200) $auth "POST" $activityBody | Out-Null
 
 $revocableToken = New-LocalJwt @("portal.menu.read")
 $revocableAuth = @{ Authorization = "Bearer $revocableToken"; "X-Correlation-ID" = "$correlationId-revocation" }

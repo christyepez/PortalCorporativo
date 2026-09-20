@@ -59,7 +59,16 @@ test('shell supports functional module selection and same-origin availability pr
   assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
-test('shell source avoids direct hosts and browser token persistence', () => {
+test('administrative shell exposes the central management sections', () => {
+  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'audit', 'operations']) {
+    assert.match(component, new RegExp(`id:\\s*'${section}'`));
+    assert.match(template, new RegExp(`activeSection === '${section}'`));
+  }
+  assert.match(template, /Tenant:\s*{{ currentTenant }}/);
+  assert.match(template, /Administración central/);
+});
+
+test('shell source avoids direct external hosts and browser token persistence', () => {
   assert.doesNotMatch(component, /https?:\/\//);
   assert.doesNotMatch(component, /localStorage|sessionStorage/);
 });
