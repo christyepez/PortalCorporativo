@@ -69,6 +69,14 @@ if ($ScanLogs) {
         $hits = @($logLines | Select-String -Pattern '(?i)(Unhandled exception|\bFATAL\b|\bCRITICAL\b)')
         if ($hits.Count -gt 0) { $failures += "$name recentCriticalLogs=$($hits.Count)" }
     }
+
+    try {
+        & (Join-Path $root 'scripts\local\prod-local-observability.ps1')
+    }
+    catch {
+        Write-Host "FAIL observability=$($_.Exception.Message)"
+        $failures += 'observability=failed'
+    }
 }
 if (-not $SkipSmoke) {
     foreach ($path in $envPaths) {

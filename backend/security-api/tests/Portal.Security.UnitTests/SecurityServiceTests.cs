@@ -85,6 +85,21 @@ public sealed class SecurityServiceTests
         Assert.Equal("security.permission.not_found", unknownAction.Error?.Code);
     }
 
+    [Fact]
+    public async Task Administrative_lists_return_tenant_entities()
+    {
+        var service = new SecurityService(new InMemorySecurityStore());
+        await service.CreateUserAsync(new("admin@example.com", "Admin User"), default);
+        await service.CreateRoleAsync(new("PortalAdmin"), default);
+        await service.RegisterResourceAsync(new("portal.audit", "Audit"), default);
+        await service.CreatePermissionAsync(new("portal.audit.read", "portal.audit", "read"), default);
+
+        Assert.Single(await service.ListUsersAsync(default));
+        Assert.Single(await service.ListRolesAsync(default));
+        Assert.Single(await service.ListResourcesAsync(default));
+        Assert.Single(await service.ListPermissionsAsync(default));
+    }
+
     private sealed class InMemorySecurityStore : ISecurityStore
     {
         private readonly List<User> users = [];
@@ -126,6 +141,14 @@ public sealed class SecurityServiceTests
                 .Distinct().ToArray();
             return Task.FromResult<IReadOnlyCollection<Permission>>(result);
         }
+        public Task<IReadOnlyCollection<User>> ListUsersAsync(string tenantId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyCollection<User>>(users.Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArray());
+        public Task<IReadOnlyCollection<Role>> ListRolesAsync(string tenantId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyCollection<Role>>(roles.Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArray());
+        public Task<IReadOnlyCollection<Permission>> ListPermissionsAsync(string tenantId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyCollection<Permission>>(permissions.Where(x => x.TenantId == tenantId).OrderBy(x => x.Code).ToArray());
+        public Task<IReadOnlyCollection<Resource>> ListResourcesAsync(string tenantId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyCollection<Resource>>(resources.Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArray());
         public Task AddAsync<T>(T entity, CancellationToken cancellationToken) where T : class
         {
             switch (entity)

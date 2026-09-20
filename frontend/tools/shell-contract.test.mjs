@@ -68,6 +68,17 @@ test('administrative shell exposes the central management sections', () => {
   assert.match(template, /Administración central/);
 });
 
+test('applications open inside the Portal workspace instead of a new browser tab', () => {
+  assert.match(component, /workspaceApplication\?:\s*ApplicationCard/);
+  assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
+  assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
+  assert.match(component, /activeSection\s*=\s*'applications'/);
+  assert.match(template, /<iframe/);
+  assert.match(template, /\[src\]="workspaceUrl"/);
+  assert.match(template, /Volver a aplicaciones/);
+  assert.doesNotMatch(component, /window\.open\(/);
+});
+
 test('shell source avoids direct external hosts and browser token persistence', () => {
   assert.doesNotMatch(component, /https?:\/\//);
   assert.doesNotMatch(component, /localStorage|sessionStorage/);
