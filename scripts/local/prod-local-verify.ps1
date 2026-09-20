@@ -42,6 +42,22 @@ foreach ($row in $rows) {
     if ($restartCount -ne 0) { $failures += "$name restartCount=$restartCount" }
 }
 
+foreach ($id in $ids) {
+    $inspect = (& docker inspect $id | ConvertFrom-Json)[0]
+    $name = ([string]$inspect.Name).TrimStart('/')
+    $bindings = $inspect.HostConfig.PortBindings
+    if ($null -eq $bindings) { continue }
+    foreach ($property in $bindings.PSObject.Properties) {
+        foreach ($binding in @($property.Value)) {
+            if ($null -eq $binding) { continue }
+            $hostIp = [string]$binding.HostIp
+            if ([string]::IsNullOrWhiteSpace($hostIp)) { $hostIp = '0.0.0.0' }
+            Write-Host ("CHECK {0} publishedPort={1} hostIp={2} hostPort={3}" -f $name,$property.Name,$hostIp,$binding.HostPort)
+            if ($hostIp -notin @('127.0.0.1','::1')) { $failures += "$name publishedPort=$($property.Name) hostIp=$hostIp" }
+        }
+    }
+}
+
 if ($ScanLogs) {
     $since = "{0}m" -f $RecentMinutes
     foreach ($id in $ids) {
