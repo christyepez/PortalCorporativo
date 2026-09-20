@@ -51,13 +51,15 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `DockerDesktopLocalRuntimeMaintenanceAutomation = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance now checks backup freshness/integrity, retention, disk space and runtime health in one command.
+`DockerDesktopLocalRuntimeDriftDetection = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift in one command.
 
 ## Next Gate
 
-`DockerDesktopLocalRuntimeDriftDetection`
+`DockerDesktopLocalRuntimeSynchronizationPackage`
 
-Add local drift detection on `trabajo`: validate expected repository revisions, Compose service/image topology, required environment variable names without reading secret values, runtime container/image identity and configuration-file hashes. Produce a baseline/report that can later be used when synchronizing `MarketingIndo`. External/cloud activation is not required.
+Build a synchronization package on `trabajo` for later use on `MarketingIndo`: repository revision manifest, required local file checklist, baseline comparison, non-secret preflight and synchronization commands. Do not require `MarketingIndo` to be online to complete this package. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -69,4 +71,4 @@ Add local drift detection on `trabajo`: validate expected repository revisions, 
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` with configuration/runtime drift detection and a reusable local baseline. Do not pause work when `MarketingIndo` is offline; synchronize only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` by preparing a non-secret synchronization package and preflight that can later be applied to `MarketingIndo` when it is available. Do not pause work when `MarketingIndo` is offline. Cloud deployment is outside the current execution path.

@@ -1,0 +1,109 @@
+﻿{
+    "SchemaVersion":  1,
+    "Project":  "portalcorporativo",
+    "CapturedUtc":  "2026-09-20T02:00:10.8272621Z",
+    "Repositories":  [
+                         {
+                             "Name":  "PortalCorporativo",
+                             "RelativePath":  ".",
+                             "RevisionPolicy":  "self",
+                             "Branch":  "*",
+                             "Revision":  "*"
+                         },
+                         {
+                             "Name":  "CRM",
+                             "RelativePath":  "../CRM",
+                             "RevisionPolicy":  "exact",
+                             "Branch":  "main",
+                             "Revision":  "5b2a4f7445cc16b8bcb670160132a61fa84c1358"
+                         },
+                         {
+                             "Name":  "Financiero",
+                             "RelativePath":  "../Financiero",
+                             "RevisionPolicy":  "exact",
+                             "Branch":  "main",
+                             "Revision":  "00c2532475bd3aa769a7305197e9ad1528cfecec"
+                         },
+                         {
+                             "Name":  "AppTTHH",
+                             "RelativePath":  "../AppTTHH",
+                             "RevisionPolicy":  "exact",
+                             "Branch":  "main",
+                             "Revision":  "2e09ec18f0aa358065ac842f9463ca9f82a7bc36"
+                         },
+                         {
+                             "Name":  "HistoriasPaolin",
+                             "RelativePath":  "../HistoriasPaolin_PORTAL_PROD",
+                             "RevisionPolicy":  "exact",
+                             "Branch":  "feature/bootstrap-agents-sprints",
+                             "Revision":  "9fc076068c5e91372d33620f0bc0898875faac85"
+                         }
+                     ],
+    "ComposeFiles":  [
+                         {
+                             "File":  "docker-compose.yml",
+                             "Sha256":  "ED7ACB4DD8C9DE862D7634DBAF1F834B07F51073861D44CAA4F91C140F16C7EC"
+                         },
+                         {
+                             "File":  "docker-compose.prod-local.yml",
+                             "Sha256":  "EC9C0DC895E7284D4789CC2F0DDD7C7872A2C6843E917D4CED691998411FF6CF"
+                         }
+                     ],
+    "RequiredEnvironmentNames":  [
+                                     "JWT_SECRET",
+                                     "MINIO_ROOT_PASSWORD",
+                                     "MINIO_ROOT_USER",
+                                     "REDIS_PASSWORD",
+                                     "SQLSERVER_SA_PASSWORD"
+                                 ],
+    "ExpectedServices":  [
+                             "api-gateway",
+                             "audit-api",
+                             "catalog-api",
+                             "configuration-api",
+                             "content-api",
+                             "crm-api",
+                             "financial-api",
+                             "historiaspaolin-api",
+                             "historiaspaolin-migrations",
+                             "historiaspaolin-worker",
+                             "hr-api",
+                             "integration-api",
+                             "integration-worker",
+                             "menu-api",
+                             "minio",
+                             "notification-api",
+                             "notification-worker",
+                             "portal-web",
+                             "redis",
+                             "reporting-api",
+                             "security-api",
+                             "seq",
+                             "sqlserver"
+                         ],
+    "RuntimeImages":  {
+                          "crm-api":  "sha256:ba7fdcdddab4ff68cc92672404825968c3ad6075e11fe1a2a99a39f025964a52",
+                          "security-api":  "sha256:05e902628aa016fb12f2f0e8b3e59a3e2b56b6a40fc1aba07b47d185c715f5eb",
+                          "api-gateway":  "sha256:ee51d538862c0748cbee3bdc53b9f309e80b4498c946abf0c5e1d2a9b3b51518",
+                          "historiaspaolin-api":  "sha256:5c996d93f224c2603cd6bdaadc2333764e6b933cc4a596819c1ddac86c2f5dc7",
+                          "notification-api":  "sha256:9f7e007c1c8762a49750697d3041b41b291441dc99d92523ae11aa686578dbbe",
+                          "hr-api":  "sha256:c9d5cd0c46bab41454425f6f732d35d0c3c55fcad00784e0650041544332914e",
+                          "reporting-api":  "sha256:8e090ce18c449257125adac99e40f8ba1093ae8e1dfe6478f1601c1ee579a9cc",
+                          "menu-api":  "sha256:4cc578f8ef9ef27a23394a550282ae7c1fb0bb2ae8d2747cfd9ddae48bd3044a",
+                          "audit-api":  "sha256:6b58f90ed9fe07830f5c1d7bbc15c66cbd74a9dd6c4fd5a70a9eb100e20dbc17",
+                          "seq":  "sha256:a9d266df8cbbfd3735e85d39f5fda7cd3d7cbbb2b653b6d39403597da16a17b1",
+                          "configuration-api":  "sha256:4d1aaeb284022142f6fac8d42a165fb58a0b5a912756346868def6cc61128767",
+                          "integration-api":  "sha256:b0f1ad9aab677208ec01754aaeb1509b29e691fb05384acbf346b5f571d6983b",
+                          "redis":  "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
+                          "notification-worker":  "sha256:4e7ec5e689539acc281dcb798bfeebf206ea13c9078f4322cc9cbd6a42bc9e30",
+                          "sqlserver":  "sha256:97b448857967be55e005424a660056fe6d51814435804dc07e8f79f028bab5fb",
+                          "minio":  "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
+                          "financial-api":  "sha256:81679839d3750bf1290510f139816164dc9b228c9566f0a0184563fe4aa10cb6",
+                          "content-api":  "sha256:bc56375788494786c24073b13c118a06c9763fdb1a226296c822b911e1693e99",
+                          "catalog-api":  "sha256:483968531ed588d210975e194cb951122ad0fa690a886e9e49263a830063dc14",
+                          "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
+                          "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
+                          "integration-worker":  "sha256:326c99cd8743def973c67533f0f4183cddd676ce4f3ac28f82e6a3f5796bcce3",
+                          "portal-web":  "sha256:978f932f914b105bf7fc6d00f5e3f216cf3a389daa3f7e507a14246348b8697b"
+                      }
+}

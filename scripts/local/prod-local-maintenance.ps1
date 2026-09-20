@@ -4,6 +4,7 @@ param(
     [int]$RetentionSets = 7,
     [double]$MinFreeGB = 10,
     [switch]$SkipRuntimeVerify,
+    [switch]$SkipDrift,
     [switch]$ScanLogs
 )
 
@@ -53,6 +54,12 @@ $drive = Get-PSDrive -Name $driveName
 $freeGB = [math]::Round($drive.Free / 1GB, 2)
 Write-Output ("CHECK backupDrive={0} freeGB={1:N2}" -f $driveName,$freeGB)
 if ($freeGB -lt $MinFreeGB) { $failures += "freeGB=$freeGB<$MinFreeGB" }
+
+$baseline = Join-Path $root 'config\prod-local-baseline.json'
+if (-not $SkipDrift -and (Test-Path -LiteralPath $baseline)) {
+    try { & (Join-Path $PSScriptRoot 'prod-local-drift-check.ps1') -Baseline $baseline }
+    catch { $failures += 'driftCheck=failed'; Write-Output $_.Exception.Message }
+}
 
 if (-not $SkipRuntimeVerify) {
     try {
