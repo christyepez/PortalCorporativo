@@ -49,13 +49,15 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `DockerDesktopLocalRuntimeBackupRecovery = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`, and the persistent SQL runtime now has repeatable backup, retention/inventory, isolated restore validation and guarded live recovery.
+`DockerDesktopLocalRuntimeMaintenanceAutomation = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance now checks backup freshness/integrity, retention, disk space and runtime health in one command.
 
 ## Next Gate
 
-`DockerDesktopLocalRuntimeMaintenanceAutomation`
+`DockerDesktopLocalRuntimeDriftDetection`
 
-Add operational automation on `trabajo`: backup freshness checks, disk-space guardrails, retention verification, a one-command maintenance report and optional Windows Task Scheduler registration without committing secrets. `MarketingIndo` remains a deferred synchronization target and must be omitted whenever it is offline. External/cloud activation is not required.
+Add local drift detection on `trabajo`: validate expected repository revisions, Compose service/image topology, required environment variable names without reading secret values, runtime container/image identity and configuration-file hashes. Produce a baseline/report that can later be used when synchronizing `MarketingIndo`. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -67,4 +69,4 @@ Add operational automation on `trabajo`: backup freshness checks, disk-space gua
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` with local maintenance automation and operational guardrails. Do not pause work when `MarketingIndo` is offline; synchronize code and runtime there only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` with configuration/runtime drift detection and a reusable local baseline. Do not pause work when `MarketingIndo` is offline; synchronize only after a stable delivery is completed and the device is available. Cloud deployment is outside the current execution path.
