@@ -27,7 +27,7 @@ Integraciones de dominio verificadas en PROD-local: CRM, Financiero, HistoriasPa
 
 Requisitos: Docker Desktop, Docker Compose v2 y PowerShell. Usar secretos locales no versionados y ejecutar el stack PROD-local con los archivos `docker-compose.yml` y `docker-compose.prod-local.yml`. CRM, Financiero, AppTTHH e HistoriasPaolin forman parte del mismo proyecto Compose `portalcorporativo` y se resuelven desde rutas configurables mediante `CRM_REPO_PATH`, `FINANCIERO_REPO_PATH`, `TTHH_REPO_PATH` y `HISTORIASPAOLIN_REPO_PATH`.
 
-Gateway: `http://localhost:8080`; Portal web: `http://localhost:4200`; Seq: `http://localhost:5341`.
+Gateway: `http://localhost:8080`; Portal web: `http://localhost:4200`; Seq: `http://localhost:5341`. En PROD-local, los puertos publicados al host se enlazan exclusivamente a `127.0.0.1`; SQL Server, Redis, MinIO, Seq, Gateway y Portal Web no se exponen directamente a la LAN.
 
 Ciclo de vida local unificado:
 

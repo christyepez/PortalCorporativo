@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-09-20T13:54:33.0009825Z",
+    "CapturedUtc":  "2026-09-20T15:47:47.5315808Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -42,11 +42,11 @@
     "ComposeFiles":  [
                          {
                              "File":  "docker-compose.yml",
-                             "Sha256":  "ED7ACB4DD8C9DE862D7634DBAF1F834B07F51073861D44CAA4F91C140F16C7EC"
+                             "Sha256":  "CCA940BC9284E02460FB45F50DC4CE1C2A30CFD9C096A4EC6CE7AA4A4D230004"
                          },
                          {
                              "File":  "docker-compose.prod-local.yml",
-                             "Sha256":  "EC9C0DC895E7284D4789CC2F0DDD7C7872A2C6843E917D4CED691998411FF6CF"
+                             "Sha256":  "B7E87A71D1F7FB2A7E28B66CB00C15E97FB753A35ED0AF495A7F5E507F8C4B49"
                          }
                      ],
     "RequiredEnvironmentNames":  [
@@ -104,6 +104,6 @@
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
                           "integration-worker":  "sha256:3b098a3b32d3aa6a23d37ca7e1744e8f133d8291d5e3d364891712603950530d",
-                          "portal-web":  "sha256:5ebbdd732395d68adda3af42c0a337764a37e6b19dfa19b6eda01d73a0c593b2"
+                          "portal-web":  "sha256:61de7b801a6025a6d0a7e3af6009c293355a567024ffb2d6c66799b8be06b898"
                       }
 }

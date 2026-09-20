@@ -56,7 +56,7 @@ For every new consumer, require:
 - Keep every domain database bounded by its own context.
 - Use the Portal Gateway as the host-facing API boundary.
 - Do not persist browser access tokens.
-- Do not change cloud deployment; Docker Desktop on `trabajo` remains the primary runtime.
+- Deployment remains local-only. Docker Desktop/Docker Compose on `trabajo` is the active runtime; do not introduce Azure, cloud hosting, Kubernetes or remote deployment unless explicitly approved.
 - Do not block work waiting for `MarketingIndo`; synchronize it later when available.
 
 ## Closure Expected

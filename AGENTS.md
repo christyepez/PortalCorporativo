@@ -16,6 +16,7 @@ No leas todo el repositorio si la tarea no lo requiere.
 - Backend: .NET 8 / ASP.NET Core
 - Frontend: Angular
 - Docker Compose
+- Despliegue actual exclusivamente local en Docker Desktop; no introducir cloud/Kubernetes/servicios remotos salvo aprobación explícita.
 - SQL Server
 - Redis
 - SQL Outbox inicial
