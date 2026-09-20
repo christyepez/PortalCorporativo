@@ -45,7 +45,18 @@ test('production build keeps output hashing enabled', () => {
 test('template keeps basic navigation and content accessibility invariants', () => {
   assert.match(template, /<aside[^>]+aria-label="Portal shell modules"/);
   assert.match(template, /<section[^>]+aria-label="Portal shell content"/);
-  assert.match(template, /<button type="button"/);
+  assert.match(template, /<button[\s\S]*type="button"/);
+  assert.match(template, /\(click\)="selectModule\(module\)"/);
+  assert.match(template, /aria-live="polite"/);
+});
+
+test('shell supports functional module selection and same-origin availability probes', () => {
+  assert.match(component, /selectedModule:\s*ShellModule\s*=\s*this\.modules\[0\]/);
+  assert.match(component, /async selectModule\(module:\s*ShellModule\)/);
+  assert.match(component, /fetch\(module\.probePath/);
+  assert.match(component, /credentials:\s*'same-origin'/);
+  assert.match(component, /response\.status === 401 \|\| response\.status === 403/);
+  assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
 test('shell source avoids direct hosts and browser token persistence', () => {

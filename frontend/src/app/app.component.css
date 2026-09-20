@@ -83,6 +83,11 @@
   opacity: 0.55;
 }
 
+.shell__sidebar button.active {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
 .shell__sidebar span,
 .shell__sidebar small {
   display: block;
@@ -100,6 +105,29 @@
 .shell__content p {
   max-width: 760px;
   line-height: 1.65;
+}
+
+.module-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(260px, 1.2fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #dde5f3;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(23, 32, 51, 0.06);
+}
+
+.module-panel h3,
+.module-panel p {
+  margin-top: 0;
+}
+
+.module-panel__details {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
 }
 
 .card-grid {
@@ -135,7 +163,8 @@
 }
 
 @media (max-width: 760px) {
-  .shell__body {
+  .shell__body,
+  .module-panel {
     grid-template-columns: 1fr;
   }
 }
