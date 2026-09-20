@@ -82,6 +82,15 @@ Mantenimiento operativo en un comando:
 
 También existe registro opcional de backup diario mediante `prod-local-backup-schedule.ps1`; usar primero `-WhatIf`. Ver `docs/operations/prod-local-maintenance.md`.
 
+Detección de drift local:
+
+```powershell
+./scripts/local/prod-local-drift-baseline.ps1
+./scripts/local/prod-local-drift-check.ps1
+```
+
+La baseline versionada contiene únicamente metadatos no sensibles (SHA de repositorios, hashes de Compose, nombres de variables requeridas, servicios e identidades de imágenes). El mantenimiento diario ejecuta el drift check automáticamente cuando existe la baseline. Ver `docs/operations/prod-local-drift-detection.md`.
+
 ## Consumo desde dominios
 
 Financiero, CRM, HistoriasPaolin, Talento Humano y futuros dominios pasan por Gateway, registran sus recursos/permisos y extienden Menu/Configuration. Adaptan Audit/Notification y mantienen sus datos de dominio en sus propias bases. Nunca consultan bases internas del Portal ni duplican identidad, autorización, menús, configuración, auditoría o notificaciones.

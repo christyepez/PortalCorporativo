@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: Docker Desktop PROD-local maintenance automation.
+Title: Docker Desktop PROD-local drift detection.
 
 Status: COMPLETE on `trabajo`. `MarketingIndo` remains deferred and never blocks implementation.
 
-Objective: provide one-command operational checks for backup freshness/integrity, retention, disk capacity and Portal runtime health, plus optional daily backup scheduling without embedding secrets.
+Objective: detect configuration/runtime drift using a reusable non-secret baseline for external repository revisions, Compose hashes, required environment variable names, service topology and runtime image identities.
 
-Evidence: `prod-local-maintenance.ps1 -ScanLogs` returned `PORTAL_PROD_LOCAL_MAINTENANCE_PASS`, including SHA-256 verification, free-space guardrail, zero restarts, authenticated smoke and log scan. Scheduled-task installation was validated safely with `-WhatIf`.
+Evidence: baseline created in `config/prod-local-baseline.json`; drift check returned `PORTAL_PROD_LOCAL_DRIFT_CHECK_PASS`; the daily maintenance command now includes drift detection and returned `PORTAL_PROD_LOCAL_MAINTENANCE_PASS`, `PORTAL_PROD_LOCAL_VERIFY_PASS` and `PROD_LOCAL_SMOKE_PASS` with zero restarts.
 
-Guardrail: scheduled task registration is optional, backup/environment secrets are never committed or embedded, real SRI production transmission remains disabled, and execution stays local on Docker Desktop.
+Guardrail: no environment values are stored, Portal self-revision is neutralized to avoid false drift after each PR, and execution remains local on Docker Desktop.
