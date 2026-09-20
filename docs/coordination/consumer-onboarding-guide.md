@@ -34,4 +34,4 @@ Identidad/autenticación, usuarios/roles globales, autorización, Gateway, motor
 
 ## Disponibilidad
 
-Security, Configuration, Menu, Audit, Notification, Gateway, Outbox/Inbox y Workers están disponibles como foundation. Catalog, Content/File, Reporting, Angular Shell, IdP y transporte productivo están `BLOCKED` hasta Sprint 2; el consumidor no debe suplirlos duplicándolos.
+Security, Configuration, Menu, Audit, Notification, Catalog, Content/File, Reporting, Integration, Gateway, Outbox/Inbox, Workers y Angular Shell están integrados en el runtime PROD-local. CRM, Financiero, HistoriasPaolin y Talento Humano ya consumen el Portal mediante Gateway. El siguiente consumidor debe reutilizar o extender estas capacidades y no suplirlas duplicándolas. IdP/SSO productivo y proveedores externos reales continúan sujetos a activación explícita.
