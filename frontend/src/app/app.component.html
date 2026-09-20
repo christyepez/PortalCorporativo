@@ -70,33 +70,54 @@
           </div>
         </section>
       }      @if (activeSection === 'applications') {
-        <section class="section-block">
-          <div class="section-heading">
-            <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
-            <button type="button" class="secondary">Registrar aplicación</button>
-          </div>
-          <p class="lead">Cada aplicación conserva su dominio funcional, mientras Portal Corporativo administra los servicios transversales.</p>
-          <div class="application-grid application-grid--wide">
-            @for (app of applications; track app.code) {
-              <article class="application-card">
-                <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
-                <div>
-                  <span class="code">{{ app.code }}</span>
-                  <h4>{{ app.name }}</h4>
-                  <p>{{ app.description }}</p>
-                </div>
-                <div class="application-card__footer">
-                  <span class="pill">{{ app.status }}</span>
-                  @if (app.port) {
-                    <button type="button" class="primary compact" (click)="openApplication(app)">Abrir aplicación</button>
-                  } @else {
-                    <span class="muted">{{ app.path }}</span>
-                  }
-                </div>
-              </article>
-            }
-          </div>
-        </section>
+        @if (workspaceApplication && workspaceUrl) {
+          <section class="workspace-shell" aria-label="Área de trabajo de aplicación">
+            <header class="workspace-shell__header">
+              <div>
+                <p class="eyebrow">Aplicación embebida</p>
+                <h2>{{ workspaceApplication.name }}</h2>
+                <span class="code">{{ workspaceApplication.code }}</span>
+              </div>
+              <button type="button" class="secondary" (click)="closeWorkspace()">Volver a aplicaciones</button>
+            </header>
+            <div class="workspace-shell__frame">
+              <iframe
+                [src]="workspaceUrl"
+                [title]="workspaceApplication.name"
+                referrerpolicy="same-origin"
+                allow="clipboard-read; clipboard-write">
+              </iframe>
+            </div>
+          </section>
+        } @else {
+          <section class="section-block">
+            <div class="section-heading">
+              <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
+              <button type="button" class="secondary">Registrar aplicación</button>
+            </div>
+            <p class="lead">Cada aplicación conserva su dominio funcional y se abre dentro del área de trabajo del Portal, sin abandonar el contenedor corporativo.</p>
+            <div class="application-grid application-grid--wide">
+              @for (app of applications; track app.code) {
+                <article class="application-card">
+                  <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
+                  <div>
+                    <span class="code">{{ app.code }}</span>
+                    <h4>{{ app.name }}</h4>
+                    <p>{{ app.description }}</p>
+                  </div>
+                  <div class="application-card__footer">
+                    <span class="pill">{{ app.status }}</span>
+                    @if (app.port) {
+                      <button type="button" class="primary compact" (click)="openApplication(app)">Abrir en Portal</button>
+                    } @else {
+                      <span class="muted">{{ app.path }}</span>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        }
       }
 
       @if (activeSection === 'security') {

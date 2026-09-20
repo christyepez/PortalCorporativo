@@ -2,7 +2,8 @@ param(
     [string]$WebBaseUrl = "http://localhost:4200",
     [string]$JwtIssuer = $(if ($env:JWT_ISSUER) { $env:JWT_ISSUER } else { "portal-corporativo" }),
     [string]$JwtAudience = $(if ($env:JWT_AUDIENCE) { $env:JWT_AUDIENCE } else { "portal-corporativo-clients" }),
-    [string]$JwtSecret = $env:JWT_SECRET
+    [string]$JwtSecret = $env:JWT_SECRET,
+    [switch]$ExpectPersistedLifecycleData
 )
 
 $ErrorActionPreference = "Stop"
@@ -100,6 +101,7 @@ $readPermissions = @(
     "portal.configuration.read",
     "portal.menu.read",
     "portal.audit.read",
+    "portal.audit.write",
     "portal.notification.read",
     "portal.catalog.read",
     "portal.catalog.manage",
@@ -126,9 +128,52 @@ Invoke-E2E "Security resources list through Portal Web proxy" "$web/api/security
 Invoke-E2E "Menu through Portal Web proxy" "$web/api/menu/modules/portal" @(200) $auth | Out-Null
 Invoke-E2E "Configuration through Portal Web proxy" "$web/api/configuration/scopes/0" @(200) $auth | Out-Null
 Invoke-E2E "Audit through Portal Web proxy" "$web/api/audit/events/?page=1&pageSize=1" @(200) $auth | Out-Null
+
+$auditCorrelationId = "$correlationId-audit"
+$auditBody = @{
+    actorId = "portal-prod-local-e2e"
+    tenantId = "default"
+    resource = "portal.e2e"
+    action = "validate"
+    entityName = "PortalRuntime"
+    entityId = $correlationId
+    beforeJson = $null
+    afterJson = '{"status":"validated"}'
+    metadataJson = '{"source":"prod-local-e2e"}'
+    correlationId = $auditCorrelationId
+    causationId = $correlationId
+    requestId = $correlationId
+    ipAddress = "127.0.0.1"
+    userAgent = "portal-prod-local-e2e"
+    severity = 1
+} | ConvertTo-Json -Compress
+$auditCreate = Invoke-E2E "Create Audit event through Portal Web" "$web/api/audit/events/" @(201) $auth "POST" $auditBody
+$auditCreated = $auditCreate.Body | ConvertFrom-Json
+if (-not $auditCreated.data.id) { throw "Audit create response did not return id." }
+
+$auditSearch = Invoke-E2E "Search Audit by correlation id" "$web/api/audit/events/?correlationId=$([uri]::EscapeDataString($auditCorrelationId))&page=1&pageSize=10" @(200) $auth
+$auditSearchPayload = $auditSearch.Body | ConvertFrom-Json
+if (-not ($auditSearchPayload.data.items | Where-Object { $_.correlationId -eq $auditCorrelationId })) {
+    throw "Audit event was not found by correlation id."
+}
+
+$auditSummary = Invoke-E2E "Read Audit operational summary" "$web/api/audit/events/summary?tenantId=default&hours=24" @(200) $auth
+$auditSummaryPayload = $auditSummary.Body | ConvertFrom-Json
+if ([long]$auditSummaryPayload.data.total -lt 1 -or [long]$auditSummaryPayload.data.warningOrHigher -lt 1) {
+    throw "Audit operational summary did not include the E2E event."
+}
+
 Invoke-E2E "Notification through Portal Web proxy" "$web/api/notifications/templates" @(200) $auth | Out-Null
-Invoke-E2E "Catalog through Portal Web proxy" "$web/api/catalog/entries" @(200) $auth | Out-Null
-Invoke-E2E "Content through Portal Web proxy" "$web/api/content/documents" @(200) $auth | Out-Null
+$catalogList = Invoke-E2E "Catalog through Portal Web proxy" "$web/api/catalog/entries" @(200) $auth
+$contentList = Invoke-E2E "Content through Portal Web proxy" "$web/api/content/documents" @(200) $auth
+if ($ExpectPersistedLifecycleData) {
+    $persistedCatalog = @($catalogList.Body | ConvertFrom-Json | Where-Object { $_.catalog -eq "portal-e2e" })
+    $persistedContent = @($contentList.Body | ConvertFrom-Json | Where-Object { $_.moduleCode -eq "PORTAL" })
+    if ($persistedCatalog.Count -lt 1) { throw "Persisted Catalog lifecycle data was not found after restart." }
+    if ($persistedContent.Count -lt 1) { throw "Persisted Content lifecycle data was not found after restart." }
+    Write-Host "PASS Catalog lifecycle data persisted across restart -> $($persistedCatalog.Count) row(s)"
+    Write-Host "PASS Content lifecycle data persisted across restart -> $($persistedContent.Count) row(s)"
+}
 Invoke-E2E "Reporting through Portal Web proxy" "$web/api/reporting/reports" @(200) $auth | Out-Null
 Invoke-E2E "Integration through Portal Web proxy" "$web/api/integration/inbox/processed?tenantId=default&source=e2e&idempotencyKey=$correlationId" @(200) $auth | Out-Null
 

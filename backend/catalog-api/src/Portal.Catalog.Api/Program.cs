@@ -5,9 +5,8 @@ using Portal.Catalog.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPortalFoundation("Portal.Catalog.Api");
-builder.Services.AddSingleton<ICatalogRepository, InMemoryCatalogRepository>();
+builder.Services.AddCatalogFoundation(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<CatalogService>();
 builder.Services.AddPortalJwtAuthentication(builder.Configuration);
 builder.Services.AddPortalPermissionAuthorization();
 

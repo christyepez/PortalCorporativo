@@ -67,11 +67,48 @@ public sealed class EfAuditStore(AuditDbContext db) : IAuditStore
         if (request.FromUtc.HasValue) query = query.Where(x => x.CreatedAtUtc >= request.FromUtc);
         if (request.ToUtc.HasValue) query = query.Where(x => x.CreatedAtUtc <= request.ToUtc);
         if (request.Severity.HasValue) query = query.Where(x => (int)x.Severity == request.Severity);
+        if (!string.IsNullOrWhiteSpace(request.CorrelationId)) query = query.Where(x => x.CorrelationId == request.CorrelationId.Trim());
         var total = await query.LongCountAsync(cancellationToken);
         var items = await query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
             .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToArrayAsync(cancellationToken);
         return new(items, request.Page, request.PageSize, total);
     }
+
+    public async Task<AuditSummaryResponse> SummaryAsync(
+        string tenantId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken)
+    {
+        var query = db.AuditLogs.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.CreatedAtUtc >= fromUtc && x.CreatedAtUtc <= toUtc);
+
+        var total = await query.LongCountAsync(cancellationToken);
+        var warningOrHigher = await query.LongCountAsync(x => (int)x.Severity >= (int)AuditSeverity.Warning, cancellationToken);
+        var errorOrHigher = await query.LongCountAsync(x => (int)x.Severity >= (int)AuditSeverity.Error, cancellationToken);
+
+        var resourceCounts = await query
+            .GroupBy(x => x.Resource)
+            .Select(group => new { Key = group.Key, Count = group.LongCount() })
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Key)
+            .Take(10)
+            .ToArrayAsync(cancellationToken);
+
+        var actionCounts = await query
+            .GroupBy(x => x.Action)
+            .Select(group => new { Key = group.Key, Count = group.LongCount() })
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Key)
+            .Take(10)
+            .ToArrayAsync(cancellationToken);
+
+        var topResources = resourceCounts.Select(x => new AuditMetricResponse(x.Key, x.Count)).ToArray();
+        var topActions = actionCounts.Select(x => new AuditMetricResponse(x.Key, x.Count)).ToArray();
+
+        return new AuditSummaryResponse(tenantId, fromUtc, toUtc, total, warningOrHigher, errorOrHigher, topResources, topActions);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 }
 
@@ -96,7 +133,26 @@ internal sealed class AuditDatabaseInitializer(IServiceProvider services) : IHos
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await using var scope = services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<AuditDbContext>().Database.EnsureCreatedAsync(cancellationToken);
+        var db = scope.ServiceProvider.GetRequiredService<AuditDbContext>();
+        await db.Database.EnsureCreatedAsync(cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[audit].[ArchivedAuditLogs]', N'U') IS NULL
+            BEGIN
+                CREATE TABLE [audit].[ArchivedAuditLogs] (
+                    [Id] uniqueidentifier NOT NULL,
+                    [OriginalAuditLogId] uniqueidentifier NOT NULL,
+                    [TenantId] nvarchar(64) NOT NULL,
+                    [OriginalCreatedAtUtc] datetimeoffset NOT NULL,
+                    [ArchivedAtUtc] datetimeoffset NOT NULL,
+                    [SnapshotJson] nvarchar(max) NOT NULL,
+                    CONSTRAINT [PK_ArchivedAuditLogs] PRIMARY KEY ([Id])
+                );
+                CREATE UNIQUE INDEX [IX_ArchivedAuditLogs_OriginalAuditLogId]
+                    ON [audit].[ArchivedAuditLogs] ([OriginalAuditLogId]);
+                CREATE INDEX [IX_ArchivedAuditLogs_TenantId_OriginalCreatedAtUtc]
+                    ON [audit].[ArchivedAuditLogs] ([TenantId], [OriginalCreatedAtUtc]);
+            END
+            """, cancellationToken);
     }
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

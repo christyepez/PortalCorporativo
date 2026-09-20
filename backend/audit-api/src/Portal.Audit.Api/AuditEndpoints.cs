@@ -14,10 +14,14 @@ public static class AuditEndpoints
         group.MapGet("/{id:guid}", async (Guid id, AuditService service, HttpContext context, CancellationToken ct) =>
             Respond(context, await service.GetAsync(id, ct))).RequireAuthorization(PortalPermissions.AuditRead);
         group.MapGet("/", async (string? tenantId, string? resource, string? action, string? actorId,
-            DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int? severity, int page, int pageSize,
+            DateTimeOffset? fromUtc, DateTimeOffset? toUtc, int? severity, int page, int pageSize, string? correlationId,
             AuditService service, HttpContext context, CancellationToken ct) =>
             Respond(context, await service.SearchAsync(new(tenantId, resource, action, actorId, fromUtc, toUtc, severity,
-                page == 0 ? 1 : page, pageSize == 0 ? 20 : pageSize), ct))).RequireAuthorization(PortalPermissions.AuditRead);
+                page == 0 ? 1 : page, pageSize == 0 ? 20 : pageSize, correlationId), ct))).RequireAuthorization(PortalPermissions.AuditRead);
+
+        group.MapGet("/summary", async (string? tenantId, int? hours, AuditService service, HttpContext context, CancellationToken ct) =>
+            Respond(context, await service.SummaryAsync(tenantId, hours.GetValueOrDefault(24), ct)))
+            .RequireAuthorization(PortalPermissions.AuditRead);
         return endpoints;
     }
 

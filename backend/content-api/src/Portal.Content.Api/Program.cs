@@ -5,9 +5,8 @@ using Portal.Content.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPortalFoundation("Portal.Content.Api");
-builder.Services.AddSingleton<IContentRepository, InMemoryContentRepository>();
+builder.Services.AddContentFoundation(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddScoped<ContentService>();
 builder.Services.AddPortalJwtAuthentication(builder.Configuration);
 builder.Services.AddPortalPermissionAuthorization();
 

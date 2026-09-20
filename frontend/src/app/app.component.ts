@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from '../environments/environment';
 
 interface ShellModule {
@@ -34,6 +35,8 @@ interface ApplicationCard {
   styleUrl: './app.component.css'
 })
 export class AppComponent {
+  constructor(private readonly sanitizer: DomSanitizer) {}
+
   protected readonly title = 'Portal Corporativo';
   protected readonly readiness = environment.shellReadiness;
   protected readonly apiBasePath = environment.apiBasePath;
@@ -50,7 +53,7 @@ export class AppComponent {
   ];
 
   protected readonly applications: ApplicationCard[] = [
-    { name: 'Conjunto al Día', code: 'APP_CONDOMINIO', description: 'Administración de propiedades y condominios.', port: 4208, status: 'Local' },
+    { name: 'Conjunto al Día', code: 'APP_CONDOMINIO', description: 'Administración de propiedades y condominios.', port: 4210, status: 'Local' },
     { name: 'CRM', code: 'CRM', description: 'Gestión comercial y clientes.', path: '/api/crm', status: 'Integrado' },
     { name: 'Financiero', code: 'FINANCIAL', description: 'Operación financiera y presupuestaria.', path: '/api/financial', status: 'Integrado' },
     { name: 'Talento Humano', code: 'HR', description: 'Gestión de personas y colaboradores.', path: '/api/hr', status: 'Integrado' },
@@ -72,6 +75,8 @@ export class AppComponent {
   ];
 
   protected activeSection: AdminSection = 'dashboard';
+  protected workspaceApplication?: ApplicationCard;
+  protected workspaceUrl?: SafeResourceUrl;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
@@ -81,8 +86,16 @@ export class AppComponent {
 
   protected openApplication(application: ApplicationCard): void {
     if (!application.port) return;
+
     const target = `${window.location.protocol}//${window.location.hostname}:${application.port}/`;
-    window.open(target, '_blank', 'noopener,noreferrer');
+    this.workspaceApplication = application;
+    this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+    this.activeSection = 'applications';
+  }
+
+  protected closeWorkspace(): void {
+    this.workspaceApplication = undefined;
+    this.workspaceUrl = undefined;
   }
 
   protected async selectModule(module: ShellModule): Promise<void> {

@@ -136,6 +136,10 @@ services:
       <<: *portal-environment
       ConnectionStrings__AuditDb: Server=sqlserver,1433;Database=PortalAudit;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
       Audit__InitializeDatabase: "true"
+      Audit__Retention__Enabled: "true"
+      Audit__Retention__RetentionDays: "365"
+      Audit__Retention__BatchSize: "500"
+      Audit__Retention__PollIntervalMinutes: "60"
       Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
       Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
@@ -191,9 +195,14 @@ services:
         ASSEMBLY_NAME: Portal.Catalog.Api
     environment:
       <<: *portal-environment
+      ConnectionStrings__CatalogDb: Server=sqlserver,1433;Database=PortalCatalog;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Catalog__InitializeDatabase: "true"
       Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
       Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
 
   content-api:
     <<: *portal-api
@@ -205,9 +214,14 @@ services:
         ASSEMBLY_NAME: Portal.Content.Api
     environment:
       <<: *portal-environment
+      ConnectionStrings__ContentDb: Server=sqlserver,1433;Database=PortalContent;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      Content__InitializeDatabase: "true"
       Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
       Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
 
   integration-api:
     <<: *portal-api

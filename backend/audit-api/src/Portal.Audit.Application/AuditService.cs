@@ -9,6 +9,7 @@ public interface IAuditStore
     Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken);
     Task<AuditLog?> GetAsync(Guid id, CancellationToken cancellationToken);
     Task<PagedResult<AuditLog>> SearchAsync(AuditSearchRequest request, CancellationToken cancellationToken);
+    Task<AuditSummaryResponse> SummaryAsync(string tenantId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
 
@@ -44,6 +45,18 @@ public sealed class AuditService(IAuditStore store, IClock clock)
         if (request.FromUtc > request.ToUtc) return Result<PagedResult<AuditEventResponse>>.Failure("audit.validation", "fromUtc must be before toUtc.");
         var page = await store.SearchAsync(request with { Page = Math.Max(1, request.Page), PageSize = Math.Clamp(request.PageSize, 1, 200) }, ct);
         return Result<PagedResult<AuditEventResponse>>.Success(new(page.Items.Select(Map).ToArray(), page.Page, page.PageSize, page.Total));
+    }
+
+    public async Task<Result<AuditSummaryResponse>> SummaryAsync(string? tenantId, int hours, CancellationToken ct)
+    {
+        var normalizedTenant = string.IsNullOrWhiteSpace(tenantId) ? "default" : tenantId.Trim().ToLowerInvariant();
+        if (normalizedTenant.Length > 64)
+            return Result<AuditSummaryResponse>.Failure("audit.validation", "tenantId is too long.");
+
+        hours = Math.Clamp(hours, 1, 24 * 30);
+        var toUtc = clock.UtcNow;
+        var fromUtc = toUtc.AddHours(-hours);
+        return Result<AuditSummaryResponse>.Success(await store.SummaryAsync(normalizedTenant, fromUtc, toUtc, ct));
     }
 
     private static AuditEventResponse Map(AuditLog x) => new(x.Id, x.ActorId, x.TenantId, x.Resource, x.Action,
