@@ -62,7 +62,7 @@ Smoke PROD-local integrado:
 ./scripts/smoke/prod-local-smoke.ps1
 ```
 
-El smoke valida Portal web, Gateway, CRM, Financiero, HistoriasPaolin y Talento Humano, incluyendo endpoints públicos de readiness y endpoints protegidos con y sin JWT.
+El smoke valida Portal web, Gateway, las rutas protegidas de Security, Configuration, Menu, Audit, Notification, Catalog, Content, Integration y Reporting, además de CRM, Financiero, HistoriasPaolin y Talento Humano. Incluye endpoints públicos de readiness y endpoints protegidos con y sin JWT.
 
 Backup y recuperación local:
 
