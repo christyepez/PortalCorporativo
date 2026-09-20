@@ -31,6 +31,22 @@ public static class SecurityRevocationEndpoints
             return Reply(context, result);
         });
 
+        endpoints.MapPost("/api/security/sessions/current/revoke", async (
+            IPortalTokenRevocationStore revocations,
+            HttpContext context,
+            CancellationToken cancellationToken) =>
+        {
+            var jti = context.User.FindFirst("jti")?.Value;
+            var exp = context.User.FindFirst("exp")?.Value;
+            if (string.IsNullOrWhiteSpace(jti) || !long.TryParse(exp, out var expSeconds))
+                return Results.BadRequest(new ApiResponse<bool>(false,
+                    new ApiError("security.session.invalid_token", "JWT must contain jti and exp claims to support revocation."),
+                    context.TraceIdentifier));
+
+            await revocations.RevokeAsync(jti, DateTimeOffset.FromUnixTimeSeconds(expSeconds), cancellationToken);
+            return Results.Ok(new ApiResponse<bool>(true, null, context.TraceIdentifier));
+        }).RequireAuthorization();
+
         return endpoints;
     }
 
