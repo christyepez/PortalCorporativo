@@ -74,6 +74,14 @@ Backup y recuperación local:
 
 Los respaldos se almacenan fuera de Git en `backups/prod-local`. La validación restaura todas las bases administradas por Portal en un SQL Server temporal aislado y ejecuta `DBCC CHECKDB`. El restore real está protegido por `-Apply`; ver `docs/operations/prod-local-backup-recovery.md`.
 
+Mantenimiento operativo en un comando:
+
+```powershell
+./scripts/local/prod-local-maintenance.ps1 -ScanLogs
+```
+
+También existe registro opcional de backup diario mediante `prod-local-backup-schedule.ps1`; usar primero `-WhatIf`. Ver `docs/operations/prod-local-maintenance.md`.
+
 ## Consumo desde dominios
 
 Financiero, CRM, HistoriasPaolin, Talento Humano y futuros dominios pasan por Gateway, registran sus recursos/permisos y extienden Menu/Configuration. Adaptan Audit/Notification y mantienen sus datos de dominio en sus propias bases. Nunca consultan bases internas del Portal ni duplican identidad, autorización, menús, configuración, auditoría o notificaciones.
