@@ -72,12 +72,15 @@ services:
     environment:
       <<: *portal-environment
       ConnectionStrings__SecurityDb: Server=sqlserver,1433;Database=PortalSecurity;User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD in .env};TrustServerCertificate=true;Encrypt=true
+      ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
       Security__InitializeDatabase: "true"
       Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
       Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
     depends_on:
       sqlserver:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   configuration-api:
@@ -270,6 +273,7 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-portal-corporativo}
       Jwt__Audience: ${JWT_AUDIENCE:-portal-corporativo-clients}
       Jwt__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ConnectionStrings__Redis: redis:6379,password=${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     ports:
       - "127.0.0.1:${API_GATEWAY_PORT:-8080}:8080"
     depends_on:
@@ -290,6 +294,8 @@ services:
       integration-api:
         condition: service_healthy
       reporting-api:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

@@ -23,6 +23,7 @@ function New-LocalJwt {
         iat = $now
         nbf = $now
         exp = $now + 600
+        jti = [Guid]::NewGuid().ToString("N")
         permission = $Permissions
     } | ConvertTo-Json -Compress
 
@@ -115,5 +116,11 @@ Invoke-E2E "CRM navigation/API through Portal Web" "$web/api/crm/readiness" @(20
 Invoke-E2E "Financiero navigation/API through Portal Web" "$web/api/financial/accounts" @(200) $auth | Out-Null
 Invoke-E2E "HistoriasPaolin navigation/API through Portal Web" "$web/api/historiaspaolin/api/channels" @(200) $auth | Out-Null
 Invoke-E2E "Talento Humano navigation/API through Portal Web" "$web/api/hr/employees" @(200) $auth | Out-Null
+
+$revocableToken = New-LocalJwt @("portal.menu.read")
+$revocableAuth = @{ Authorization = "Bearer $revocableToken"; "X-Correlation-ID" = "$correlationId-revocation" }
+Invoke-E2E "JWT valid before revocation" "$web/api/menu/modules/portal" @(200) $revocableAuth | Out-Null
+Invoke-E2E "Revoke current JWT session" "$web/api/security/sessions/current/revoke" @(200) $revocableAuth "POST" | Out-Null
+Invoke-E2E "Revoked JWT rejected by Gateway" "$web/api/menu/modules/portal" @(401) $revocableAuth | Out-Null
 
 Write-Host "PORTAL_PROD_LOCAL_E2E_PASS"

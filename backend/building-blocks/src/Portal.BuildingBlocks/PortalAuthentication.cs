@@ -13,8 +13,21 @@ public static class PortalAuthenticationExtensions
         var authority = configuration["Jwt:Authority"]?.Trim();
         var audience = configuration["Jwt:Audience"]?.Trim();
 
+        services.AddPortalTokenRevocation(configuration);
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
         {
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var jti = context.Principal?.FindFirst("jti")?.Value;
+                    if (string.IsNullOrWhiteSpace(jti)) return;
+
+                    var revocations = context.HttpContext.RequestServices.GetService<IPortalTokenRevocationStore>();
+                    if (revocations is not null && await revocations.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+                        context.Fail("JWT session has been revoked.");
+                }
+            };
             if (!string.IsNullOrWhiteSpace(authority))
             {
                 options.Authority = authority;
