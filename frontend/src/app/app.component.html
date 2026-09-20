@@ -12,12 +12,16 @@
       <h2>Portal</h2>
       <nav>
         @for (module of modules; track module.label) {
-          <button type="button" [class.disabled]="!module.enabled" [disabled]="!module.enabled">
+          <button
+            type="button"
+            [class.disabled]="!module.enabled"
+            [class.active]="selectedModule.label === module.label"
+            [disabled]="!module.enabled"
+            [attr.aria-current]="selectedModule.label === module.label ? 'page' : null"
+            (click)="selectModule(module)">
             <span>{{ module.label }}</span>
             <small>{{ module.status }}</small>
-            @if (module.gatewayPath) {
-              <small>{{ module.gatewayPath }}</small>
-            }
+            <small>{{ module.gatewayPath }}</small>
           </button>
         }
       </nav>
@@ -30,6 +34,32 @@
         Portal Core, CRM, Financiero, Talento Humano e HistoriasPaolin comparten una única entrada HTTP mediante el API Gateway.
         CRM, Financiero y Talento Humano no exponen su API directamente al host en el orquestador PROD local.
       </p>
+
+      <section class="module-panel" aria-live="polite">
+        <div>
+          <p class="eyebrow">Módulo seleccionado</p>
+          <h3>{{ selectedModule.label }}</h3>
+          <p>{{ selectedModule.status }}</p>
+        </div>
+        <div class="module-panel__details">
+          <span><strong>Gateway</strong> {{ selectedModule.gatewayPath }}</span>
+          <span><strong>Probe</strong> {{ selectedModule.probePath }}</span>
+          <span>
+            <strong>Estado</strong>
+            @switch (moduleProbeState) {
+              @case ('checking') { Verificando… }
+              @case ('available') { Disponible }
+              @case ('protected') { Disponible · protegido por autorización }
+              @case ('unavailable') { No disponible }
+              @default { Selecciona el módulo para validar disponibilidad }
+            }
+            @if (moduleProbeStatus) {
+              (HTTP {{ moduleProbeStatus }})
+            }
+          </span>
+        </div>
+      </section>
+
       <div class="card-grid">
         <article>
           <strong>API base</strong>
