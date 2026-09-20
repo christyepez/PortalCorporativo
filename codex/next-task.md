@@ -55,13 +55,15 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `DockerDesktopLocalRuntimeSynchronizationPackage = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo` when it becomes available.
+`PortalIntegratedFunctionalGapReview = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo`; and the first functional gap review closed frontend quality placeholders plus current-state documentation drift.
 
 ## Next Gate
 
-`PortalIntegratedFunctionalGapReview`
+`PortalFrontendQualityCoverageExpansion`
 
-Perform a repository-wide functional and integration gap review on `trabajo`: unresolved TODO/FIXME items, planned/disabled integrations, incomplete domain onboarding, placeholder providers, missing tests and documentation mismatches. Classify each gap by module and risk, then implement safe high-priority gaps without requiring `MarketingIndo`. External/cloud activation is not required.
+Expand real frontend quality coverage on `trabajo`: shell module catalog contract, gateway-route uniqueness, template accessibility invariants, environment/API-base contract and regression checks for forbidden browser token persistence. Keep the suite dependency-light and CI-friendly. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -73,4 +75,4 @@ Perform a repository-wide functional and integration gap review on `trabajo`: un
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` with a functional/integration gap review and implement safe high-priority gaps. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` by expanding frontend quality coverage around the integrated shell and Gateway-facing module contract. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.

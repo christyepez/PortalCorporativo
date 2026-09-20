@@ -1,6 +1,6 @@
 # PROD local integration roadmap
 
-Status: implementation in progress through Portal Sprints 23-27.
+Status: COMPLETE and validated on the primary `trabajo` Docker Desktop runtime.
 
 ## Objective
 Run PortalCorporativo locally with `ASPNETCORE_ENVIRONMENT=Production` and expose integrated modules through the Portal API Gateway as the single HTTP entry point.
@@ -12,18 +12,18 @@ Run PortalCorporativo locally with `ASPNETCORE_ENVIRONMENT=Production` and expos
 | Portal Core | `/api/security`, `/api/configuration`, `/api/menu`, `/api/audit`, `/api/notifications`, `/api/catalog`, `/api/content`, `/api/reporting`, `/api/integration` | Portal | Gateway only |
 | CRM | `/api/crm/**` | CRM repo | Gateway only in PROD-local orchestrator |
 | Financiero | `/api/financial/**` | Financiero repo | Gateway only in PROD-local orchestrator |
-| HistoriasPaolin | `/api/historiaspaolin/**` | HistoriasPaolin repo | Gateway via opt-in network override |
-| Talento Humano | pending | AppTTHH | not deployed |
+| HistoriasPaolin | `/api/historiaspaolin/**` | HistoriasPaolin repo | Gateway only in unified PROD-local orchestrator |
+| Talento Humano | `/api/hr/**` | AppTTHH repo | Gateway only in PROD-local orchestrator |
 
 ## Runtime command
 
 ```powershell
-Copy-Item .env.prod-local.example .env.prod.local
-# Fill local-only values in .env.prod.local.
-docker compose --env-file .env.prod.local -f docker-compose.yml -f docker-compose.prod-local.yml up -d --build
+./scripts/local/prod-local-up.ps1 -Build
+./scripts/local/prod-local-status.ps1
+./scripts/local/prod-local-verify.ps1 -ScanLogs
 ```
 
-The default repository layout expects `PortalCorporativo`, `CRM` and `Financiero` as sibling folders. Override `CRM_REPO_PATH` and `FINANCIERO_REPO_PATH` when necessary.
+The default repository layout expects `PortalCorporativo`, `CRM`, `Financiero`, `AppTTHH` and `HistoriasPaolin_PORTAL_PROD` as sibling folders. Override the corresponding `*_REPO_PATH` variables only when necessary.
 
 ## Security boundary
 
