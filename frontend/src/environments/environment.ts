@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  shellReadiness: 'BuildableNonProductionShell',
+  shellReadiness: 'LocalProductionIntegratedShell',
   apiBasePath: '/api'
 } as const;

@@ -6,64 +6,37 @@ christyepez/PortalCorporativo
 
 ## Phase
 
-Portal PROD-local Integrated Runtime - COMPLETE
-
-## Current Branch
-
-main
+Portal PROD-local Integrated Runtime - Security Hardening
 
 ## Objective Status
 
 `PortalProdLocalObjectiveAchieved = true`
 
-The Portal functional foundation and the local Production-mode integrated runtime are complete. Portal Core, CRM, Financiero, Talento Humano and HistoriasPaolin run behind the Portal Gateway on the shared Docker network.
+The integrated local runtime remains healthy. The non-breaking npm remediation is complete and validated.
 
-## Verified Evidence
+## Current Security Evidence
 
-- Portal Angular web health: PASS.
-- Gateway readiness: PASS.
-- CRM readiness through Gateway: PASS.
-- Financiero readiness through Gateway: PASS.
-- HistoriasPaolin readiness through Gateway: PASS.
-- Talento Humano readiness through Gateway: PASS.
-- Protected routes without token return 401 for CRM, Financiero, Talento Humano and HistoriasPaolin.
-- Runtime stability scan: all integrated containers running with zero restarts and no recent fatal/unhandled/critical errors.
-- CRM runtime: `Production` / `LocalProduction`, PortalIntegration enabled, FinancialIntegration enabled.
-- Financiero runtime: `Production`, Portal Audit/Notification/Outbox/Configuration enabled.
-- Authenticated PROD-local smoke returns `PROD_LOCAL_SMOKE_PASS` on the primary device `trabajo` for CRM, Financiero, HistoriasPaolin and Talento Humano. `MarketingIndo` is synchronized only when available.
-- Financiero JWT environment parity is merged in `f04d9783ca7dab6f852cb56f8d6110083da1931f`; 145/145 API tests passed and PR #68 CI succeeded.
-- AppTTHH JWT environment parity is merged in `b9d4420d123973bc6896cd8aa0dd38f5a90bd0b2`.
-- Closure: `docs/releases/portal-prod-local-runtime-closure.md`.
-
-## Integrated Modules
-
-- Portal Core APIs and Angular Shell.
-- CRM via `/api/crm/**`.
-- Financiero via `/api/financial/**`.
-- HistoriasPaolin via `/api/historiaspaolin/**`.
-- Talento Humano via `/api/hr/**`.
-
-## Completed Gates
-
-`DockerDesktopLocalRuntimeLifecycleHardening = COMPLETE`
-
-`DockerDesktopLocalRuntimeBackupRecovery = COMPLETE`
-
-`DockerDesktopLocalRuntimeMaintenanceAutomation = COMPLETE`
-
-`DockerDesktopLocalRuntimeDriftDetection = COMPLETE`
-
-`DockerDesktopLocalRuntimeSynchronizationPackage = COMPLETE`
-
-`PortalIntegratedFunctionalGapReview = COMPLETE`
-
-The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo`; and the first functional gap review closed frontend quality placeholders plus current-state documentation drift.
+- Initial npm audit: 61 findings (6 low, 26 moderate, 28 high, 1 critical).
+- After non-breaking `npm audit fix`: 55 findings (6 low, 23 moderate, 25 high, 1 critical).
+- Production dependencies only: 8 findings (5 moderate, 3 high, 0 critical).
+- Remaining findings require semver-major Angular / CLI / build-tooling changes according to npm.
+- No `--force` or unvalidated breaking upgrade was applied.
+- Frontend shell tests: 8/8 PASS.
+- Frontend lint: PASS.
+- Frontend production build: PASS.
+- Docker `portal-web` rebuild: PASS.
+- Authenticated PROD-local smoke: PASS.
+- Drift check: PASS.
+- Runtime verify: PASS.
+- Maintenance scan: PASS; integrated containers remain at zero restarts.
 
 ## Next Gate
 
-`PortalFrontendQualityCoverageExpansion`
+`PortalAngularSecurityMajorUpgrade`
 
-Expand real frontend quality coverage on `trabajo`: shell module catalog contract, gateway-route uniqueness, template accessibility invariants, environment/API-base contract and regression checks for forbidden browser token persistence. Keep the suite dependency-light and CI-friendly. External/cloud activation is not required.
+Execute an evidence-driven Angular security migration on a dedicated branch. Determine the lowest supported Angular major/patch line that clears the production Angular advisories and materially reduces build-tool findings. Upgrade incrementally using Angular migrations, never `npm audit fix --force`. After each supported migration step run shell tests, lint, production build and audit. Only keep a step if all gates pass.
+
+Then rebuild `portal-web`, rerun authenticated PROD-local smoke, drift, runtime verify and maintenance, and refresh the synchronization baseline.
 
 ## Guardrails
 
@@ -72,7 +45,9 @@ Expand real frontend quality coverage on `trabajo`: shell module catalog contrac
 - Keep CRM/Financial databases bounded by their own contexts; no direct cross-domain DB coupling.
 - Use the Portal Gateway as the host-facing API boundary.
 - Do not persist browser access tokens.
+- Do not change cloud deployment; Docker Desktop on `trabajo` remains the primary runtime.
+- `MarketingIndo` synchronization remains deferred until the device is online.
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` by expanding frontend quality coverage around the integrated shell and Gateway-facing module contract. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.
+Close the frontend security gate with the lowest validated major upgrade that removes the production Angular advisories without regressing Portal behavior. Document any residual development-tool-only findings separately from runtime exposure.
