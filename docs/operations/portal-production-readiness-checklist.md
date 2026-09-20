@@ -16,7 +16,7 @@ This checklist is prepared for future use and does not approve production deploy
 - Health, live and ready endpoints validated in controlled runtime.
 - Smoke tests executed against controlled non-production environment.
 - API Gateway authorization policy reviewed for every route.
-- CRM, Financiero, HistoriasPaolin and Talento Humano external module routes remain disabled unless separately approved.
+- CRM, Financiero, HistoriasPaolin and Talento Humano are active only in the validated local PROD runtime behind the Portal Gateway; any external/cloud production activation remains disabled unless separately approved.
 - SQL Server, Redis, MinIO and Seq ownership documented.
 - Backup, restore, rollback and recovery drills completed.
 - Observability dashboard and alert ownership assigned.

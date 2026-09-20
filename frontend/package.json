@@ -5,8 +5,8 @@
   "scripts": {
     "build": "ng build --configuration production",
     "start": "ng serve --configuration development",
-    "test": "node ./tools/frontend-test-placeholder.mjs",
-    "lint": "node ./tools/frontend-lint-placeholder.mjs"
+    "test": "node --test ./tools/shell-contract.test.mjs",
+    "lint": "tsc -p tsconfig.app.json --noEmit && node ./tools/frontend-lint.mjs"
   },
   "dependencies": {
     "@angular/animations": "18.2.13",
