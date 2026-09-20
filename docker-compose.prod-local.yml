@@ -248,7 +248,7 @@ services:
       dockerfile: Dockerfile.prod
     restart: unless-stopped
     ports:
-      - "${PORTAL_WEB_PORT:-4200}:80"
+      - "127.0.0.1:${PORTAL_WEB_PORT:-4200}:80"
     depends_on:
       api-gateway:
         condition: service_healthy
