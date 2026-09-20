@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: Portal integrated functional gap review.
+Title: Portal frontend quality coverage expansion.
 
 Status: COMPLETE on `trabajo`. `MarketingIndo` remains deferred and never blocks implementation.
 
-Objective: identify unresolved functional/integration gaps, distinguish real defects from intentional external-production guardrails, and implement safe high-priority fixes.
+Objective: expand real frontend regression coverage around the integrated shell and remove duplicated readiness state.
 
-Evidence: frontend placeholder test/lint scripts replaced with real Node contract tests, TypeScript no-emit validation and policy lint; 4/4 tests pass; production build passes; current PROD-local integration documentation aligned with CRM, Financiero, HistoriasPaolin and Talento Humano active behind the Gateway; gap review documented in `docs/roadmap/portal-functional-gap-review-2026-09-19.md`.
+Evidence: shell contract suite expanded to 8/8 passing tests covering integrated domain routes, route uniqueness, `/api` boundary, environment contract, production readiness, output hashing, accessibility invariants and browser token persistence guardrails; Angular production build and TypeScript/policy lint pass; `environment.shellReadiness` is now the single source of truth; `portal-web` rebuilt in Docker Desktop and PROD-local maintenance/drift/smoke all pass.
 
-Guardrail: Integration transport, real notification providers, production OIDC/SSO, real SRI transmission and cloud activation remain disabled intentionally.
+Guardrail: no external/cloud provider activation was introduced; real SRI, OIDC/SSO, external notifications and integration transport remain disabled.

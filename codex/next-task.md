@@ -57,13 +57,15 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `PortalIntegratedFunctionalGapReview = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo`; and the first functional gap review closed frontend quality placeholders plus current-state documentation drift.
+`PortalFrontendQualityCoverageExpansion = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo`; the first functional gap review closed frontend quality placeholders and documentation drift; and the shell now has 8 real regression tests plus a single environment-driven readiness contract.
 
 ## Next Gate
 
-`PortalFrontendQualityCoverageExpansion`
+`PortalFrontendDependencyVulnerabilityRemediation`
 
-Expand real frontend quality coverage on `trabajo`: shell module catalog contract, gateway-route uniqueness, template accessibility invariants, environment/API-base contract and regression checks for forbidden browser token persistence. Keep the suite dependency-light and CI-friendly. External/cloud activation is not required.
+Analyze the npm audit findings observed during the Docker frontend rebuild on `trabajo` (61 vulnerabilities: 6 low, 26 moderate, 28 high, 1 critical). Identify direct/transitive root causes, apply only non-breaking remediation first, rerun build/test/lint and Docker rebuild, then refresh drift/synchronization baselines. Do not use forced/breaking upgrades without evidence.
 
 ## Guardrails
 
@@ -75,4 +77,4 @@ Expand real frontend quality coverage on `trabajo`: shell module catalog contrac
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` by expanding frontend quality coverage around the integrated shell and Gateway-facing module contract. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` with evidence-driven remediation of frontend npm vulnerabilities, preferring non-breaking fixes and preserving the passing shell contract. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.

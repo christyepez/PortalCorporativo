@@ -16,7 +16,7 @@ interface ShellModule {
 })
 export class AppComponent {
   protected readonly title = 'Portal Corporativo';
-  protected readonly readiness = 'LocalProductionIntegratedShell';
+  protected readonly readiness = environment.shellReadiness;
   protected readonly apiBasePath = environment.apiBasePath;
   protected readonly modules: ShellModule[] = [
     { label: 'Security', status: 'Portal Core', enabled: true, gatewayPath: '/api/security' },
