@@ -1,11 +1,13 @@
 # Current Codex Task
 
-Title: Portal frontend quality coverage expansion.
+Title: Portal frontend dependency vulnerability remediation.
 
-Status: COMPLETE on `trabajo`. `MarketingIndo` remains deferred and never blocks implementation.
+Status: NON-BREAKING REMEDIATION COMPLETE on `trabajo`. `MarketingIndo` remains deferred and never blocks implementation.
 
-Objective: expand real frontend regression coverage around the integrated shell and remove duplicated readiness state.
+Objective: reduce npm audit exposure without forcing a major Angular upgrade, then prove the PROD-local runtime remains stable.
 
-Evidence: shell contract suite expanded to 8/8 passing tests covering integrated domain routes, route uniqueness, `/api` boundary, environment contract, production readiness, output hashing, accessibility invariants and browser token persistence guardrails; Angular production build and TypeScript/policy lint pass; `environment.shellReadiness` is now the single source of truth; `portal-web` rebuilt in Docker Desktop and PROD-local maintenance/drift/smoke all pass.
+Evidence: npm audit reduced from 61 to 55 total findings after compatible lockfile remediation; production dependency audit is 8 findings (5 moderate, 3 high, 0 critical). Shell contract tests remain 8/8 PASS, TypeScript/policy lint PASS, Angular production build PASS, Docker `portal-web` rebuild PASS, authenticated PROD-local smoke PASS, drift PASS, runtime verify PASS and maintenance PASS with zero restarts.
 
-Guardrail: no external/cloud provider activation was introduced; real SRI, OIDC/SSO, external notifications and integration transport remain disabled.
+Decision: no `npm audit fix --force` was used. Remaining findings are rooted in Angular 18 / CLI / build-tooling dependency lines and npm proposes semver-major upgrades.
+
+Guardrail: preserve Gateway boundaries, local-production operation and browser-token persistence protections. Real SRI, OIDC/SSO, external notifications and integration transport remain disabled.
