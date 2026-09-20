@@ -1,0 +1,68 @@
+﻿{
+    "SchemaVersion":  1,
+    "SourceRuntime":  "trabajo",
+    "PortalBranch":  "main",
+    "BaselineFile":  "config/prod-local-baseline.json",
+    "BaselineSha256":  "420106557C96B6AE1472E4C87997123C8DED245870A99271C71282380D93AA28",
+    "RequiredLocalFiles":  [
+                               ".env.portal.local"
+                           ],
+    "RequiredEnvironmentNames":  [
+                                     "JWT_SECRET",
+                                     "MINIO_ROOT_PASSWORD",
+                                     "MINIO_ROOT_USER",
+                                     "REDIS_PASSWORD",
+                                     "SQLSERVER_SA_PASSWORD"
+                                 ],
+    "Repositories":  [
+                         {
+                             "Name":  "CRM",
+                             "RelativePath":  "../CRM",
+                             "Branch":  "main",
+                             "Revision":  "5b2a4f7445cc16b8bcb670160132a61fa84c1358"
+                         },
+                         {
+                             "Name":  "Financiero",
+                             "RelativePath":  "../Financiero",
+                             "Branch":  "main",
+                             "Revision":  "00c2532475bd3aa769a7305197e9ad1528cfecec"
+                         },
+                         {
+                             "Name":  "AppTTHH",
+                             "RelativePath":  "../AppTTHH",
+                             "Branch":  "main",
+                             "Revision":  "2e09ec18f0aa358065ac842f9463ca9f82a7bc36"
+                         },
+                         {
+                             "Name":  "HistoriasPaolin",
+                             "RelativePath":  "../HistoriasPaolin_PORTAL_PROD",
+                             "Branch":  "feature/bootstrap-agents-sprints",
+                             "Revision":  "9fc076068c5e91372d33620f0bc0898875faac85"
+                         }
+                     ],
+    "ExpectedServices":  [
+                             "api-gateway",
+                             "audit-api",
+                             "catalog-api",
+                             "configuration-api",
+                             "content-api",
+                             "crm-api",
+                             "financial-api",
+                             "historiaspaolin-api",
+                             "historiaspaolin-migrations",
+                             "historiaspaolin-worker",
+                             "hr-api",
+                             "integration-api",
+                             "integration-worker",
+                             "menu-api",
+                             "minio",
+                             "notification-api",
+                             "notification-worker",
+                             "portal-web",
+                             "redis",
+                             "reporting-api",
+                             "security-api",
+                             "seq",
+                             "sqlserver"
+                         ]
+}
