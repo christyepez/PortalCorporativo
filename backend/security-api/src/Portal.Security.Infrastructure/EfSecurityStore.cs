@@ -55,6 +55,18 @@ public sealed class EfSecurityStore(SecurityDbContext dbContext) : ISecurityStor
                where userRole.TenantId == tenantId && userRole.UserId == userId
                select permission).Distinct().ToArrayAsync(cancellationToken);
 
+    public async Task<IReadOnlyCollection<User>> ListUsersAsync(string tenantId, CancellationToken cancellationToken) =>
+        await dbContext.Users.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Role>> ListRolesAsync(string tenantId, CancellationToken cancellationToken) =>
+        await dbContext.Roles.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Permission>> ListPermissionsAsync(string tenantId, CancellationToken cancellationToken) =>
+        await dbContext.Permissions.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Code).ToArrayAsync(cancellationToken);
+
+    public async Task<IReadOnlyCollection<Resource>> ListResourcesAsync(string tenantId, CancellationToken cancellationToken) =>
+        await dbContext.Resources.AsNoTracking().Where(x => x.TenantId == tenantId).OrderBy(x => x.Name).ToArrayAsync(cancellationToken);
+
     public Task AddAsync<T>(T entity, CancellationToken cancellationToken) where T : class =>
         dbContext.Set<T>().AddAsync(entity, cancellationToken).AsTask();
 

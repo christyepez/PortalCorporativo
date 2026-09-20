@@ -1,83 +1,203 @@
-<main class="shell">
-  <header class="shell__header">
-    <div>
-      <p class="eyebrow">Local Production Integrated Shell</p>
-      <h1>{{ title }}</h1>
+<main class="portal">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__mark">PC</div>
+      <div>
+        <p class="eyebrow">Administración central</p>
+        <h1>{{ title }}</h1>
+      </div>
     </div>
-    <span class="status">{{ readiness }}</span>
+    <div class="topbar__meta">
+      <span class="tenant">Tenant: {{ currentTenant }}</span>
+      <span class="status">{{ readiness }}</span>
+    </div>
   </header>
 
-  <section class="shell__body">
-    <aside class="shell__sidebar" aria-label="Portal shell modules">
-      <h2>Portal</h2>
-      <nav>
-        @for (module of modules; track module.label) {
-          <button
-            type="button"
-            [class.disabled]="!module.enabled"
-            [class.active]="selectedModule.label === module.label"
-            [disabled]="!module.enabled"
-            [attr.aria-current]="selectedModule.label === module.label ? 'page' : null"
-            (click)="selectModule(module)">
-            <span>{{ module.label }}</span>
-            <small>{{ module.status }}</small>
-            <small>{{ module.gatewayPath }}</small>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Portal shell modules">
+      <div class="sidebar__title">Administración</div>
+      <nav class="sidebar__nav">
+        @for (item of navigation; track item.id) {
+          <button type="button"
+                  [class.active]="activeSection === item.id"
+                  (click)="selectSection(item.id)">
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-copy">
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.description }}</small>
+            </span>
           </button>
         }
       </nav>
     </aside>
 
-    <section class="shell__content" aria-label="Portal shell content">
-      <p class="eyebrow">Sprints 23-27 · Local PROD integration</p>
-      <h2>Portal único con módulos integrados detrás del Gateway</h2>
-      <p>
-        Portal Core, CRM, Financiero, Talento Humano e HistoriasPaolin comparten una única entrada HTTP mediante el API Gateway.
-        CRM, Financiero y Talento Humano no exponen su API directamente al host en el orquestador PROD local.
-      </p>
+    <section class="content" aria-label="Portal shell content">      @if (activeSection === 'dashboard') {
+        <section class="hero">
+          <div>
+            <p class="eyebrow">Portal administrativo único</p>
+            <h2>Gobierno y operación de todas las aplicaciones</h2>
+            <p>Portal único con módulos integrados detrás del Gateway. Desde aquí se centralizan seguridad, parámetros, menús, catálogos, auditoría y acceso a las aplicaciones.</p>
+          </div>
+          <button class="primary" type="button" (click)="selectSection('applications')">Ver aplicaciones</button>
+        </section>
 
-      <section class="module-panel" aria-live="polite">
-        <div>
-          <p class="eyebrow">Módulo seleccionado</p>
-          <h3>{{ selectedModule.label }}</h3>
-          <p>{{ selectedModule.status }}</p>
-        </div>
-        <div class="module-panel__details">
-          <span><strong>Gateway</strong> {{ selectedModule.gatewayPath }}</span>
-          <span><strong>Probe</strong> {{ selectedModule.probePath }}</span>
-          <span>
-            <strong>Estado</strong>
-            @switch (moduleProbeState) {
-              @case ('checking') { Verificando… }
-              @case ('available') { Disponible }
-              @case ('protected') { Disponible · protegido por autorización }
-              @case ('unavailable') { No disponible }
-              @default { Selecciona el módulo para validar disponibilidad }
-            }
-            @if (moduleProbeStatus) {
-              (HTTP {{ moduleProbeStatus }})
-            }
-          </span>
-        </div>
-      </section>
+        <section class="metrics">
+          <article><strong>{{ applications.length }}</strong><span>Aplicaciones registradas</span></article>
+          <article><strong>8</strong><span>Servicios transversales</span></article>
+          <article><strong>{{ modules.length }}</strong><span>Módulos vía Gateway</span></article>
+          <article><strong>Local</strong><span>Entorno activo</span></article>
+        </section>
 
-      <div class="card-grid">
-        <article>
-          <strong>API base</strong>
-          <span>{{ apiBasePath }}</span>
-        </article>
-        <article>
-          <strong>Autorización</strong>
-          <span>JWT común Portal; los módulos reciben el mismo bearer token y correlation ID.</span>
-        </article>
-        <article>
-          <strong>Runtime</strong>
-          <span>ASPNETCORE_ENVIRONMENT=Production sobre Docker local; integraciones externas reales permanecen deshabilitadas.</span>
-        </article>
-      </div>
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Acceso rápido</p><h3>Aplicaciones</h3></div>
+          </div>
+          <div class="application-grid">
+            @for (app of applications; track app.code) {
+              <article class="application-card">
+                <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
+                <div><h4>{{ app.name }}</h4><p>{{ app.description }}</p></div>
+                <div class="application-card__footer">
+                  <span class="pill">{{ app.status }}</span>
+                  @if (app.port) {
+                    <button type="button" class="link-button" (click)="openApplication(app)">Abrir</button>
+                  } @else {
+                    <span class="muted">Gateway</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }      @if (activeSection === 'applications') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
+            <button type="button" class="secondary">Registrar aplicación</button>
+          </div>
+          <p class="lead">Cada aplicación conserva su dominio funcional, mientras Portal Corporativo administra los servicios transversales.</p>
+          <div class="application-grid application-grid--wide">
+            @for (app of applications; track app.code) {
+              <article class="application-card">
+                <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
+                <div>
+                  <span class="code">{{ app.code }}</span>
+                  <h4>{{ app.name }}</h4>
+                  <p>{{ app.description }}</p>
+                </div>
+                <div class="application-card__footer">
+                  <span class="pill">{{ app.status }}</span>
+                  @if (app.port) {
+                    <button type="button" class="primary compact" (click)="openApplication(app)">Abrir aplicación</button>
+                  } @else {
+                    <span class="muted">{{ app.path }}</span>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeSection === 'security') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Seguridad centralizada</p><h2>Usuarios, roles y permisos</h2></div>
+            <button type="button" class="primary">Nuevo usuario</button>
+          </div>
+          <div class="admin-tabs"><button class="active" type="button">Usuarios</button><button type="button">Roles</button><button type="button">Permisos</button><button type="button">Recursos</button></div>
+          <div class="empty-state">
+            <div class="empty-state__icon">◉</div>
+            <h3>Administración de identidad y acceso</h3>
+            <p>El backend ya permite crear usuarios, roles, permisos, recursos y asignaciones. Se está completando el listado administrativo para operar estas entidades desde esta pantalla.</p>
+            <span class="pill pill--warning">Contrato de consulta en ampliación</span>
+          </div>
+        </section>
+      }      @if (activeSection === 'menus') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Navegación dinámica</p><h2>Menús por aplicación</h2></div>
+            <button type="button" class="primary">Nuevo elemento</button>
+          </div>
+          <div class="toolbar"><label>Aplicación<select><option>Portal Corporativo</option><option>Conjunto al Día</option><option>CRM</option><option>Financiero</option></select></label></div>
+          <div class="table-card">
+            <div class="table-row table-row--header"><span>Orden</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Estado</span></div>
+            <div class="table-row"><span>1</span><strong>Inicio</strong><span>/</span><span>portal.read</span><span class="pill">Activo</span></div>
+            <div class="table-row"><span>2</span><strong>Administración</strong><span>/admin</span><span>portal.admin</span><span class="pill">Activo</span></div>
+          </div>
+        </section>
+      }
+
+      @if (activeSection === 'configuration') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Configuración funcional</p><h2>Parámetros del sistema</h2></div>
+            <button type="button" class="primary">Nuevo parámetro</button>
+          </div>
+          <div class="toolbar">
+            <label>Ámbito<select><option>Global</option><option>Aplicación</option><option>Tenant</option><option>Usuario</option></select></label>
+            <label>Aplicación<select><option>Todas</option><option>Conjunto al Día</option><option>CRM</option></select></label>
+            <label>Buscar<input type="search" placeholder="Clave o descripción"></label>
+          </div>
+          <div class="empty-state compact-state"><h3>Parámetros centralizados</h3><p>Los valores efectivos se resuelven por ámbito y aplicación mediante Configuration API.</p></div>
+        </section>
+      }      @if (activeSection === 'catalogs') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Datos maestros</p><h2>Catálogos</h2></div>
+            <button type="button" class="primary">Nuevo valor</button>
+          </div>
+          <div class="toolbar"><label>Catálogo<select><option>Todos</option><option>Estados</option><option>Categorías</option><option>Tipos</option></select></label><label>Buscar<input type="search" placeholder="Código o nombre"></label></div>
+          <div class="empty-state compact-state"><h3>Catálogos reutilizables</h3><p>Catálogos y valores compartidos por las aplicaciones sin duplicar lógica en cada sistema.</p></div>
+        </section>
+      }
+
+      @if (activeSection === 'audit') {
+        <section class="section-block">
+          <div class="section-heading"><div><p class="eyebrow">Trazabilidad</p><h2>Auditoría</h2></div><button type="button" class="secondary">Exportar</button></div>
+          <div class="toolbar"><label>Aplicación<select><option>Todas</option><option>Portal</option><option>Conjunto al Día</option></select></label><label>Evento<input type="search" placeholder="Acción, usuario o recurso"></label></div>
+          <div class="empty-state compact-state"><h3>Eventos centralizados</h3><p>Consulta de operaciones, cambios de configuración, accesos y acciones administrativas.</p></div>
+        </section>
+      }      @if (activeSection === 'operations') {
+        <section class="section-block">
+          <div class="section-heading"><div><p class="eyebrow">Operación local</p><h2>Estado de servicios</h2></div></div>
+          <p class="lead">CRM, Financiero, Talento Humano e HistoriasPaolin comparten una única entrada HTTP mediante el API Gateway.</p>
+          <div class="service-grid">
+            @for (module of modules; track module.label) {
+              <button type="button"
+                      [class.disabled]="!module.enabled"
+                      [class.active]="selectedModule.label === module.label"
+                      [disabled]="!module.enabled"
+                      [attr.aria-current]="selectedModule.label === module.label ? 'page' : null"
+                      (click)="selectModule(module)">
+                <strong>{{ module.label }}</strong>
+                <span>{{ module.status }}</span>
+                <small>{{ module.gatewayPath }}</small>
+              </button>
+            }
+          </div>
+
+          <section class="module-panel" aria-live="polite">
+            <div><p class="eyebrow">Módulo seleccionado</p><h3>{{ selectedModule.label }}</h3><p>{{ selectedModule.status }}</p></div>
+            <div class="module-panel__details">
+              <span><strong>Gateway</strong> {{ selectedModule.gatewayPath }}</span>
+              <span><strong>Probe</strong> {{ selectedModule.probePath }}</span>
+              <span><strong>Estado</strong>
+                @switch (moduleProbeState) {
+                  @case ('checking') { Verificando… }
+                  @case ('available') { Disponible }
+                  @case ('protected') { Disponible · protegido por autorización }
+                  @case ('unavailable') { No disponible }
+                  @default { Selecciona el módulo para validar disponibilidad }
+                }
+                @if (moduleProbeStatus) { (HTTP {{ moduleProbeStatus }}) }
+              </span>
+            </div>
+          </section>
+        </section>
+      }
     </section>
-  </section>
+  </div>
 
-  <footer class="shell__footer">
-    Portal · CRM · Financiero · Talento Humano · HistoriasPaolin · PROD local
-  </footer>
+  <footer class="footer">Portal · CRM · Financiero · Talento Humano · HistoriasPaolin · PROD local · API base {{ apiBasePath }}</footer>
 </main>

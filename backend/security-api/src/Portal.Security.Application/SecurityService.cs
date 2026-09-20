@@ -136,6 +136,18 @@ public sealed class SecurityService(ISecurityStore store)
         return Result<UserPermissionsResponse>.Success(new UserPermissionsResponse(userId, permissions.Select(x => x.Code).Distinct().Order().ToArray()));
     }
 
+    public async Task<IReadOnlyCollection<UserResponse>> ListUsersAsync(CancellationToken cancellationToken) =>
+        (await store.ListUsersAsync(TenantIds.Default, cancellationToken)).Select(ToResponse).ToArray();
+
+    public async Task<IReadOnlyCollection<RoleResponse>> ListRolesAsync(CancellationToken cancellationToken) =>
+        (await store.ListRolesAsync(TenantIds.Default, cancellationToken)).Select(x => new RoleResponse(x.Id, x.TenantId, x.Name)).ToArray();
+
+    public async Task<IReadOnlyCollection<PermissionResponse>> ListPermissionsAsync(CancellationToken cancellationToken) =>
+        (await store.ListPermissionsAsync(TenantIds.Default, cancellationToken)).Select(ToResponse).ToArray();
+
+    public async Task<IReadOnlyCollection<ResourceResponse>> ListResourcesAsync(CancellationToken cancellationToken) =>
+        (await store.ListResourcesAsync(TenantIds.Default, cancellationToken)).Select(x => new ResourceResponse(x.Id, x.TenantId, x.Key, x.Name)).ToArray();
+
     private static Result<T> Invalid<T>(ArgumentException exception) =>
         Result<T>.Failure("validation.invalid", exception.Message);
 

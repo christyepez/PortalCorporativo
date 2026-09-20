@@ -12,10 +12,14 @@ public static class SecurityEndpoints
 
         group.MapPost("/users", async (CreateUserRequest request, SecurityService service, HttpContext context, CancellationToken ct) =>
             Response(context, await service.CreateUserAsync(request, ct), StatusCodes.Status201Created));
+        group.MapGet("/users", async (SecurityService service, CancellationToken ct) => Results.Ok(await service.ListUsersAsync(ct)));
         group.MapGet("/users/{id:guid}", async (Guid id, SecurityService service, HttpContext context, CancellationToken ct) =>
             Response(context, await service.GetUserAsync(id, ct)));
         group.MapPost("/roles", async (CreateRoleRequest request, SecurityService service, HttpContext context, CancellationToken ct) =>
             Response(context, await service.CreateRoleAsync(request, ct), StatusCodes.Status201Created));
+        group.MapGet("/roles", async (SecurityService service, CancellationToken ct) => Results.Ok(await service.ListRolesAsync(ct)));
+        group.MapGet("/permissions", async (SecurityService service, CancellationToken ct) => Results.Ok(await service.ListPermissionsAsync(ct)));
+        group.MapGet("/resources", async (SecurityService service, CancellationToken ct) => Results.Ok(await service.ListResourcesAsync(ct)));
         group.MapPost("/permissions", async (CreatePermissionRequest request, SecurityService service, HttpContext context, CancellationToken ct) =>
             Response(context, await service.CreatePermissionAsync(request, ct), StatusCodes.Status201Created));
         group.MapPost("/resources", async (RegisterProtectedResourceRequest request, SecurityService service, HttpContext context, CancellationToken ct) =>
