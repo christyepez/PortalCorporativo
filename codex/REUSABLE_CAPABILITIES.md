@@ -63,12 +63,12 @@ BLOCKED = no implementar hasta revisar portal o resolver una decisión.
 | API Gateway | Foundation lista | REUSE |
 | Workers | Foundation lista | EXTEND |
 | Health/logging/correlationId | Foundation lista | REUSE |
-| Catalog API | Pendiente | BLOCKED hasta Sprint 2 |
-| Content/File API | Pendiente | BLOCKED hasta Sprint 2 |
-| Reporting API | Pendiente | BLOCKED hasta Sprint 2 |
-| Integration API productiva | Pendiente | BLOCKED hasta contrato/transporte |
-| Portal Angular Shell | Pendiente | BLOCKED hasta Sprint 2 |
-| IdP productivo | Pendiente | BLOCKED para login productivo |
+| Catalog API | Integrada en PROD-local | REUSE/EXTEND |
+| Content/File API | Integrada en PROD-local | ADAPT/EXTEND |
+| Reporting API | Integrada en PROD-local | REUSE/EXTEND |
+| Integration API | Integrada en PROD-local | ADAPT/EXTEND |
+| Portal Angular Shell | Integrado en PROD-local, Angular 20 | REUSE/EXTEND |
+| IdP productivo | Activación explícita pendiente | BLOCKED para login productivo real |
 
 ## Estado de Security API
 
