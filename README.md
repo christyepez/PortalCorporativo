@@ -91,6 +91,16 @@ Detección de drift local:
 
 La baseline versionada contiene únicamente metadatos no sensibles (SHA de repositorios, hashes de Compose, nombres de variables requeridas, servicios e identidades de imágenes). El mantenimiento diario ejecuta el drift check automáticamente cuando existe la baseline. Ver `docs/operations/prod-local-drift-detection.md`.
 
+Paquete de sincronización diferida:
+
+```powershell
+./scripts/local/prod-local-sync-package.ps1
+./scripts/local/prod-local-sync-preflight.ps1
+./scripts/local/prod-local-sync-apply.ps1 -Apply -WhatIf
+```
+
+El paquete permite preparar y validar una futura sincronización de `MarketingIndo` sin que ese equipo deba estar conectado. La aplicación real exige `-Apply`, repositorios limpios y sólo permite fast-forward; ver `docs/operations/prod-local-synchronization.md`.
+
 ## Consumo desde dominios
 
 Financiero, CRM, HistoriasPaolin, Talento Humano y futuros dominios pasan por Gateway, registran sus recursos/permisos y extienden Menu/Configuration. Adaptan Audit/Notification y mantienen sus datos de dominio en sus propias bases. Nunca consultan bases internas del Portal ni duplican identidad, autorización, menús, configuración, auditoría o notificaciones.

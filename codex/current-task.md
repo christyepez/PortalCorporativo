@@ -1,11 +1,11 @@
 # Current Codex Task
 
-Title: Docker Desktop PROD-local drift detection.
+Title: Docker Desktop PROD-local synchronization package.
 
 Status: COMPLETE on `trabajo`. `MarketingIndo` remains deferred and never blocks implementation.
 
-Objective: detect configuration/runtime drift using a reusable non-secret baseline for external repository revisions, Compose hashes, required environment variable names, service topology and runtime image identities.
+Objective: prepare a non-secret, reusable synchronization package and safe preflight/application flow so `MarketingIndo` can later align with the authoritative `trabajo` runtime.
 
-Evidence: baseline created in `config/prod-local-baseline.json`; drift check returned `PORTAL_PROD_LOCAL_DRIFT_CHECK_PASS`; the daily maintenance command now includes drift detection and returned `PORTAL_PROD_LOCAL_MAINTENANCE_PASS`, `PORTAL_PROD_LOCAL_VERIFY_PASS` and `PROD_LOCAL_SMOKE_PASS` with zero restarts.
+Evidence: package generated in `config/prod-local-sync-package.json`; local target preflight returned `PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS`; package records exact external repo revisions, required local file/env names, baseline hash and expected services; apply flow is guarded by `-Apply`, requires clean repositories and allows only fast-forward operations.
 
-Guardrail: no environment values are stored, Portal self-revision is neutralized to avoid false drift after each PR, and execution remains local on Docker Desktop.
+Guardrail: no secret values or backup payloads are included; no reset/force Git operation is used; `MarketingIndo` is not required to be online until synchronization is actually executed.

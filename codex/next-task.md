@@ -53,13 +53,15 @@ The Portal functional foundation and the local Production-mode integrated runtim
 
 `DockerDesktopLocalRuntimeDriftDetection = COMPLETE`
 
-The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift in one command.
+`DockerDesktopLocalRuntimeSynchronizationPackage = COMPLETE`
+
+The local Docker Desktop lifecycle is hardened on `trabajo`; SQL backup/recovery is repeatable and verified; maintenance checks backup freshness/integrity, retention, disk space, runtime health and configuration drift; a non-secret synchronization package is ready for `MarketingIndo` when it becomes available.
 
 ## Next Gate
 
-`DockerDesktopLocalRuntimeSynchronizationPackage`
+`PortalIntegratedFunctionalGapReview`
 
-Build a synchronization package on `trabajo` for later use on `MarketingIndo`: repository revision manifest, required local file checklist, baseline comparison, non-secret preflight and synchronization commands. Do not require `MarketingIndo` to be online to complete this package. External/cloud activation is not required.
+Perform a repository-wide functional and integration gap review on `trabajo`: unresolved TODO/FIXME items, planned/disabled integrations, incomplete domain onboarding, placeholder providers, missing tests and documentation mismatches. Classify each gap by module and risk, then implement safe high-priority gaps without requiring `MarketingIndo`. External/cloud activation is not required.
 
 ## Guardrails
 
@@ -71,4 +73,4 @@ Build a synchronization package on `trabajo` for later use on `MarketingIndo`: r
 
 ## Closure Expected
 
-The PROD-local objective remains the active operating model. Continue on `trabajo` by preparing a non-secret synchronization package and preflight that can later be applied to `MarketingIndo` when it is available. Do not pause work when `MarketingIndo` is offline. Cloud deployment is outside the current execution path.
+The PROD-local objective remains the active operating model. Continue on `trabajo` with a functional/integration gap review and implement safe high-priority gaps. Do not pause work when `MarketingIndo` is offline; use the prepared synchronization package only when that device becomes available. Cloud deployment is outside the current execution path.
