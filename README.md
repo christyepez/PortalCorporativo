@@ -64,6 +64,14 @@ Smoke PROD-local integrado:
 
 El smoke valida Portal web, Gateway, las rutas protegidas de Security, Configuration, Menu, Audit, Notification, Catalog, Content, Integration y Reporting, además de CRM, Financiero, HistoriasPaolin y Talento Humano. Incluye endpoints públicos de readiness y endpoints protegidos con y sin JWT.
 
+E2E PROD-local de runtime:
+
+```powershell
+./scripts/e2e/prod-local-portal-e2e.ps1
+```
+
+El E2E valida el Shell Angular compilado, enforcement de permisos, capacidades Core y navegación/API hacia CRM, Financiero, HistoriasPaolin y Talento Humano a través del proxy del Portal Web y el Gateway.
+
 Backup y recuperación local:
 
 ```powershell
