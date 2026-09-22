@@ -37,13 +37,19 @@ public sealed class IntegrationDbContext(DbContextOptions<IntegrationDbContext> 
 
 public sealed class EfReliableMessageStore(IntegrationDbContext db) : IReliableMessageStore
 {
+    public Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct) =>
+        db.OutboxMessages.AsNoTracking().SingleOrDefaultAsync(x => x.MessageId == messageId, ct);
     public Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct) =>
         db.OutboxMessages.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.IdempotencyKey == key, ct);
     public Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct) =>
         db.InboxMessages.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Source == source && x.IdempotencyKey == key, ct);
     public async Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct) =>
-        await db.OutboxMessages.Where(x => (x.Status == MessageStatus.Pending || x.Status == MessageStatus.Failed)
-            && (x.NextRetryAtUtc == null || x.NextRetryAtUtc <= now)).OrderBy(x => x.CreatedAtUtc).Take(batchSize).ToArrayAsync(ct);
+        await db.OutboxMessages.Where(x =>
+            (x.Status == MessageStatus.Pending || x.Status == MessageStatus.Failed || x.Status == MessageStatus.Processing)
+            && (x.NextRetryAtUtc == null || x.NextRetryAtUtc <= now))
+            .OrderBy(x => x.CreatedAtUtc)
+            .Take(batchSize)
+            .ToArrayAsync(ct);
     public Task AddAsync<T>(T entity, CancellationToken ct) where T : class => db.Set<T>().AddAsync(entity, ct).AsTask();
     public Task SaveChangesAsync(CancellationToken ct) => db.SaveChangesAsync(ct);
 }

@@ -40,6 +40,11 @@ foreach ($file in $EnvFile) {
     $path = if ([IO.Path]::IsPathRooted($file)) { $file } else { Join-Path $root $file }
     if (-not (Test-Path -LiteralPath $path)) { throw "Environment file not found: $path" }
     $envArgs += @('--env-file',$path)
+    Get-Content -LiteralPath $path | ForEach-Object {
+        if ($_ -match '^[#\s]*$') { return }
+        $i = $_.IndexOf('=')
+        if ($i -gt 0) { [Environment]::SetEnvironmentVariable($_.Substring(0,$i).Trim(),$_.Substring($i+1).Trim(),'Process') }
+    }
 }
 $composeArgs = @('compose','-p','portalcorporativo') + $envArgs + @('-f',(Join-Path $root 'docker-compose.yml'),'-f',(Join-Path $root 'docker-compose.prod-local.yml'))
 $services = @(& docker @composeArgs config --services | Sort-Object -Unique)
@@ -67,5 +72,23 @@ $baseline = [ordered]@{
 $outputPath = if ([IO.Path]::IsPathRooted($Output)) { $Output } else { Join-Path $root $Output }
 $parent = Split-Path -Parent $outputPath
 New-Item -ItemType Directory -Path $parent -Force | Out-Null
-$baseline | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $outputPath -Encoding UTF8
+$json = $baseline | ConvertTo-Json -Depth 8
+$tempPath = "$outputPath.tmp-$PID"
+$json | Set-Content -LiteralPath $tempPath -Encoding UTF8
+try {
+    $written = $false
+    for ($attempt = 1; $attempt -le 8 -and -not $written; $attempt++) {
+        try {
+            Move-Item -LiteralPath $tempPath -Destination $outputPath -Force
+            $written = $true
+        }
+        catch {
+            if ($attempt -eq 8) { throw }
+            Start-Sleep -Milliseconds 250
+        }
+    }
+}
+finally {
+    Remove-Item -LiteralPath $tempPath -Force -ErrorAction SilentlyContinue
+}
 Write-Output "PORTAL_PROD_LOCAL_DRIFT_BASELINE_CREATED $outputPath"

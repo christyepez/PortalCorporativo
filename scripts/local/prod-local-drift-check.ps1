@@ -19,7 +19,11 @@ foreach ($file in $EnvFile) {
     Get-Content -LiteralPath $path | ForEach-Object {
         if ($_ -match '^[#\s]*$') { return }
         $i = $_.IndexOf('=')
-        if ($i -gt 0) { $envNames += $_.Substring(0,$i).Trim() }
+        if ($i -gt 0) {
+            $name = $_.Substring(0,$i).Trim()
+            $envNames += $name
+            [Environment]::SetEnvironmentVariable($name,$_.Substring($i+1).Trim(),'Process')
+        }
     }
 }
 foreach ($name in $baselineData.RequiredEnvironmentNames) {

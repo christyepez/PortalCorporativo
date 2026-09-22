@@ -109,6 +109,7 @@ $readPermissions = @(
     "portal.content.manage",
     "portal.reporting.read",
     "portal.integration.read",
+    "portal.integration.manage",
     "financial.*",
     "historiaspaolin.channels.view",
     "hr.employees.view"
@@ -176,6 +177,42 @@ if ($ExpectPersistedLifecycleData) {
 }
 Invoke-E2E "Reporting through Portal Web proxy" "$web/api/reporting/reports" @(200) $auth | Out-Null
 Invoke-E2E "Integration through Portal Web proxy" "$web/api/integration/inbox/processed?tenantId=default&source=e2e&idempotencyKey=$correlationId" @(200) $auth | Out-Null
+
+$outboxKey = "portal-e2e-$([Guid]::NewGuid().ToString('N'))"
+$outboxBody = @{
+    tenantId = "default"
+    aggregateType = "PortalE2E"
+    aggregateId = $outboxKey
+    eventType = "portal.e2e.local.v1"
+    payloadJson = (@{ idempotencyKey = $outboxKey; source = "PortalLocalE2E" } | ConvertTo-Json -Compress)
+    headersJson = $null
+    correlationId = $correlationId
+    causationId = $null
+    idempotencyKey = $outboxKey
+} | ConvertTo-Json -Compress -Depth 5
+
+$outboxFirst = Invoke-E2E "Enqueue local Outbox message" "$web/api/integration/outbox" @(202) $auth "POST" $outboxBody
+$outboxFirstPayload = $outboxFirst.Body | ConvertFrom-Json
+if ($outboxFirstPayload.data.duplicate -ne $false) { throw "First Outbox enqueue must not be marked duplicate." }
+
+$outboxDuplicate = Invoke-E2E "Repeat Outbox idempotency key" "$web/api/integration/outbox" @(202) $auth "POST" $outboxBody
+$outboxDuplicatePayload = $outboxDuplicate.Body | ConvertFrom-Json
+if ($outboxDuplicatePayload.data.duplicate -ne $true) { throw "Repeated Outbox enqueue must be marked duplicate." }
+if ($outboxDuplicatePayload.data.messageId -ne $outboxFirstPayload.data.messageId) { throw "Idempotent Outbox enqueue returned a different message id." }
+
+$outboxProcessed = $false
+for ($attempt = 1; $attempt -le 10; $attempt++) {
+    $outboxStatus = Invoke-E2E "Read local Outbox status attempt $attempt" "$web/api/integration/outbox/status?tenantId=default&idempotencyKey=$outboxKey" @(200) $auth
+    $outboxStatusPayload = $outboxStatus.Body | ConvertFrom-Json
+    if ($outboxStatusPayload.status -eq "Processed") {
+        $outboxProcessed = $true
+        if ([int]$outboxStatusPayload.attempts -ne 1) { throw "Local Outbox message must be published exactly once." }
+        break
+    }
+    Start-Sleep -Seconds 1
+}
+if (-not $outboxProcessed) { throw "Local Outbox message did not reach Processed state." }
+Write-Host "PASS Local Outbox idempotency and single publish -> $($outboxFirstPayload.data.messageId)"
 
 Invoke-E2E "CRM navigation/API through Portal Web" "$web/api/crm/readiness" @(200) $auth | Out-Null
 Invoke-E2E "Financiero navigation/API through Portal Web" "$web/api/financial/accounts" @(200) $auth | Out-Null
