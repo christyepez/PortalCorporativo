@@ -67,6 +67,20 @@ public sealed class MessagingTests
     }
 
     [Fact]
+    public async Task Outbox_status_query_reports_processed_message()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var registration = await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "status-key"), default);
+        await new OutboxProcessor(store, new Publisher(false), store.Clock).ProcessBatchAsync(10, 3, TimeSpan.FromSeconds(1), default);
+
+        var status = await service.GetOutboxStatusAsync(registration.Value!.MessageId, default);
+
+        Assert.NotNull(status);
+        Assert.Equal("Processed", status.Status);
+        Assert.Equal(1, status.Attempts);
+    }
+
+    [Fact]
     public async Task Outbox_retries_then_moves_to_dead_letter()
     {
         var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
@@ -77,6 +91,24 @@ public sealed class MessagingTests
         store.Clock.Now = store.Clock.Now.AddSeconds(2);
         await processor.ProcessBatchAsync(10, 2, TimeSpan.FromSeconds(1), default);
         Assert.Equal(MessageStatus.DeadLetter, store.Outbox.Single().Status);
+    }
+
+    [Fact]
+    public async Task Outbox_recovers_expired_processing_lease_after_worker_restart()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "lease-key"), default);
+        var message = store.Outbox.Single();
+        message.MarkProcessing(store.Clock.Now, TimeSpan.FromSeconds(1));
+        Assert.Equal(MessageStatus.Processing, message.Status);
+        Assert.Equal(1, message.Attempts);
+
+        store.Clock.Now = store.Clock.Now.AddSeconds(2);
+        await new OutboxProcessor(store, new Publisher(false), store.Clock)
+            .ProcessBatchAsync(10, 3, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), default);
+
+        Assert.Equal(MessageStatus.Processed, message.Status);
+        Assert.Equal(2, message.Attempts);
     }
 
     [Fact]
@@ -104,9 +136,10 @@ public sealed class MessagingTests
     private sealed class MemoryStore : IReliableMessageStore
     {
         public TestClock Clock { get; } = new(); public List<OutboxMessage> Outbox { get; } = []; public List<InboxMessage> Inbox { get; } = [];
+        public Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct) => Task.FromResult(Outbox.SingleOrDefault(x => x.MessageId == messageId));
         public Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct) => Task.FromResult(Outbox.SingleOrDefault(x => x.TenantId == tenantId && x.IdempotencyKey == key));
         public Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct) => Task.FromResult(Inbox.SingleOrDefault(x => x.TenantId == tenantId && x.Source == source && x.IdempotencyKey == key));
-        public Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct) => Task.FromResult<IReadOnlyCollection<OutboxMessage>>(Outbox.Where(x => (x.Status is MessageStatus.Pending or MessageStatus.Failed) && x.NextRetryAtUtc <= now).Take(batchSize).ToArray());
+        public Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct) => Task.FromResult<IReadOnlyCollection<OutboxMessage>>(Outbox.Where(x => (x.Status is MessageStatus.Pending or MessageStatus.Failed or MessageStatus.Processing) && x.NextRetryAtUtc <= now).Take(batchSize).ToArray());
         public Task AddAsync<T>(T entity, CancellationToken ct) where T : class { if (entity is OutboxMessage o) Outbox.Add(o); else if (entity is InboxMessage i) Inbox.Add(i); return Task.CompletedTask; }
         public Task SaveChangesAsync(CancellationToken ct) => Task.CompletedTask;
     }

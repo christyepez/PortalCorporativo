@@ -50,8 +50,13 @@ services:
   integration-worker:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      Worker__Enabled: "false"
-      Worker__Transport: Disabled
+      Worker__Enabled: "true"
+      Worker__Transport: LocalLog
+      Worker__PollIntervalSeconds: "1"
+      Worker__BatchSize: "50"
+      Worker__MaxAttempts: "5"
+      Worker__BaseRetrySeconds: "2"
+      Worker__ProcessingLeaseSeconds: "30"
 
   reporting-api:
     environment:

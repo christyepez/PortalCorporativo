@@ -9,7 +9,7 @@ builder.AddPortalFoundation("Portal.Integration.Worker");
 builder.Services.AddReliableMessaging(builder.Configuration);
 builder.Services.AddHealthChecks().AddDbContextCheck<IntegrationDbContext>("integration-db");
 builder.Services.Configure<OutboxWorkerOptions>(builder.Configuration.GetSection("Worker"));
-builder.Services.AddSingleton<IEventPublisher, DevelopmentLogPublisher>();
+builder.Services.AddSingleton<IEventPublisher, LocalLogPublisher>();
 builder.Services.AddScoped<OutboxProcessor>();
 builder.Services.AddHostedService<OutboxBackgroundWorker>();
 var app = builder.Build();

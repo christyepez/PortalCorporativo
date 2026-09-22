@@ -44,7 +44,16 @@ public sealed class OutboxMessage
         string payloadJson, string? headersJson, string correlationId, string? causationId, string? idempotencyKey, DateTimeOffset now) =>
         new(Guid.NewGuid(), tenantId, aggregateType, aggregateId, eventType, payloadJson, headersJson, correlationId, causationId, idempotencyKey, now);
 
-    public void MarkProcessing() { if (Status is not (MessageStatus.Pending or MessageStatus.Failed)) throw new InvalidOperationException("Message cannot be claimed."); Status = MessageStatus.Processing; Attempts++; }
+    public void MarkProcessing(DateTimeOffset now, TimeSpan lease)
+    {
+        if (lease <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(lease), "Processing lease must be positive.");
+        var canRecoverExpiredProcessing = Status == MessageStatus.Processing && NextRetryAtUtc is not null && NextRetryAtUtc <= now;
+        if (Status is not (MessageStatus.Pending or MessageStatus.Failed) && !canRecoverExpiredProcessing)
+            throw new InvalidOperationException("Message cannot be claimed.");
+        Status = MessageStatus.Processing;
+        Attempts++;
+        NextRetryAtUtc = now.Add(lease);
+    }
     public void MarkProcessed(DateTimeOffset now) { if (Status != MessageStatus.Processing) throw new InvalidOperationException("Message is not processing."); Status = MessageStatus.Processed; ProcessedAtUtc = now; NextRetryAtUtc = null; LastError = null; }
     public void MarkFailed(string error, DateTimeOffset now, int maxAttempts, TimeSpan retryDelay)
     {

@@ -11,6 +11,11 @@ foreach ($file in $EnvFile) {
     $path = if ([IO.Path]::IsPathRooted($file)) { $file } else { Join-Path $root $file }
     if (-not (Test-Path -LiteralPath $path)) { throw "Local environment file not found: $path" }
     $envArgs += @('--env-file', $path)
+    Get-Content -LiteralPath $path | ForEach-Object {
+        if ($_ -match '^[#\s]*$') { return }
+        $i = $_.IndexOf('=')
+        if ($i -gt 0) { [Environment]::SetEnvironmentVariable($_.Substring(0,$i).Trim(),$_.Substring($i+1).Trim(),'Process') }
+    }
 }
 
 $args = @('compose', '-p', 'portalcorporativo') + $envArgs + @(

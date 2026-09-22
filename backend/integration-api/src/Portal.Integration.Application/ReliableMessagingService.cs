@@ -6,6 +6,7 @@ namespace Portal.Integration.Application;
 
 public interface IReliableMessageStore
 {
+    Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct);
     Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct);
     Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct);
     Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct);
@@ -55,6 +56,28 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
         { return Result<MessageRegistrationResponse>.Failure("inbox.validation", e.Message); }
     }
 
+    public async Task<OutboxStatusResponse?> GetOutboxStatusAsync(string tenantId, string key, CancellationToken ct)
+    {
+        var message = await store.FindOutboxByIdempotencyKeyAsync(tenantId, key, ct);
+        return message is null ? null : new(
+            message.MessageId,
+            message.TenantId,
+            message.IdempotencyKey,
+            message.Status.ToString(),
+            message.Attempts,
+            message.CreatedAtUtc,
+            message.ProcessedAtUtc,
+            message.NextRetryAtUtc,
+            message.LastError);
+    }
+
+    public async Task<OutboxMessageStatusResponse?> GetOutboxStatusAsync(Guid messageId, CancellationToken ct)
+    {
+        var message = await store.FindOutboxAsync(messageId, ct);
+        return message is null ? null : new OutboxMessageStatusResponse(message.MessageId, message.TenantId, message.EventType,
+            message.Status.ToString(), message.Attempts, message.ProcessedAtUtc, message.LastError);
+    }
+
     public async Task<bool> CheckAlreadyProcessedAsync(string tenantId, string source, string key, CancellationToken ct) =>
         (await store.FindInboxAsync(tenantId, source, key, ct))?.Status == MessageStatus.Processed;
     public async Task MarkInboxProcessedAsync(InboxMessage message, CancellationToken ct) { message.MarkProcessed(clock.UtcNow); await store.SaveChangesAsync(ct); }
@@ -63,12 +86,15 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 
 public sealed class OutboxProcessor(IReliableMessageStore store, IEventPublisher publisher, IClock clock)
 {
-    public async Task<int> ProcessBatchAsync(int batchSize, int maxAttempts, TimeSpan baseDelay, CancellationToken ct)
+    public Task<int> ProcessBatchAsync(int batchSize, int maxAttempts, TimeSpan baseDelay, CancellationToken ct) =>
+        ProcessBatchAsync(batchSize, maxAttempts, baseDelay, TimeSpan.FromMinutes(1), ct);
+
+    public async Task<int> ProcessBatchAsync(int batchSize, int maxAttempts, TimeSpan baseDelay, TimeSpan processingLease, CancellationToken ct)
     {
         var messages = await store.GetPendingAsync(clock.UtcNow, Math.Clamp(batchSize, 1, 500), ct);
         foreach (var message in messages)
         {
-            message.MarkProcessing(); await store.SaveChangesAsync(ct);
+            message.MarkProcessing(clock.UtcNow, processingLease); await store.SaveChangesAsync(ct);
             try
             {
                 await publisher.PublishAsync(new(message.MessageId, message.TenantId, message.AggregateType, message.AggregateId,
