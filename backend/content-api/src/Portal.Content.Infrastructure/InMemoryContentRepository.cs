@@ -8,20 +8,20 @@ public sealed class InMemoryContentRepository : IContentRepository
 {
     private readonly ConcurrentDictionary<Guid, StoredContent> _items = new();
 
-    public Task<IReadOnlyCollection<ContentDocument>> ListAsync(string? moduleCode, bool? isActive, CancellationToken cancellationToken)
+    public Task<IReadOnlyCollection<ContentDocument>> ListAsync(string tenantId, string? moduleCode, bool? isActive, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        IEnumerable<StoredContent> query = _items.Values;
+        IEnumerable<StoredContent> query = _items.Values.Where(x => x.Document.TenantId == tenantId);
         if (!string.IsNullOrWhiteSpace(moduleCode)) query = query.Where(x => x.Document.ModuleCode.Equals(moduleCode.Trim(), StringComparison.OrdinalIgnoreCase));
         if (isActive.HasValue) query = query.Where(x => x.Document.IsActive == isActive.Value);
         return Task.FromResult<IReadOnlyCollection<ContentDocument>>(query.Select(x => x.Document).OrderByDescending(x => x.CreatedAt).ToArray());
     }
 
-    public Task<StoredContent?> GetAsync(Guid id, CancellationToken cancellationToken)
+    public Task<StoredContent?> GetAsync(string tenantId, Guid id, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         _items.TryGetValue(id, out var content);
-        return Task.FromResult(content);
+        return Task.FromResult(content is not null && content.Document.TenantId == tenantId ? content : null);
     }
 
     public Task AddAsync(StoredContent content, CancellationToken cancellationToken)

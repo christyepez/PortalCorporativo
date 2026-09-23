@@ -14,7 +14,10 @@ function ConvertTo-Base64Url([byte[]]$Bytes) {
 }
 
 function New-LocalJwt {
-    param([string[]]$Permissions)
+    param(
+        [string[]]$Permissions,
+        [string]$TenantId = ""
+    )
     $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     $header = @{ alg = "HS256"; typ = "JWT" } | ConvertTo-Json -Compress
     $payload = @{
@@ -26,7 +29,9 @@ function New-LocalJwt {
         exp = $now + 600
         jti = [Guid]::NewGuid().ToString("N")
         permission = $Permissions
-    } | ConvertTo-Json -Compress
+    }
+    if (-not [string]::IsNullOrWhiteSpace($TenantId)) { $payload.tenant_id = $TenantId }
+    $payload = $payload | ConvertTo-Json -Compress
 
     $headerPart = ConvertTo-Base64Url ([Text.Encoding]::UTF8.GetBytes($header))
     $payloadPart = ConvertTo-Base64Url ([Text.Encoding]::UTF8.GetBytes($payload))
@@ -177,6 +182,176 @@ if ($ExpectPersistedLifecycleData) {
 }
 Invoke-E2E "Reporting through Portal Web proxy" "$web/api/reporting/reports" @(200) $auth | Out-Null
 Invoke-E2E "Integration through Portal Web proxy" "$web/api/integration/inbox/processed?tenantId=default&source=e2e&idempotencyKey=$correlationId" @(200) $auth | Out-Null
+
+$tenantPermissions = @(
+    "portal.security.manage",
+    "portal.configuration.read",
+    "portal.configuration.manage",
+    "portal.notification.read",
+    "portal.notification.manage",
+    "portal.catalog.read",
+    "portal.catalog.manage",
+    "portal.content.read",
+    "portal.content.manage",
+    "portal.reporting.read",
+    "portal.audit.read",
+    "portal.audit.write",
+    "portal.integration.read",
+    "portal.integration.manage"
+)
+$tenantA = "tenant-a-e2e"
+$tenantB = "tenant-b-e2e"
+$tenantAToken = New-LocalJwt $tenantPermissions $tenantA
+$tenantBToken = New-LocalJwt $tenantPermissions $tenantB
+$tenantAAuth = @{ Authorization = "Bearer $tenantAToken"; "X-Correlation-ID" = "$correlationId-tenant-a" }
+$tenantBAuth = @{ Authorization = "Bearer $tenantBToken"; "X-Correlation-ID" = "$correlationId-tenant-b" }
+
+$tenantRoleName = "TenantA-$([Guid]::NewGuid().ToString('N').Substring(0,10))"
+$tenantRoleBody = @{ name = $tenantRoleName } | ConvertTo-Json -Compress
+$tenantRoleCreate = Invoke-E2E "Create Security role in tenant A" "$web/api/security/roles" @(201) $tenantAAuth "POST" $tenantRoleBody
+$tenantRole = $tenantRoleCreate.Body | ConvertFrom-Json
+if ($tenantRole.data.tenantId -ne $tenantA) { throw "Security role was not created in tenant A." }
+
+$tenantARoles = Invoke-E2E "List Security roles in tenant A" "$web/api/security/roles" @(200) $tenantAAuth
+if (-not (@($tenantARoles.Body | ConvertFrom-Json | Where-Object { $_.name -eq $tenantRoleName }))) {
+    throw "Tenant A cannot read its own role."
+}
+$tenantBRoles = Invoke-E2E "List Security roles in tenant B" "$web/api/security/roles" @(200) $tenantBAuth
+if (@($tenantBRoles.Body | ConvertFrom-Json | Where-Object { $_.name -eq $tenantRoleName }).Count -ne 0) {
+    throw "Tenant B can read tenant A Security data."
+}
+Write-Host "PASS Security tenant isolation"
+
+$tenantConfigKey = "tenant.e2e.$([Guid]::NewGuid().ToString('N').Substring(0,12))"
+$tenantConfigBody = @{
+    key = $tenantConfigKey
+    scope = 1
+    moduleCode = $null
+    userId = $null
+    category = 0
+    valueJson = '{"tenant":"a"}'
+} | ConvertTo-Json -Compress
+$tenantConfigCreate = Invoke-E2E "Create Configuration in tenant A" "$web/api/configuration/items" @(201) $tenantAAuth "POST" $tenantConfigBody
+$tenantConfig = $tenantConfigCreate.Body | ConvertFrom-Json
+if ($tenantConfig.data.tenantId -ne $tenantA) { throw "Configuration was not created in tenant A." }
+$tenantBConfig = Invoke-E2E "List tenant B Configuration scope" "$web/api/configuration/scopes/1" @(200) $tenantBAuth
+$tenantBConfigPayload = $tenantBConfig.Body | ConvertFrom-Json
+if (@($tenantBConfigPayload.data | Where-Object { $_.key -eq $tenantConfigKey }).Count -ne 0) {
+    throw "Tenant B can read tenant A Configuration data."
+}
+Write-Host "PASS Configuration tenant isolation"
+
+$tenantTemplateCode = "tenant.e2e.$([Guid]::NewGuid().ToString('N').Substring(0,12))"
+$tenantTemplateBody = @{
+    code = $tenantTemplateCode
+    subject = "Tenant A E2E"
+    body = "Tenant A isolated notification"
+    allowedVariables = @()
+    defaultChannel = 2
+} | ConvertTo-Json -Compress
+Invoke-E2E "Create Notification template in tenant A" "$web/api/notifications/templates" @(201) $tenantAAuth "POST" $tenantTemplateBody | Out-Null
+$tenantBTemplates = Invoke-E2E "List Notification templates in tenant B" "$web/api/notifications/templates" @(200) $tenantBAuth
+$tenantBTemplatesPayload = $tenantBTemplates.Body | ConvertFrom-Json
+if (@($tenantBTemplatesPayload.data | Where-Object { $_.code -eq $tenantTemplateCode }).Count -ne 0) {
+    throw "Tenant B can read tenant A Notification templates."
+}
+Write-Host "PASS Notification tenant isolation"
+
+$tenantCatalogCode = "tenant-a-$([Guid]::NewGuid().ToString('N').Substring(0,12))"
+$tenantCatalogBody = @{
+    catalog = "tenant-e2e"
+    code = $tenantCatalogCode
+    name = "Tenant A Catalog"
+    description = "Tenant-isolated catalog entry"
+    sortOrder = 1
+} | ConvertTo-Json -Compress
+$tenantCatalogCreate = Invoke-E2E "Create Catalog entry in tenant A" "$web/api/catalog/entries" @(201) $tenantAAuth "POST" $tenantCatalogBody
+$tenantCatalog = $tenantCatalogCreate.Body | ConvertFrom-Json
+Invoke-E2E "Tenant B cannot read tenant A Catalog by id" "$web/api/catalog/entries/$($tenantCatalog.id)" @(404) $tenantBAuth | Out-Null
+$tenantBCatalogList = Invoke-E2E "List Catalog entries in tenant B" "$web/api/catalog/entries?catalog=tenant-e2e" @(200) $tenantBAuth
+if (@($tenantBCatalogList.Body | ConvertFrom-Json | Where-Object { $_.code -eq $tenantCatalogCode }).Count -ne 0) {
+    throw "Tenant B can read tenant A Catalog data."
+}
+Write-Host "PASS Catalog tenant isolation"
+
+$tenantContentBytes = [Text.Encoding]::UTF8.GetBytes("Tenant A isolated content $correlationId")
+$tenantContentBody = @{
+    moduleCode = "TENANT_E2E"
+    fileName = "$tenantCatalogCode.txt"
+    contentType = "text/plain"
+    content = [Convert]::ToBase64String($tenantContentBytes)
+} | ConvertTo-Json -Compress
+$tenantContentCreate = Invoke-E2E "Create Content document in tenant A" "$web/api/content/documents" @(201) $tenantAAuth "POST" $tenantContentBody
+$tenantContent = $tenantContentCreate.Body | ConvertFrom-Json
+Invoke-E2E "Tenant B cannot read tenant A Content metadata" "$web/api/content/documents/$($tenantContent.id)" @(404) $tenantBAuth | Out-Null
+Invoke-E2E "Tenant B cannot download tenant A Content" "$web/api/content/documents/$($tenantContent.id)/download" @(404) $tenantBAuth | Out-Null
+$tenantBContentList = Invoke-E2E "List Content documents in tenant B" "$web/api/content/documents?moduleCode=TENANT_E2E" @(200) $tenantBAuth
+if (@($tenantBContentList.Body | ConvertFrom-Json | Where-Object { $_.fileName -eq "$tenantCatalogCode.txt" }).Count -ne 0) {
+    throw "Tenant B can read tenant A Content data."
+}
+Write-Host "PASS Content tenant isolation"
+
+$tenantReportBody = @{ parameters = @{} } | ConvertTo-Json -Compress
+$tenantAReport = Invoke-E2E "Execute Reporting in tenant A" "$web/api/reporting/reports/portal-overview/execute" @(200) $tenantAAuth "POST" $tenantReportBody
+$tenantAReportPayload = $tenantAReport.Body | ConvertFrom-Json
+if (@($tenantAReportPayload.rows | Where-Object { $_.TenantId -ne $tenantA }).Count -ne 0) {
+    throw "Reporting execution did not preserve tenant A context."
+}
+$tenantBReport = Invoke-E2E "Execute Reporting in tenant B" "$web/api/reporting/reports/portal-overview/execute" @(200) $tenantBAuth "POST" $tenantReportBody
+$tenantBReportPayload = $tenantBReport.Body | ConvertFrom-Json
+if (@($tenantBReportPayload.rows | Where-Object { $_.TenantId -ne $tenantB }).Count -ne 0) {
+    throw "Reporting execution did not preserve tenant B context."
+}
+Write-Host "PASS Reporting tenant context"
+
+$tenantAuditCorrelation = "$correlationId-tenant-a-audit"
+$tenantAuditBody = @{
+    actorId = "tenant-a-e2e"
+    tenantId = $tenantA
+    resource = "portal.multitenancy"
+    action = "validate"
+    entityName = "TenantIsolation"
+    entityId = $tenantAuditCorrelation
+    beforeJson = $null
+    afterJson = '{"isolated":true}'
+    metadataJson = $null
+    correlationId = $tenantAuditCorrelation
+    causationId = $null
+    requestId = $tenantAuditCorrelation
+    ipAddress = "127.0.0.1"
+    userAgent = "portal-prod-local-e2e"
+    severity = 1
+} | ConvertTo-Json -Compress
+Invoke-E2E "Create Audit event in tenant A" "$web/api/audit/events/" @(201) $tenantAAuth "POST" $tenantAuditBody | Out-Null
+$tenantBAudit = Invoke-E2E "Search tenant A Audit correlation from tenant B" "$web/api/audit/events/?correlationId=$([uri]::EscapeDataString($tenantAuditCorrelation))&page=1&pageSize=10" @(200) $tenantBAuth
+$tenantBAuditPayload = $tenantBAudit.Body | ConvertFrom-Json
+if ([long]$tenantBAuditPayload.data.total -ne 0) { throw "Tenant B can read tenant A Audit data." }
+Write-Host "PASS Audit tenant isolation"
+
+$tenantOutboxKey = "tenant-a-$([Guid]::NewGuid().ToString('N'))"
+$tenantOutboxBody = @{
+    tenantId = $tenantA
+    aggregateType = "TenantIsolation"
+    aggregateId = $tenantOutboxKey
+    eventType = "portal.multitenancy.e2e.v1"
+    payloadJson = '{"tenant":"tenant-a-e2e"}'
+    headersJson = $null
+    correlationId = "$correlationId-tenant-a-outbox"
+    causationId = $null
+    idempotencyKey = $tenantOutboxKey
+} | ConvertTo-Json -Compress
+$tenantOutboxCreate = Invoke-E2E "Enqueue Outbox in tenant A" "$web/api/integration/outbox" @(202) $tenantAAuth "POST" $tenantOutboxBody
+$tenantOutbox = $tenantOutboxCreate.Body | ConvertFrom-Json
+Invoke-E2E "Tenant B cannot read tenant A Outbox by id" "$web/api/integration/outbox/$($tenantOutbox.data.messageId)" @(404) $tenantBAuth | Out-Null
+Invoke-E2E "Tenant B cannot read tenant A Outbox by key" "$web/api/integration/outbox/status?tenantId=$tenantA&idempotencyKey=$tenantOutboxKey" @(404) $tenantBAuth | Out-Null
+Write-Host "PASS Integration tenant isolation"
+
+$mismatchedTenantHeaders = @{
+    Authorization = "Bearer $tenantAToken"
+    "X-Correlation-ID" = "$correlationId-tenant-mismatch"
+    "X-Tenant-ID" = $tenantB
+}
+Invoke-E2E "JWT tenant/header mismatch rejected" "$web/api/security/roles" @(401) $mismatchedTenantHeaders | Out-Null
 
 $outboxKey = "portal-e2e-$([Guid]::NewGuid().ToString('N'))"
 $outboxBody = @{

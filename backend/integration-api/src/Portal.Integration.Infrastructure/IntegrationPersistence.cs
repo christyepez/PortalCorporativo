@@ -37,8 +37,8 @@ public sealed class IntegrationDbContext(DbContextOptions<IntegrationDbContext> 
 
 public sealed class EfReliableMessageStore(IntegrationDbContext db) : IReliableMessageStore
 {
-    public Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct) =>
-        db.OutboxMessages.AsNoTracking().SingleOrDefaultAsync(x => x.MessageId == messageId, ct);
+    public Task<OutboxMessage?> FindOutboxAsync(string tenantId, Guid messageId, CancellationToken ct) =>
+        db.OutboxMessages.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == tenantId && x.MessageId == messageId, ct);
     public Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct) =>
         db.OutboxMessages.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.IdempotencyKey == key, ct);
     public Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct) =>

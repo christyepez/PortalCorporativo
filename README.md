@@ -70,7 +70,9 @@ E2E PROD-local de runtime:
 ./scripts/e2e/prod-local-portal-e2e.ps1
 ```
 
-El E2E valida el Shell Angular compilado, enforcement de permisos, capacidades Core y navegación/API hacia CRM, Financiero, HistoriasPaolin y Talento Humano a través del proxy del Portal Web y el Gateway.
+El E2E valida el Shell Angular compilado, enforcement de permisos, capacidades Core y navegación/API hacia CRM, Financiero, HistoriasPaolin y Talento Humano a través del proxy del Portal Web y el Gateway. También valida aislamiento multi-tenant entre dos tenants independientes para Security, Configuration, Notification, Catalog, Content, Reporting, Audit e Integration, incluido el rechazo de un `X-Tenant-ID` que no coincida con el claim autenticado.
+
+Contrato multi-tenant: el tenant efectivo se resuelve desde `tenant_id` (o `tenant` por compatibilidad), con fallback local a `default`; los valores de tenant recibidos en body/query no pueden sobreescribir el contexto autenticado. Ver `docs/security/multitenancy.md`.
 
 Backup y recuperación local:
 

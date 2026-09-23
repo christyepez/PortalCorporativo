@@ -1,3 +1,4 @@
+using Portal.BuildingBlocks;
 using Portal.Security.Application;
 using Portal.Security.Domain;
 using Xunit;
@@ -12,7 +13,7 @@ public sealed class SecurityRevocationServiceTests
         var user = User.Create(TenantIds.Default, "revocation@example.com", "Revocation User");
         var role = Role.Create(TenantIds.Default, "Operator");
         var store = new RevocationStore(user, role, null) { UserRoleExists = true };
-        var service = new SecurityRevocationService(store);
+        var service = new SecurityRevocationService(store, new PortalTenantContext());
 
         var result = await service.RevokeRoleFromUserAsync(user.Id, role.Id, default);
 
@@ -26,7 +27,7 @@ public sealed class SecurityRevocationServiceTests
         var role = Role.Create(TenantIds.Default, "Auditor");
         var permission = Permission.Create(TenantIds.Default, "portal.audit.read", "portal.audit", "read");
         var store = new RevocationStore(null, role, permission) { RolePermissionExists = true };
-        var service = new SecurityRevocationService(store);
+        var service = new SecurityRevocationService(store, new PortalTenantContext());
 
         var result = await service.RevokePermissionFromRoleAsync(role.Id, permission.Id, default);
 
@@ -40,7 +41,7 @@ public sealed class SecurityRevocationServiceTests
         var user = User.Create(TenantIds.Default, "revocation@example.com", "Revocation User");
         var role = Role.Create(TenantIds.Default, "Operator");
         var store = new RevocationStore(user, role, null);
-        var service = new SecurityRevocationService(store);
+        var service = new SecurityRevocationService(store, new PortalTenantContext());
 
         var result = await service.RevokeRoleFromUserAsync(user.Id, role.Id, default);
 

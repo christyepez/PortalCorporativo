@@ -6,6 +6,15 @@ namespace Portal.Security.Infrastructure;
 
 public sealed class EfSecurityStore(SecurityDbContext dbContext) : ISecurityStore
 {
+    public async Task EnsureTenantAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        if (dbContext.Tenants.Local.Any(x => x.Id == tenantId) ||
+            await dbContext.Tenants.AnyAsync(x => x.Id == tenantId, cancellationToken))
+            return;
+
+        await dbContext.Tenants.AddAsync(new Tenant(tenantId, tenantId), cancellationToken);
+    }
+
     public Task<User?> FindUserAsync(string tenantId, Guid id, CancellationToken cancellationToken) =>
         dbContext.Users.SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == id, cancellationToken);
 

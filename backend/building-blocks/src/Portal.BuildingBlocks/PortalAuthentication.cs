@@ -14,12 +14,28 @@ public static class PortalAuthenticationExtensions
         var audience = configuration["Jwt:Audience"]?.Trim();
 
         services.AddPortalTokenRevocation(configuration);
+        services.AddScoped<PortalTenantContext>();
+        services.AddScoped<IPortalTenantContext>(sp => sp.GetRequiredService<PortalTenantContext>());
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
         {
             options.Events = new JwtBearerEvents
             {
                 OnTokenValidated = async context =>
                 {
+                    try
+                    {
+                        var tenantContext = context.HttpContext.RequestServices.GetRequiredService<PortalTenantContext>();
+                        tenantContext.Resolve(
+                            context.Principal?.FindFirst("tenant_id")?.Value ?? context.Principal?.FindFirst("tenant")?.Value,
+                            context.Request.Headers[PortalTenantContext.HeaderName].FirstOrDefault());
+                        context.Response.Headers[PortalTenantContext.HeaderName] = tenantContext.TenantId;
+                    }
+                    catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+                    {
+                        context.Fail(exception.Message);
+                        return;
+                    }
+
                     var jti = context.Principal?.FindFirst("jti")?.Value;
                     if (string.IsNullOrWhiteSpace(jti)) return;
 

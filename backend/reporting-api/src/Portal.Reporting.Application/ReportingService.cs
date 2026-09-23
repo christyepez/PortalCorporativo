@@ -13,7 +13,7 @@ public interface IReportingProvider
 {
     Task<IReadOnlyCollection<ReportDefinition>> ListAsync(CancellationToken cancellationToken);
     Task<ReportDefinition?> GetAsync(string key, CancellationToken cancellationToken);
-    Task<ReportExecution?> ExecuteAsync(string key, IReadOnlyDictionary<string, string> parameters, DateTimeOffset generatedAt, CancellationToken cancellationToken);
+    Task<ReportExecution?> ExecuteAsync(string tenantId, string key, IReadOnlyDictionary<string, string> parameters, DateTimeOffset generatedAt, CancellationToken cancellationToken);
 }
 
 public sealed class ReportingService(IReportingProvider provider, TimeProvider timeProvider)
@@ -24,8 +24,10 @@ public sealed class ReportingService(IReportingProvider provider, TimeProvider t
     public async Task<ReportDefinitionDto?> GetAsync(string key, CancellationToken cancellationToken)
         => (await provider.GetAsync(key, cancellationToken)) is { } definition ? Map(definition) : null;
 
-    public async Task<ReportExecutionDto?> ExecuteAsync(string key, ExecuteReportRequest request, CancellationToken cancellationToken)
+    public async Task<ReportExecutionDto?> ExecuteAsync(string tenantId, string key, ExecuteReportRequest request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(tenantId)) throw new ArgumentException("TenantId is required.", nameof(tenantId));
+
         var definition = await provider.GetAsync(key, cancellationToken);
         if (definition is null) return null;
 
@@ -33,7 +35,7 @@ public sealed class ReportingService(IReportingProvider provider, TimeProvider t
         var missing = definition.RequiredParameters.Where(required => !parameters.Keys.Any(k => k.Equals(required, StringComparison.OrdinalIgnoreCase))).ToArray();
         if (missing.Length > 0) throw new ArgumentException($"Missing required report parameters: {string.Join(", ", missing)}.", nameof(request));
 
-        var execution = await provider.ExecuteAsync(key, parameters, timeProvider.GetUtcNow(), cancellationToken);
+        var execution = await provider.ExecuteAsync(tenantId, key, parameters, timeProvider.GetUtcNow(), cancellationToken);
         return execution is null ? null : new ReportExecutionDto(execution.Key, execution.GeneratedAt, execution.Rows, execution.SourceMode);
     }
 

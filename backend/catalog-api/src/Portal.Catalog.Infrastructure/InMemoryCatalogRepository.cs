@@ -8,26 +8,29 @@ public sealed class InMemoryCatalogRepository : ICatalogRepository
 {
     private readonly ConcurrentDictionary<Guid, CatalogEntry> _entries = new();
 
-    public Task<IReadOnlyCollection<CatalogEntry>> ListAsync(string? catalog, bool? isActive, CancellationToken cancellationToken)
+    public Task<IReadOnlyCollection<CatalogEntry>> ListAsync(string tenantId, string? catalog, bool? isActive, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        IEnumerable<CatalogEntry> query = _entries.Values;
+        IEnumerable<CatalogEntry> query = _entries.Values.Where(x => x.TenantId == tenantId);
         if (!string.IsNullOrWhiteSpace(catalog)) query = query.Where(x => x.Catalog.Equals(catalog.Trim(), StringComparison.OrdinalIgnoreCase));
         if (isActive.HasValue) query = query.Where(x => x.IsActive == isActive.Value);
         return Task.FromResult<IReadOnlyCollection<CatalogEntry>>(query.OrderBy(x => x.Catalog).ThenBy(x => x.SortOrder).ThenBy(x => x.Name).ToArray());
     }
 
-    public Task<CatalogEntry?> GetAsync(Guid id, CancellationToken cancellationToken)
+    public Task<CatalogEntry?> GetAsync(string tenantId, Guid id, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         _entries.TryGetValue(id, out var entry);
-        return Task.FromResult(entry);
+        return Task.FromResult(entry is not null && entry.TenantId == tenantId ? entry : null);
     }
 
-    public Task<CatalogEntry?> FindByCodeAsync(string catalog, string code, CancellationToken cancellationToken)
+    public Task<CatalogEntry?> FindByCodeAsync(string tenantId, string catalog, string code, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var entry = _entries.Values.FirstOrDefault(x => x.Catalog.Equals(catalog.Trim(), StringComparison.OrdinalIgnoreCase) && x.Code.Equals(code.Trim(), StringComparison.OrdinalIgnoreCase));
+        var entry = _entries.Values.FirstOrDefault(x =>
+            x.TenantId == tenantId &&
+            x.Catalog.Equals(catalog.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            x.Code.Equals(code.Trim(), StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(entry);
     }
 
