@@ -1,0 +1,9 @@
+# Controlled migration preview; not a production cutover.
+# Apply after docker-compose.yml and docker-compose.prod-local.yml.
+services:
+  financial-api:
+    image: ${CENTRAL_FINANCIAL_IMAGE:?Set the verified locally imported image ID}
+    environment:
+      ConnectionStrings__FinancialDb: Server=sqlserver,1433;Database=${CENTRAL_FINANCIAL_DATABASE:?Set the isolated restored database};User Id=sa;Password=${SQLSERVER_SA_PASSWORD:?Set SQLSERVER_SA_PASSWORD};Encrypt=true;TrustServerCertificate=true
+      Database__Initialize: "false"
+      Database__RunMigrations: "false"
