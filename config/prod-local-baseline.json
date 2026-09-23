@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-09-22T15:22:33.0362549Z",
+    "CapturedUtc":  "2026-09-23T21:14:36.7347014Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -83,27 +83,27 @@
                          ],
     "RuntimeImages":  {
                           "crm-api":  "sha256:76a595c7012e367d89a5537b99c2db7fc0e5f5a6f1b90277177b533c34a75a25",
-                          "security-api":  "sha256:14e25743e88849645126ed8d6c8928f1e4a655686a1d0f236e4d54e96d738926",
-                          "api-gateway":  "sha256:cda878f4776933c1417943389e3ec8050205a5c2b5151b7d9e2d2b9ce5a78c45",
+                          "security-api":  "sha256:45cf09966ec293dec15a902d0fdb9334af101d112a42f56368471f616c480cfa",
+                          "api-gateway":  "sha256:ebc20aba1333c0962a740fb05ece99beef36154310ea913ff461384dc2b1a1d4",
                           "historiaspaolin-api":  "sha256:5c996d93f224c2603cd6bdaadc2333764e6b933cc4a596819c1ddac86c2f5dc7",
-                          "notification-api":  "sha256:530db98f85b51bb92d64185c76d58fab358fab929473bd8ef2477651d034e35d",
-                          "hr-api":  "sha256:cbebcca964d59aa1d18c8930854876955d1cf3ca7342a0bba29621f33e8e8d25",
-                          "reporting-api":  "sha256:41216c84c1923dc3ed69a51af7cb8f29019bf2b39dc547057f46d5ca195ce14b",
-                          "menu-api":  "sha256:5e0af50c8636fd5ef95cb48f9044301ea99aa295744fe8d20aebe161a0015758",
-                          "audit-api":  "sha256:2aac78e96a9aee53c49e296310e369eeddece0c30a2b5785efac5dc42b694b82",
+                          "notification-api":  "sha256:1f0f054613342761718250250da486503621e7674f9c89ad2202f579db50ccc3",
+                          "hr-api":  "sha256:88b222ceff617264f34c80fdceb15c5f129f95c2de68f4645774125e8b705bba",
+                          "reporting-api":  "sha256:ff5dfd067c95097c0c874c9993ceaf08de24b646a33c77f8d2eefe97ecd84c93",
+                          "menu-api":  "sha256:80a41c961cc6e503bd14ee6db5a8894ddb029c21cd7ca8bd399bfe1e66cc15e6",
+                          "audit-api":  "sha256:cd567a68e24d10ec2bd7400d2c779440437fa809fdf16573b233259f488408d2",
                           "seq":  "sha256:a9d266df8cbbfd3735e85d39f5fda7cd3d7cbbb2b653b6d39403597da16a17b1",
-                          "configuration-api":  "sha256:1fe2e9e31810dfa12fc4810483c8e0f79e846417ff865419267dc4d903bd3063",
-                          "integration-api":  "sha256:b0d1c6695ae0464519866f0d23a86795e1d753edf456fd9448d1d1cb816342d4",
+                          "configuration-api":  "sha256:f8adce31a91b24d03d9e744238b4c378ffc784e532ed8a83ca1362166878de1d",
+                          "integration-api":  "sha256:a2be96f2cb3568fa7ddf1469bc10cead053fd3220dc8908426700224463f9233",
                           "redis":  "sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf",
-                          "notification-worker":  "sha256:95e6671ab52af25109efd90801413edd4560dfc6057b70e20c1c92f7b4a0ff08",
+                          "notification-worker":  "sha256:3a7c08aa9081645c0c62594c94a79022860858009911d26ca3b9df29cdb7ee79",
                           "sqlserver":  "sha256:97b448857967be55e005424a660056fe6d51814435804dc07e8f79f028bab5fb",
                           "minio":  "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
-                          "financial-api":  "sha256:f376b54650e3a95766cd7d4d90cca003cc0e4e7fb4b1d1c2027a567b9d45e410",
-                          "content-api":  "sha256:a7814f9c71d5e5158b119a3fc3c03116f8b465de4ddf6b1b4ce935632540148d",
-                          "catalog-api":  "sha256:d45ff575560a3aa2437daec821ca3a5249e4b6d7ea5e387c3eb904456de8cb8b",
+                          "financial-api":  "sha256:a93d5d532cfe4451175c2c0c34548f442d92aba1225221aacdf4a51aa4330b65",
+                          "content-api":  "sha256:f0e1d744509dcc047e1e9a6d329ee3fa979a1d06e80ca33ee68d742dc0ac6fd2",
+                          "catalog-api":  "sha256:e247fab190d3cfc3575ffbb7725627d147db1dcb97664acd877c3c70a950515f",
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
-                          "integration-worker":  "sha256:5d54961bb11dd01bc145bb6f56ee4f4806a96884f0dca6c92ba6dbc0da58b971",
-                          "portal-web":  "sha256:f1efcde2f603e92b8010ad146d56408512a925668a6e9ff55786ce5e0e424d77"
+                          "integration-worker":  "sha256:a7a06c01c1906a9be50c95251a4ed40de70a2f611412dbff57ad3180441233ea",
+                          "portal-web":  "sha256:c7f33348845989e09deb993e31a85ede84ae5f1ae178495ccd4f4a6fde203f15"
                       }
 }
