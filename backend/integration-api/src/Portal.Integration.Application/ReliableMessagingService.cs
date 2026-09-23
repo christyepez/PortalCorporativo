@@ -23,7 +23,9 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 {
     public async Task<Result<MessageRegistrationResponse>> EnqueueAsync(EnqueueOutboxRequest request, CancellationToken ct)
     {
-        var tenant = request.TenantId ?? "default";
+        if (!TenantMatches(request.TenantId))
+            return Result<MessageRegistrationResponse>.Failure("outbox.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var tenant = tenantContext.TenantId;
         if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
         {
             var existing = await store.FindOutboxByIdempotencyKeyAsync(tenant, request.IdempotencyKey, ct);
@@ -42,7 +44,9 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 
     public async Task<Result<MessageRegistrationResponse>> RegisterIncomingAsync(RegisterInboxRequest request, CancellationToken ct)
     {
-        var tenant = request.TenantId ?? "default";
+        if (!TenantMatches(request.TenantId))
+            return Result<MessageRegistrationResponse>.Failure("inbox.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var tenant = tenantContext.TenantId;
         var existing = await store.FindInboxAsync(tenant, request.Source, request.IdempotencyKey, ct);
         if (existing is not null) return Result<MessageRegistrationResponse>.Success(new(existing.MessageId, true, existing.Status.ToString()));
         try

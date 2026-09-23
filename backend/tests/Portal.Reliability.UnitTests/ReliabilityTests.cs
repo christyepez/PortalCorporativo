@@ -129,6 +129,34 @@ public sealed class MessagingTests
         Assert.True(await service.CheckAlreadyProcessedAsync("default", "finance", "same", default));
     }
 
+    [Fact]
+    public async Task Outbox_rejects_request_tenant_that_does_not_match_authenticated_context()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
+
+        var result = await service.EnqueueAsync(
+            new("tenant-b", "Order", "1", "Created", "{}", null, "corr", null, "tenant-mismatch-outbox"),
+            default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("outbox.tenant_mismatch", result.Error!.Code);
+        Assert.Empty(store.Outbox);
+    }
+
+    [Fact]
+    public async Task Inbox_rejects_request_tenant_that_does_not_match_authenticated_context()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
+
+        var result = await service.RegisterIncomingAsync(
+            new("tenant-b", "crm", "Changed", "{}", null, "corr", "tenant-mismatch-inbox"),
+            default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("inbox.tenant_mismatch", result.Error!.Code);
+        Assert.Empty(store.Inbox);
+    }
+
     private sealed class Publisher(bool fail) : IEventPublisher
     { public Task PublishAsync(IntegrationEventEnvelopeV1 message, CancellationToken cancellationToken) => fail ? Task.FromException(new InvalidOperationException("failure")) : Task.CompletedTask; }
 
