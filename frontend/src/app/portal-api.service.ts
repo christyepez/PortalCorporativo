@@ -46,6 +46,19 @@ export interface MenuItem {
   readonly metadataJson?: string | null;
 }
 
+export interface ConfigurationItem {
+  readonly id: string;
+  readonly key: string;
+  readonly scope: number;
+  readonly tenantId: string;
+  readonly moduleCode?: string | null;
+  readonly userId?: string | null;
+  readonly category: number;
+  readonly valueJson: string;
+  readonly version: number;
+  readonly isActive: boolean;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -98,6 +111,14 @@ export class PortalApiService {
     const params = new URLSearchParams({ key });
     if (moduleCode) params.set('moduleCode', moduleCode);
     return this.http.get(`${environment.apiBasePath}/configuration/effective?${params.toString()}`, { headers: this.headers() });
+  }
+
+  loadConfigurationScope(scope: number, moduleCode?: string, userId?: string): Observable<ApiResponse<ConfigurationItem[]>> {
+    const params = new URLSearchParams();
+    if (moduleCode) params.set('moduleCode', moduleCode);
+    if (userId) params.set('userId', userId);
+    const suffix = params.size ? `?${params.toString()}` : '';
+    return this.http.get<ApiResponse<ConfigurationItem[]>>(`${environment.apiBasePath}/configuration/scopes/${scope}${suffix}`, { headers: this.headers() });
   }
 
   loadCatalog(catalog?: string): Observable<unknown> {

@@ -266,14 +266,72 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Configuración funcional</p><h2>Parámetros del sistema</h2></div>
-            <button type="button" class="primary">Nuevo parámetro</button>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="configurationLoading" (click)="loadConfigurationData()">Recargar</button>
+            }
           </div>
-          <div class="toolbar">
-            <label>Ámbito<select><option>Global</option><option>Aplicación</option><option>Tenant</option><option>Usuario</option></select></label>
-            <label>Aplicación<select><option>Todas</option><option>Conjunto al Día</option><option>CRM</option></select></label>
-            <label>Buscar<input type="search" placeholder="Clave o descripción"></label>
-          </div>
-          <div class="empty-state compact-state"><h3>Parámetros centralizados</h3><p>Los valores efectivos se resuelven por ámbito y aplicación mediante Configuration API.</p></div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Configuration API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            <div class="toolbar">
+              <label>Ámbito
+                <select [value]="configurationScope" (change)="configurationScope = +$any($event.target).value">
+                  <option [value]="0">Global</option>
+                  <option [value]="1">Tenant</option>
+                  <option [value]="2">Módulo</option>
+                  <option [value]="3">Usuario</option>
+                </select>
+              </label>
+              @if (configurationScope >= 2) {
+                <label>Código de módulo
+                  <input type="search"
+                         [value]="configurationModuleCode"
+                         (input)="configurationModuleCode = $any($event.target).value"
+                         placeholder="portal">
+                </label>
+              }
+              @if (configurationScope === 3) {
+                <label>User ID
+                  <input type="search"
+                         [value]="configurationUserId"
+                         (input)="configurationUserId = $any($event.target).value"
+                         placeholder="00000000-0000-0000-0000-000000000000">
+                </label>
+              }
+              <button type="button" class="primary" [disabled]="configurationLoading" (click)="loadConfigurationData()">Consultar</button>
+            </div>
+
+            @if (configurationError) {
+              <div class="toolbar" role="alert">{{ configurationError }}</div>
+            }
+
+            @if (configurationLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Configuration API…</h3></div>
+            } @else {
+              <div class="table-card">
+                <div class="table-row table-row--header"><span>Clave</span><span>Ámbito</span><span>Módulo</span><span>Categoría</span><span>Versión / Estado</span></div>
+                @for (item of configurationItems; track item.id) {
+                  <div class="table-row">
+                    <strong>{{ item.key }}</strong>
+                    <span>{{ configurationScopeLabel(item.scope) }}</span>
+                    <span>{{ item.moduleCode || '—' }}</span>
+                    <span>{{ configurationCategoryLabel(item.category) }}</span>
+                    <span>{{ item.version }} · {{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state">
+                    <h3>No hay parámetros para el ámbito consultado</h3>
+                    <p>Configuration API devolvió una colección vacía para los filtros actuales.</p>
+                  </div>
+                }
+              </div>
+            }
+          }
         </section>
       }      @if (activeSection === 'catalogs') {
         <section class="section-block">

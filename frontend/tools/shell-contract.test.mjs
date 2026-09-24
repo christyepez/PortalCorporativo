@@ -91,6 +91,17 @@ test('menu administration loads the live module contract instead of hardcoded ro
   assert.doesNotMatch(template, /<strong>Administración<\/strong>/);
 });
 
+test('configuration administration loads live scope data with valid scope filters', () => {
+  assert.match(apiService, /\/configuration\/scopes\/\$\{scope\}/);
+  assert.match(component, /async loadConfigurationData\(\)/);
+  assert.match(component, /configurationScopeLabel\(scope:\s*number\)/);
+  assert.match(component, /configurationCategoryLabel\(category:\s*number\)/);
+  assert.match(template, /configurationScope === 3/);
+  assert.match(template, /configurationScope >= 2/);
+  assert.match(template, /@for \(item of configurationItems; track item\.id\)/);
+  assert.doesNotMatch(template, /Nuevo parámetro/);
+});
+
 test('administrative shell exposes the central management sections', () => {
   for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'audit', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
