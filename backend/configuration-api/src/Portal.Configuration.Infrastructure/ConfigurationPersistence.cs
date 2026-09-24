@@ -18,7 +18,7 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
 }
 public sealed class EfConfigurationStore(ConfigurationDbContext db) : IConfigurationStore
 {
-    public Task<ConfigurationItem?> GetAsync(Guid id, CancellationToken ct) => db.Items.SingleOrDefaultAsync(x => x.Id == id, ct);
+    public Task<ConfigurationItem?> GetAsync(string tenant, Guid id, CancellationToken ct) => db.Items.SingleOrDefaultAsync(x => x.TenantId == tenant && x.Id == id, ct);
     public async Task<IReadOnlyCollection<ConfigurationItem>> FindCandidatesAsync(string tenant, string key, string? module, Guid? user, CancellationToken ct) => await db.Items.Where(x => x.TenantId == tenant && x.Key == key &&
         (x.Scope == ConfigurationScope.Global || x.Scope == ConfigurationScope.Tenant || (x.Scope == ConfigurationScope.Module && x.ModuleCode == module) || (x.Scope == ConfigurationScope.User && x.ModuleCode == module && x.UserId == user))).ToArrayAsync(ct);
     public async Task<IReadOnlyCollection<ConfigurationItem>> GetByScopeAsync(ConfigurationScope scope, string tenant, string? module, Guid? user, CancellationToken ct) => await db.Items.AsNoTracking().Where(x => x.TenantId == tenant && x.Scope == scope && (module == null || x.ModuleCode == module) && (user == null || x.UserId == user)).ToArrayAsync(ct);

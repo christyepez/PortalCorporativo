@@ -51,7 +51,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Outbox_enqueue_is_idempotent()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         var request = new EnqueueOutboxRequest(null, "Order", "1", "OrderCreatedV1", "{}", null, "corr", null, "key-1");
         var first = await service.EnqueueAsync(request, default); var second = await service.EnqueueAsync(request, default);
         Assert.False(first.Value!.Duplicate); Assert.True(second.Value!.Duplicate); Assert.Single(store.Outbox);
@@ -60,7 +60,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Outbox_processor_marks_successful_message_processed()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "k"), default);
         await new OutboxProcessor(store, new Publisher(false), store.Clock).ProcessBatchAsync(10, 3, TimeSpan.FromSeconds(1), default);
         Assert.Equal(MessageStatus.Processed, store.Outbox.Single().Status);
@@ -69,7 +69,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Outbox_status_query_reports_processed_message()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         var registration = await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "status-key"), default);
         await new OutboxProcessor(store, new Publisher(false), store.Clock).ProcessBatchAsync(10, 3, TimeSpan.FromSeconds(1), default);
 
@@ -83,7 +83,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Outbox_retries_then_moves_to_dead_letter()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "k"), default);
         var processor = new OutboxProcessor(store, new Publisher(true), store.Clock);
         await processor.ProcessBatchAsync(10, 2, TimeSpan.FromSeconds(1), default);
@@ -96,7 +96,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Outbox_recovers_expired_processing_lease_after_worker_restart()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         await service.EnqueueAsync(new(null, "Order", "1", "Created", "{}", null, "corr", null, "lease-key"), default);
         var message = store.Outbox.Single();
         message.MarkProcessing(store.Clock.Now, TimeSpan.FromSeconds(1));
@@ -114,7 +114,7 @@ public sealed class MessagingTests
     [Fact]
     public async Task Inbox_detects_duplicate_source_and_key()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         var request = new RegisterInboxRequest(null, "crm", "CustomerChangedV1", "{}", null, "corr", "same");
         var first = await service.RegisterIncomingAsync(request, default); var duplicate = await service.RegisterIncomingAsync(request, default);
         Assert.False(first.Value!.Duplicate); Assert.True(duplicate.Value!.Duplicate); Assert.Single(store.Inbox);
@@ -123,10 +123,38 @@ public sealed class MessagingTests
     [Fact]
     public async Task Inbox_reports_processed_idempotency_key()
     {
-        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock);
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
         await service.RegisterIncomingAsync(new(null, "finance", "PostedV1", "{}", null, "corr", "same"), default);
         await service.MarkInboxProcessedAsync(store.Inbox.Single(), default);
         Assert.True(await service.CheckAlreadyProcessedAsync("default", "finance", "same", default));
+    }
+
+    [Fact]
+    public async Task Outbox_rejects_request_tenant_that_does_not_match_authenticated_context()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
+
+        var result = await service.EnqueueAsync(
+            new("tenant-b", "Order", "1", "Created", "{}", null, "corr", null, "tenant-mismatch-outbox"),
+            default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("outbox.tenant_mismatch", result.Error!.Code);
+        Assert.Empty(store.Outbox);
+    }
+
+    [Fact]
+    public async Task Inbox_rejects_request_tenant_that_does_not_match_authenticated_context()
+    {
+        var store = new MemoryStore(); var service = new ReliableMessagingService(store, store.Clock, new PortalTenantContext());
+
+        var result = await service.RegisterIncomingAsync(
+            new("tenant-b", "crm", "Changed", "{}", null, "corr", "tenant-mismatch-inbox"),
+            default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("inbox.tenant_mismatch", result.Error!.Code);
+        Assert.Empty(store.Inbox);
     }
 
     private sealed class Publisher(bool fail) : IEventPublisher
@@ -136,7 +164,7 @@ public sealed class MessagingTests
     private sealed class MemoryStore : IReliableMessageStore
     {
         public TestClock Clock { get; } = new(); public List<OutboxMessage> Outbox { get; } = []; public List<InboxMessage> Inbox { get; } = [];
-        public Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct) => Task.FromResult(Outbox.SingleOrDefault(x => x.MessageId == messageId));
+        public Task<OutboxMessage?> FindOutboxAsync(string tenantId, Guid messageId, CancellationToken ct) => Task.FromResult(Outbox.SingleOrDefault(x => x.TenantId == tenantId && x.MessageId == messageId));
         public Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct) => Task.FromResult(Outbox.SingleOrDefault(x => x.TenantId == tenantId && x.IdempotencyKey == key));
         public Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct) => Task.FromResult(Inbox.SingleOrDefault(x => x.TenantId == tenantId && x.Source == source && x.IdempotencyKey == key));
         public Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct) => Task.FromResult<IReadOnlyCollection<OutboxMessage>>(Outbox.Where(x => (x.Status is MessageStatus.Pending or MessageStatus.Failed or MessageStatus.Processing) && x.NextRetryAtUtc <= now).Take(batchSize).ToArray());

@@ -4,6 +4,7 @@ namespace Portal.Security.Application;
 
 public interface ISecurityStore
 {
+    Task EnsureTenantAsync(string tenantId, CancellationToken cancellationToken);
     Task<User?> FindUserAsync(string tenantId, Guid id, CancellationToken cancellationToken);
     Task<User?> FindUserByEmailAsync(string tenantId, string normalizedEmail, CancellationToken cancellationToken);
     Task<Role?> FindRoleAsync(string tenantId, Guid id, CancellationToken cancellationToken);

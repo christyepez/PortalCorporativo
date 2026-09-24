@@ -7,20 +7,22 @@ namespace Portal.Audit.Application;
 public interface IAuditStore
 {
     Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken);
-    Task<AuditLog?> GetAsync(Guid id, CancellationToken cancellationToken);
+    Task<AuditLog?> GetAsync(string tenantId, Guid id, CancellationToken cancellationToken);
     Task<PagedResult<AuditLog>> SearchAsync(AuditSearchRequest request, CancellationToken cancellationToken);
     Task<AuditSummaryResponse> SummaryAsync(string tenantId, DateTimeOffset fromUtc, DateTimeOffset toUtc, CancellationToken cancellationToken);
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
 
-public sealed class AuditService(IAuditStore store, IClock clock)
+public sealed class AuditService(IAuditStore store, IClock clock, IPortalTenantContext tenantContext)
 {
     public async Task<Result<AuditEventResponse>> CreateAsync(CreateAuditEventRequest request, string fallbackCorrelationId, CancellationToken ct)
     {
         AuditLog audit;
         try
         {
-            audit = AuditLog.Create(request.ActorId, request.TenantId ?? "default", request.Resource, request.Action,
+            if (!string.IsNullOrWhiteSpace(request.TenantId) && !string.Equals(request.TenantId.Trim(), tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+                return Result<AuditEventResponse>.Failure("audit.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+            audit = AuditLog.Create(request.ActorId, tenantContext.TenantId, request.Resource, request.Action,
                 request.EntityName, request.EntityId, request.BeforeJson, request.AfterJson, request.MetadataJson,
                 request.CorrelationId ?? fallbackCorrelationId, request.CausationId, request.RequestId,
                 request.IpAddress, request.UserAgent, Enum.IsDefined(typeof(AuditSeverity), request.Severity)
@@ -35,7 +37,7 @@ public sealed class AuditService(IAuditStore store, IClock clock)
 
     public async Task<Result<AuditEventResponse>> GetAsync(Guid id, CancellationToken ct)
     {
-        var audit = await store.GetAsync(id, ct);
+        var audit = await store.GetAsync(tenantContext.TenantId, id, ct);
         return audit is null ? Result<AuditEventResponse>.Failure("audit.not_found", "Audit event was not found.") :
             Result<AuditEventResponse>.Success(Map(audit));
     }
@@ -43,15 +45,17 @@ public sealed class AuditService(IAuditStore store, IClock clock)
     public async Task<Result<PagedResult<AuditEventResponse>>> SearchAsync(AuditSearchRequest request, CancellationToken ct)
     {
         if (request.FromUtc > request.ToUtc) return Result<PagedResult<AuditEventResponse>>.Failure("audit.validation", "fromUtc must be before toUtc.");
-        var page = await store.SearchAsync(request with { Page = Math.Max(1, request.Page), PageSize = Math.Clamp(request.PageSize, 1, 200) }, ct);
+        if (!string.IsNullOrWhiteSpace(request.TenantId) && !string.Equals(request.TenantId.Trim(), tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+            return Result<PagedResult<AuditEventResponse>>.Failure("audit.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var page = await store.SearchAsync(request with { TenantId = tenantContext.TenantId, Page = Math.Max(1, request.Page), PageSize = Math.Clamp(request.PageSize, 1, 200) }, ct);
         return Result<PagedResult<AuditEventResponse>>.Success(new(page.Items.Select(Map).ToArray(), page.Page, page.PageSize, page.Total));
     }
 
     public async Task<Result<AuditSummaryResponse>> SummaryAsync(string? tenantId, int hours, CancellationToken ct)
     {
-        var normalizedTenant = string.IsNullOrWhiteSpace(tenantId) ? "default" : tenantId.Trim().ToLowerInvariant();
-        if (normalizedTenant.Length > 64)
-            return Result<AuditSummaryResponse>.Failure("audit.validation", "tenantId is too long.");
+        if (!string.IsNullOrWhiteSpace(tenantId) && !string.Equals(tenantId.Trim(), tenantContext.TenantId, StringComparison.OrdinalIgnoreCase))
+            return Result<AuditSummaryResponse>.Failure("audit.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var normalizedTenant = tenantContext.TenantId;
 
         hours = Math.Clamp(hours, 1, 24 * 30);
         var toUtc = clock.UtcNow;

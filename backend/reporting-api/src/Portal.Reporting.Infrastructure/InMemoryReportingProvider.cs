@@ -24,7 +24,7 @@ public sealed class InMemoryReportingProvider : IReportingProvider
         return Task.FromResult(definition);
     }
 
-    public Task<ReportExecution?> ExecuteAsync(string key, IReadOnlyDictionary<string, string> parameters, DateTimeOffset generatedAt, CancellationToken cancellationToken)
+    public Task<ReportExecution?> ExecuteAsync(string tenantId, string key, IReadOnlyDictionary<string, string> parameters, DateTimeOffset generatedAt, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!_definitions.ContainsKey(key)) return Task.FromResult<ReportExecution?>(null);
@@ -33,13 +33,13 @@ public sealed class InMemoryReportingProvider : IReportingProvider
         {
             "portal-overview" => new[]
             {
-                Row(("Metric", "ServicesHealthy"), ("Value", 9)),
-                Row(("Metric", "ActiveModules"), ("Value", 4)),
-                Row(("Metric", "PendingOperationalGates"), ("Value", 3))
+                Row(("TenantId", tenantId), ("Metric", "ServicesHealthy"), ("Value", 9)),
+                Row(("TenantId", tenantId), ("Metric", "ActiveModules"), ("Value", 4)),
+                Row(("TenantId", tenantId), ("Metric", "PendingOperationalGates"), ("Value", 3))
             },
             "module-activity" => new[]
             {
-                Row(("ModuleCode", GetParameter(parameters, "moduleCode")), ("Events", 12), ("Mode", "SyntheticNonProduction"))
+                Row(("TenantId", tenantId), ("ModuleCode", GetParameter(parameters, "moduleCode")), ("Events", 12), ("Mode", "SyntheticNonProduction"))
             },
             _ => Array.Empty<IReadOnlyDictionary<string, object?>>()
         };

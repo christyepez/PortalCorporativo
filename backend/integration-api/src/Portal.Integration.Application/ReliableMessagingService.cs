@@ -6,7 +6,7 @@ namespace Portal.Integration.Application;
 
 public interface IReliableMessageStore
 {
-    Task<OutboxMessage?> FindOutboxAsync(Guid messageId, CancellationToken ct);
+    Task<OutboxMessage?> FindOutboxAsync(string tenantId, Guid messageId, CancellationToken ct);
     Task<OutboxMessage?> FindOutboxByIdempotencyKeyAsync(string tenantId, string key, CancellationToken ct);
     Task<InboxMessage?> FindInboxAsync(string tenantId, string source, string key, CancellationToken ct);
     Task<IReadOnlyCollection<OutboxMessage>> GetPendingAsync(DateTimeOffset now, int batchSize, CancellationToken ct);
@@ -19,11 +19,13 @@ public interface IEventPublisher
     Task PublishAsync(IntegrationEventEnvelopeV1 message, CancellationToken cancellationToken);
 }
 
-public sealed class ReliableMessagingService(IReliableMessageStore store, IClock clock)
+public sealed class ReliableMessagingService(IReliableMessageStore store, IClock clock, IPortalTenantContext tenantContext)
 {
     public async Task<Result<MessageRegistrationResponse>> EnqueueAsync(EnqueueOutboxRequest request, CancellationToken ct)
     {
-        var tenant = request.TenantId ?? "default";
+        if (!TenantMatches(request.TenantId))
+            return Result<MessageRegistrationResponse>.Failure("outbox.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var tenant = tenantContext.TenantId;
         if (!string.IsNullOrWhiteSpace(request.IdempotencyKey))
         {
             var existing = await store.FindOutboxByIdempotencyKeyAsync(tenant, request.IdempotencyKey, ct);
@@ -42,7 +44,9 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 
     public async Task<Result<MessageRegistrationResponse>> RegisterIncomingAsync(RegisterInboxRequest request, CancellationToken ct)
     {
-        var tenant = request.TenantId ?? "default";
+        if (!TenantMatches(request.TenantId))
+            return Result<MessageRegistrationResponse>.Failure("inbox.tenant_mismatch", "Request tenant does not match the authenticated tenant.");
+        var tenant = tenantContext.TenantId;
         var existing = await store.FindInboxAsync(tenant, request.Source, request.IdempotencyKey, ct);
         if (existing is not null) return Result<MessageRegistrationResponse>.Success(new(existing.MessageId, true, existing.Status.ToString()));
         try
@@ -58,7 +62,8 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 
     public async Task<OutboxStatusResponse?> GetOutboxStatusAsync(string tenantId, string key, CancellationToken ct)
     {
-        var message = await store.FindOutboxByIdempotencyKeyAsync(tenantId, key, ct);
+        if (!TenantMatches(tenantId)) return null;
+        var message = await store.FindOutboxByIdempotencyKeyAsync(tenantContext.TenantId, key, ct);
         return message is null ? null : new(
             message.MessageId,
             message.TenantId,
@@ -73,13 +78,16 @@ public sealed class ReliableMessagingService(IReliableMessageStore store, IClock
 
     public async Task<OutboxMessageStatusResponse?> GetOutboxStatusAsync(Guid messageId, CancellationToken ct)
     {
-        var message = await store.FindOutboxAsync(messageId, ct);
+        var message = await store.FindOutboxAsync(tenantContext.TenantId, messageId, ct);
         return message is null ? null : new OutboxMessageStatusResponse(message.MessageId, message.TenantId, message.EventType,
             message.Status.ToString(), message.Attempts, message.ProcessedAtUtc, message.LastError);
     }
 
     public async Task<bool> CheckAlreadyProcessedAsync(string tenantId, string source, string key, CancellationToken ct) =>
-        (await store.FindInboxAsync(tenantId, source, key, ct))?.Status == MessageStatus.Processed;
+        TenantMatches(tenantId) && (await store.FindInboxAsync(tenantContext.TenantId, source, key, ct))?.Status == MessageStatus.Processed;
+
+    private bool TenantMatches(string? requestedTenant) =>
+        string.IsNullOrWhiteSpace(requestedTenant) || string.Equals(requestedTenant.Trim(), tenantContext.TenantId, StringComparison.OrdinalIgnoreCase);
     public async Task MarkInboxProcessedAsync(InboxMessage message, CancellationToken ct) { message.MarkProcessed(clock.UtcNow); await store.SaveChangesAsync(ct); }
     public async Task MarkInboxFailedAsync(InboxMessage message, string error, CancellationToken ct) { message.MarkFailed(error); await store.SaveChangesAsync(ct); }
 }

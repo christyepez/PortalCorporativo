@@ -3,6 +3,7 @@ namespace Portal.Catalog.Domain;
 public sealed class CatalogEntry
 {
     public Guid Id { get; private set; }
+    public string TenantId { get; private set; }
     public string Catalog { get; private set; }
     public string Code { get; private set; }
     public string Name { get; private set; }
@@ -12,9 +13,10 @@ public sealed class CatalogEntry
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    private CatalogEntry(Guid id, string catalog, string code, string name, string? description, bool isActive, int sortOrder, DateTimeOffset createdAt, DateTimeOffset updatedAt)
+    private CatalogEntry(Guid id, string tenantId, string catalog, string code, string name, string? description, bool isActive, int sortOrder, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
         Id = id;
+        TenantId = tenantId;
         Catalog = catalog;
         Code = code;
         Name = name;
@@ -25,10 +27,11 @@ public sealed class CatalogEntry
         UpdatedAt = updatedAt;
     }
 
-    public static CatalogEntry Create(string catalog, string code, string name, string? description, int sortOrder, DateTimeOffset now)
+    public static CatalogEntry Create(string tenantId, string catalog, string code, string name, string? description, int sortOrder, DateTimeOffset now)
     {
+        ValidateTenant(tenantId);
         Validate(catalog, code, name, sortOrder);
-        return new CatalogEntry(Guid.NewGuid(), catalog.Trim(), code.Trim(), name.Trim(), Normalize(description), true, sortOrder, now, now);
+        return new CatalogEntry(Guid.NewGuid(), tenantId.Trim().ToLowerInvariant(), catalog.Trim(), code.Trim(), name.Trim(), Normalize(description), true, sortOrder, now, now);
     }
 
     public void Update(string name, string? description, bool isActive, int sortOrder, DateTimeOffset now)
@@ -39,6 +42,12 @@ public sealed class CatalogEntry
         IsActive = isActive;
         SortOrder = sortOrder;
         UpdatedAt = now;
+    }
+
+    private static void ValidateTenant(string tenantId)
+    {
+        if (string.IsNullOrWhiteSpace(tenantId) || tenantId.Trim().Length > 64)
+            throw new ArgumentException("TenantId is required and must be <= 64 characters.", nameof(tenantId));
     }
 
     private static void Validate(string catalog, string code, string name, int sortOrder)

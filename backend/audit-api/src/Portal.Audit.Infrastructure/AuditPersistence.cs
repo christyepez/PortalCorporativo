@@ -56,7 +56,7 @@ public sealed class AuditDbContext(DbContextOptions<AuditDbContext> options) : D
 public sealed class EfAuditStore(AuditDbContext db) : IAuditStore
 {
     public Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken) => db.AuditLogs.AddAsync(auditLog, cancellationToken).AsTask();
-    public Task<AuditLog?> GetAsync(Guid id, CancellationToken cancellationToken) => db.AuditLogs.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+    public Task<AuditLog?> GetAsync(string tenantId, Guid id, CancellationToken cancellationToken) => db.AuditLogs.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == tenantId && x.Id == id, cancellationToken);
     public async Task<PagedResult<AuditLog>> SearchAsync(AuditSearchRequest request, CancellationToken cancellationToken)
     {
         var query = db.AuditLogs.AsNoTracking().AsQueryable();
