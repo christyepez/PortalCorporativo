@@ -212,14 +212,53 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Navegación dinámica</p><h2>Menús por aplicación</h2></div>
-            <button type="button" class="primary">Nuevo elemento</button>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="menuLoading" (click)="loadMenuData()">Recargar</button>
+            }
           </div>
-          <div class="toolbar"><label>Aplicación<select><option>Portal Corporativo</option><option>Conjunto al Día</option><option>CRM</option><option>Financiero</option></select></label></div>
-          <div class="table-card">
-            <div class="table-row table-row--header"><span>Orden</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Estado</span></div>
-            <div class="table-row"><span>1</span><strong>Inicio</strong><span>/</span><span>portal.read</span><span class="pill">Activo</span></div>
-            <div class="table-row"><span>2</span><strong>Administración</strong><span>/admin</span><span>portal.admin</span><span class="pill">Activo</span></div>
-          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Menu API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            <div class="toolbar">
+              <label>Código de módulo
+                <input type="search"
+                       [value]="menuModuleCode"
+                       (input)="menuModuleCode = $any($event.target).value"
+                       (keyup.enter)="loadMenuData()"
+                       placeholder="portal">
+              </label>
+              <button type="button" class="primary" [disabled]="menuLoading" (click)="loadMenuData()">Consultar</button>
+              <span class="muted">El módulo portal está registrado en la baseline actual.</span>
+            </div>
+
+            @if (menuError) {
+              <div class="toolbar" role="alert">{{ menuError }}</div>
+            }
+
+            @if (menuLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Menu API…</h3></div>
+            } @else {
+              <div class="table-card">
+                <div class="table-row table-row--header"><span>Orden</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Código</span></div>
+                @for (item of menuItems; track item.id) {
+                  <div class="table-row">
+                    <span>{{ item.order }}</span>
+                    <strong>{{ item.label }}</strong>
+                    <span>{{ item.route }}</span>
+                    <span>{{ item.permissionCode }}</span>
+                    <span class="code">{{ item.code }}</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay elementos para el módulo consultado</h3></div>
+                }
+              </div>
+            }
+          }
         </section>
       }
 

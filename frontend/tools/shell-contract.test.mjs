@@ -81,6 +81,16 @@ test('security administration uses an ephemeral in-memory session and live list 
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
 
+test('menu administration loads the live module contract instead of hardcoded rows', () => {
+  assert.match(apiService, /\/menu\/modules\/\$\{encodeURIComponent\(moduleCode\)\}/);
+  assert.match(component, /menuModuleCode\s*=\s*'portal'/);
+  assert.match(component, /async loadMenuData\(\)/);
+  assert.match(template, /Código de módulo/);
+  assert.match(template, /@for \(item of menuItems; track item\.id\)/);
+  assert.doesNotMatch(template, /<strong>Inicio<\/strong>/);
+  assert.doesNotMatch(template, /<strong>Administración<\/strong>/);
+});
+
 test('administrative shell exposes the central management sections', () => {
   for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'audit', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));

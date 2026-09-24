@@ -32,6 +32,26 @@ export interface SecurityResource {
   readonly name: string;
 }
 
+export interface MenuItem {
+  readonly id: string;
+  readonly menuId: string;
+  readonly parentId?: string | null;
+  readonly code: string;
+  readonly label: string;
+  readonly route: string;
+  readonly icon?: string | null;
+  readonly order: number;
+  readonly resourceKey: string;
+  readonly permissionCode: string;
+  readonly metadataJson?: string | null;
+}
+
+interface ApiResponse<T> {
+  readonly data: T;
+  readonly error?: unknown;
+  readonly correlationId?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PortalApiService {
   private accessToken: string | null = null;
@@ -70,8 +90,8 @@ export class PortalApiService {
     return this.http.get(`${environment.apiBasePath}/security/users/${encodeURIComponent(userId)}/permissions`, { headers: this.headers() });
   }
 
-  loadMenu(): Observable<unknown> {
-    return this.http.get(`${environment.apiBasePath}/menu`, { headers: this.headers() });
+  loadMenu(moduleCode: string): Observable<ApiResponse<MenuItem[]>> {
+    return this.http.get<ApiResponse<MenuItem[]>>(`${environment.apiBasePath}/menu/modules/${encodeURIComponent(moduleCode)}`, { headers: this.headers() });
   }
 
   loadConfiguration(key: string, moduleCode?: string): Observable<unknown> {
