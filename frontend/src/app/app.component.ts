@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -102,12 +102,17 @@ export class AppComponent {
   protected securityRoles: SecurityRole[] = [];
   protected securityPermissions: SecurityPermission[] = [];
   protected securityResources: SecurityResource[] = [];
+  protected menuModuleCode = 'portal';
+  protected menuLoading = false;
+  protected menuError?: string;
+  protected menuItems: MenuItem[] = [];
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
     this.activeSection = section;
     if (section === 'operations') void this.refreshModuleHealth();
     if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
+    if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -138,6 +143,28 @@ export class AppComponent {
 
   protected selectSecurityTab(tab: SecurityTab): void {
     this.activeSecurityTab = tab;
+  }
+
+  protected async loadMenuData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const moduleCode = this.menuModuleCode.trim().toLowerCase();
+    if (!moduleCode) {
+      this.menuError = 'Ingresa un código de módulo.';
+      this.menuItems = [];
+      return;
+    }
+
+    this.menuLoading = true;
+    this.menuError = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.loadMenu(moduleCode));
+      this.menuItems = response.data ?? [];
+    } catch (error: unknown) {
+      this.menuItems = [];
+      this.menuError = error instanceof Error ? error.message : 'No fue posible cargar Menu API.';
+    } finally {
+      this.menuLoading = false;
+    }
   }
 
   protected async loadSecurityData(): Promise<void> {
