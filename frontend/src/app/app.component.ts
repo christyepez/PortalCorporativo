@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { ConfigurationItem, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -106,6 +106,12 @@ export class AppComponent {
   protected menuLoading = false;
   protected menuError?: string;
   protected menuItems: MenuItem[] = [];
+  protected configurationScope = 0;
+  protected configurationModuleCode = '';
+  protected configurationUserId = '';
+  protected configurationLoading = false;
+  protected configurationError?: string;
+  protected configurationItems: ConfigurationItem[] = [];
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -113,6 +119,7 @@ export class AppComponent {
     if (section === 'operations') void this.refreshModuleHealth();
     if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
     if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
+    if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -143,6 +150,44 @@ export class AppComponent {
 
   protected selectSecurityTab(tab: SecurityTab): void {
     this.activeSecurityTab = tab;
+  }
+
+  protected configurationScopeLabel(scope: number): string {
+    return ['Global', 'Tenant', 'Módulo', 'Usuario'][scope] ?? `Scope ${scope}`;
+  }
+
+  protected configurationCategoryLabel(category: number): string {
+    return ['Visual', 'Funcional', 'Grid', 'Formulario', 'Acción', 'Layout', 'Tema'][category] ?? `Categoría ${category}`;
+  }
+
+  protected async loadConfigurationData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const scope = Number(this.configurationScope);
+    const moduleCode = scope >= 2 ? this.configurationModuleCode.trim().toLowerCase() : '';
+    const userId = scope === 3 ? this.configurationUserId.trim() : '';
+
+    if (scope >= 2 && !moduleCode) {
+      this.configurationError = 'Ingresa un código de módulo para scope Módulo o Usuario.';
+      this.configurationItems = [];
+      return;
+    }
+    if (scope === 3 && !userId) {
+      this.configurationError = 'Ingresa un userId para scope Usuario.';
+      this.configurationItems = [];
+      return;
+    }
+
+    this.configurationLoading = true;
+    this.configurationError = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.loadConfigurationScope(scope, moduleCode || undefined, userId || undefined));
+      this.configurationItems = response.data ?? [];
+    } catch (error: unknown) {
+      this.configurationItems = [];
+      this.configurationError = error instanceof Error ? error.message : 'No fue posible cargar Configuration API.';
+    } finally {
+      this.configurationLoading = false;
+    }
   }
 
   protected async loadMenuData(): Promise<void> {
