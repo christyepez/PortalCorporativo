@@ -21,12 +21,14 @@ The integrated local runtime is healthy and the Angular 20 security migration is
 - Angular CLI / build tooling: 20.3.37.
 - TypeScript: 5.9.3.
 - Angular security upgrade merged through PR #60.
-- Portal CI #116: PASS.
+- Portal CI for PR #71: PASS.
+- PR #71 merged to `main` as squash commit `10e5e0e`.
 - PROD-local full Docker rebuild: PASS.
+- Full multi-tenant E2E including persisted Catalog/Content lifecycle data: PASS.
 - Authenticated PROD-local smoke: PASS.
-- Drift check: PASS after baseline refresh.
-- Runtime verify: PASS.
-- Maintenance scan: PASS.
+- Drift check on `main`: PASS.
+- Runtime verify with `-ScanLogs`: PASS.
+- Seq/correlation observability: PASS.
 - Integrated containers remain at zero restarts.
 - Current domain integrations through Gateway: CRM, Financiero, HistoriasPaolin and Talento Humano (AppTTHH).
 - Primary runtime: Docker Desktop on device `trabajo`.
@@ -35,6 +37,8 @@ The integrated local runtime is healthy and the Angular 20 security migration is
 ## Next Gate
 
 `PortalConsumerExpansionGate`
+
+Start from `docs/coordination/consumer-onboarding-template.md` once the next domain/application is explicitly selected.
 
 Onboard the next explicitly selected domain/application through the existing Portal consumer contract. Do not create a new transversal capability when Security, Menu, Configuration, Audit, Notification, Content, Catalog, Reporting, Integration, Gateway or the Angular Shell can be reused or extended.
 

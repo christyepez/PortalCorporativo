@@ -2,6 +2,8 @@
 
 Aplica a Financiero, CRM y futuros dominios. PortalCorporativo es owner de capacidades transversales; el consumidor es owner exclusivo de su negocio.
 
+Para un consumidor nuevo, iniciar con `docs/coordination/consumer-onboarding-template.md` y completar sus gates antes de declararlo integrado.
+
 ## Flujo común
 
 1. Clasificar cada necesidad como REUSE, EXTEND, ADAPT, CREATE o BLOCKED.
