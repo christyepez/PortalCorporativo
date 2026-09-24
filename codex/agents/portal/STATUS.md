@@ -2,14 +2,14 @@
 
 | Stream | State | Next action |
 |---|---|---|
-| 00 Orchestrator | ACTIVE | coordinate remaining gates |
-| 01 Core Security & Multi-tenancy | CODE GREEN | Integration tenant mismatch guard covered; runtime E2E pending |
-| 02 Portal Workspace & Frontend | GREEN | 11/11 contract tests, lint OK, production build OK |
-| 03 Platform Data | IMPLEMENTED | validate Catalog/Content DB upgrade in runtime |
-| 04 Integration Reliability | CODE GREEN | Reliability 12/12; worker restart/runtime proof pending |
-| 05 Observability & Operations | READY | verify/smoke/drift after rebuild |
-| 06 Quality & E2E | ACTIVE | Docker rebuild + full PROD-local E2E pending |
-| 07 Release Integration | BLOCKED | waits for green gates |
+| 00 Orchestrator | GREEN | PROD-local objective closed; coordinate next explicit consumer |
+| 01 Core Security & Multi-tenancy | GREEN | Tenant isolation and mismatch guard validated in full runtime E2E |
+| 02 Portal Workspace & Frontend | GREEN | Angular 20 shell, proxy and contract tests validated |
+| 03 Platform Data | GREEN | Catalog/Content persistence upgrade validated across restart |
+| 04 Integration Reliability | GREEN | Outbox idempotency and worker restart/runtime proof validated |
+| 05 Observability & Operations | GREEN | verify, smoke, ScanLogs, Seq correlation and drift all pass |
+| 06 Quality & E2E | GREEN | Full PROD-local multi-tenant E2E passes |
+| 07 Release Integration | GREEN | PR #71 merged to main; runtime revalidated on main |
 
 Primary machine: trabajo.
-Do not sync MarketingIndo until all streams are green.
+MarketingIndo synchronization is deferred and does not block implementation.
