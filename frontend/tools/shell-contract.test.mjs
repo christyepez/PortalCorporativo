@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const component = readFileSync(new URL('../src/app/app.component.ts', import.meta.url), 'utf8');
 const template = readFileSync(new URL('../src/app/app.component.html', import.meta.url), 'utf8');
+const apiService = readFileSync(new URL('../src/app/portal-api.service.ts', import.meta.url), 'utf8');
 const environment = readFileSync(new URL('../src/environments/environment.ts', import.meta.url), 'utf8');
 const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.url), 'utf8'));
 
@@ -62,6 +63,22 @@ test('shell supports functional module selection and same-origin availability pr
   assert.match(template, /probeCount\('available'\)/);
   assert.match(template, /data-state/);
   assert.doesNotMatch(component, /Authorization\s*:/);
+});
+
+test('security administration uses an ephemeral in-memory session and live list endpoints', () => {
+  for (const route of ['/security/users', '/security/roles', '/security/permissions', '/security/resources']) {
+    assert.match(apiService, new RegExp(route.replaceAll('/', '\\/')));
+  }
+  assert.match(component, /connectLocalSession\(\)/);
+  assert.match(component, /loadSecurityData\(\)/);
+  assert.match(component, /selectSecurityTab\(tab:\s*SecurityTab\)/);
+  assert.match(component, /portalApi\.setAccessToken\(token\)/);
+  for (const tab of ['users', 'roles', 'permissions', 'resources']) {
+    assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
+  }
+  assert.match(template, /JWT local efímero/);
+  assert.match(template, /El token permanece sólo en memoria/);
+  assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
 
 test('administrative shell exposes the central management sections', () => {

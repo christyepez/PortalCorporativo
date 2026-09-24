@@ -124,15 +124,89 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Seguridad centralizada</p><h2>Usuarios, roles y permisos</h2></div>
-            <button type="button" class="primary">Nuevo usuario</button>
+            @if (hasAuthenticatedSession()) {
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="securityLoading" (click)="loadSecurityData()">Recargar</button>
+                <button type="button" class="secondary" (click)="clearLocalSession()">Cerrar sesión local</button>
+              </div>
+            }
           </div>
-          <div class="admin-tabs"><button class="active" type="button">Usuarios</button><button type="button">Roles</button><button type="button">Permisos</button><button type="button">Recursos</button></div>
-          <div class="empty-state">
-            <div class="empty-state__icon">◉</div>
-            <h3>Administración de identidad y acceso</h3>
-            <p>El backend ya permite crear usuarios, roles, permisos, recursos y asignaciones. Se está completando el listado administrativo para operar estas entidades desde esta pantalla.</p>
-            <span class="pill pill--warning">Contrato de consulta en ampliación</span>
-          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="toolbar session-toolbar">
+              <label>JWT local efímero
+                <input type="password"
+                       autocomplete="off"
+                       [value]="sessionTokenInput"
+                       (input)="sessionTokenInput = $any($event.target).value"
+                       placeholder="Pega un token local con portal.security.manage">
+              </label>
+              <button type="button" class="primary" (click)="connectLocalSession()">Conectar sesión</button>
+              <span class="muted">El token permanece sólo en memoria y se pierde al recargar la página.</span>
+            </div>
+          } @else {
+            <div class="metrics security-summary">
+              <article><strong>{{ securityUsers.length }}</strong><span>Usuarios</span></article>
+              <article><strong>{{ securityRoles.length }}</strong><span>Roles</span></article>
+              <article><strong>{{ securityPermissions.length }}</strong><span>Permisos</span></article>
+              <article><strong>{{ securityResources.length }}</strong><span>Recursos</span></article>
+            </div>
+          }
+
+          @if (securityError) {
+            <div class="inline-message inline-message--error" role="alert">{{ securityError }}</div>
+          }
+
+          @if (hasAuthenticatedSession()) {
+            <div class="admin-tabs">
+              <button type="button" [class.active]="activeSecurityTab === 'users'" (click)="selectSecurityTab('users')">Usuarios</button>
+              <button type="button" [class.active]="activeSecurityTab === 'roles'" (click)="selectSecurityTab('roles')">Roles</button>
+              <button type="button" [class.active]="activeSecurityTab === 'permissions'" (click)="selectSecurityTab('permissions')">Permisos</button>
+              <button type="button" [class.active]="activeSecurityTab === 'resources'" (click)="selectSecurityTab('resources')">Recursos</button>
+            </div>
+            @if (securityLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Security API…</h3></div>
+            } @else if (activeSecurityTab === 'users') {
+              <div class="table-card security-table">
+                <div class="table-row table-row--header"><span>Nombre</span><span>Email</span><span>Tenant</span><span>Estado</span><span>Id</span></div>
+                @for (user of securityUsers; track user.id) {
+                  <div class="table-row">
+                    <strong>{{ user.name }}</strong>
+                    <span>{{ user.email }}</span>
+                    <span>{{ user.tenantId }}</span>
+                    <span class="pill">{{ user.isActive ? 'Activo' : 'Inactivo' }}</span>
+                    <span class="code">{{ user.id }}</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay usuarios para el tenant actual</h3></div>
+                }
+              </div>
+            } @else if (activeSecurityTab === 'roles') {
+              <div class="application-grid">
+                @for (role of securityRoles; track role.id) {
+                  <article class="application-card"><span class="code">{{ role.id }}</span><h4>{{ role.name }}</h4><p>Tenant: {{ role.tenantId }}</p></article>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay roles para el tenant actual</h3></div>
+                }
+              </div>
+            } @else if (activeSecurityTab === 'permissions') {
+              <div class="application-grid">
+                @for (permission of securityPermissions; track permission.id) {
+                  <article class="application-card"><span class="code">{{ permission.code }}</span><h4>{{ permission.resourceKey }}</h4><p>Acción: {{ permission.action }}</p><p>Tenant: {{ permission.tenantId }}</p></article>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay permisos para el tenant actual</h3></div>
+                }
+              </div>
+            } @else {
+              <div class="application-grid">
+                @for (resource of securityResources; track resource.id) {
+                  <article class="application-card"><span class="code">{{ resource.key }}</span><h4>{{ resource.name }}</h4><p>Tenant: {{ resource.tenantId }}</p></article>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay recursos para el tenant actual</h3></div>
+                }
+              </div>
+            }
+          }
         </section>
       }      @if (activeSection === 'menus') {
         <section class="section-block">

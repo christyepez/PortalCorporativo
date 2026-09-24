@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
+import { PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -11,6 +13,7 @@ interface ShellModule {
 }
 
 type ModuleProbeState = 'idle' | 'checking' | 'available' | 'protected' | 'unavailable';
+type SecurityTab = 'users' | 'roles' | 'permissions' | 'resources';
 
 interface ModuleProbeResult {
   readonly state: ModuleProbeState;
@@ -41,7 +44,10 @@ interface ApplicationCard {
   styleUrl: './app.component.css'
 })
 export class AppComponent {
-  constructor(private readonly sanitizer: DomSanitizer) {}
+  constructor(
+    private readonly sanitizer: DomSanitizer,
+    private readonly portalApi: PortalApiService
+  ) {}
 
   protected readonly title = 'Portal Corporativo';
   protected readonly readiness = environment.shellReadiness;
@@ -88,11 +94,73 @@ export class AppComponent {
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
+  protected sessionTokenInput = '';
+  protected securityLoading = false;
+  protected securityError?: string;
+  protected activeSecurityTab: SecurityTab = 'users';
+  protected securityUsers: SecurityUser[] = [];
+  protected securityRoles: SecurityRole[] = [];
+  protected securityPermissions: SecurityPermission[] = [];
+  protected securityResources: SecurityResource[] = [];
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
     this.activeSection = section;
     if (section === 'operations') void this.refreshModuleHealth();
+    if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
+  }
+
+  protected hasAuthenticatedSession(): boolean {
+    return this.portalApi.hasAuthenticatedSession();
+  }
+
+  protected async connectLocalSession(): Promise<void> {
+    const token = this.sessionTokenInput.trim();
+    if (!token) {
+      this.securityError = 'Ingresa un JWT local válido para iniciar una sesión efímera.';
+      return;
+    }
+
+    this.portalApi.setAccessToken(token);
+    this.sessionTokenInput = '';
+    await this.loadSecurityData();
+  }
+
+  protected clearLocalSession(): void {
+    this.portalApi.clearAccessToken();
+    this.sessionTokenInput = '';
+    this.securityUsers = [];
+    this.securityRoles = [];
+    this.securityPermissions = [];
+    this.securityResources = [];
+    this.securityError = undefined;
+  }
+
+  protected selectSecurityTab(tab: SecurityTab): void {
+    this.activeSecurityTab = tab;
+  }
+
+  protected async loadSecurityData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.securityLoading = true;
+    this.securityError = undefined;
+
+    try {
+      const [users, roles, permissions, resources] = await Promise.all([
+        firstValueFrom(this.portalApi.loadUsers()),
+        firstValueFrom(this.portalApi.loadRoles()),
+        firstValueFrom(this.portalApi.loadPermissions()),
+        firstValueFrom(this.portalApi.loadResources())
+      ]);
+      this.securityUsers = users;
+      this.securityRoles = roles;
+      this.securityPermissions = permissions;
+      this.securityResources = resources;
+    } catch (error: unknown) {
+      this.securityError = error instanceof Error ? error.message : 'No fue posible cargar Security API.';
+    } finally {
+      this.securityLoading = false;
+    }
   }
 
   protected probeResult(module: ShellModule): ModuleProbeResult {
