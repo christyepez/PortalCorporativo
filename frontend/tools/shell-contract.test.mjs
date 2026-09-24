@@ -53,9 +53,14 @@ test('template keeps basic navigation and content accessibility invariants', () 
 test('shell supports functional module selection and same-origin availability probes', () => {
   assert.match(component, /selectedModule:\s*ShellModule\s*=\s*this\.modules\[0\]/);
   assert.match(component, /async selectModule\(module:\s*ShellModule\)/);
+  assert.match(component, /async refreshModuleHealth\(\)/);
+  assert.match(component, /Promise\.all\(this\.modules\.filter/);
   assert.match(component, /fetch\(module\.probePath/);
   assert.match(component, /credentials:\s*'same-origin'/);
   assert.match(component, /response\.status === 401 \|\| response\.status === 403/);
+  assert.match(template, /Actualizar estado/);
+  assert.match(template, /probeCount\('available'\)/);
+  assert.match(template, /data-state/);
   assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
