@@ -1,23 +1,23 @@
-# Sprint 2 — Roadmap propuesto
+# Sprint 2 — Roadmap de cierre
 
 ## Objetivo
 
-Convertir foundations pendientes en capacidades consumibles de producción sin ampliar PortalCorporativo con reglas de Financiero o CRM.
+Convertir foundations pendientes en capacidades consumibles sin ampliar PortalCorporativo con reglas de Financiero o CRM. El objetivo PROD-local quedó cerrado; la activación productiva externa conserva gates separados.
 
-## Orden recomendado
+## Estado consolidado
 
-| Orden | Paquete | Resultado mínimo | Dependencias |
+| Orden | Paquete | Estado actual | Evidencia / gate |
 |---:|---|---|---|
-| 1 | IdP productivo/OIDC | Login y emisión confiable; claims y rotación de claves | Security, Gateway |
-| 2 | Revocación + JWT E2E | Revocación/versionado de permisos y pruebas HTTP reales | IdP, policies |
-| 3 | Catalog API Foundation | Catálogos versionados, publicación y permisos | Security, Audit |
-| 4 | Content/File Foundation | Metadata, almacenamiento por adaptador, antivirus/limits definidos | Security, Audit, MinIO |
-| 5 | Integration productiva | Contratos, observabilidad, leasing robusto y transporte aprobado | Outbox/Inbox, Workers |
-| 6 | Notification productiva | Adaptador de proveedor, secretos externos y gobierno de plantillas | Integration, Configuration |
-| 7 | Angular Shell | Login, layout, Menu y Configuration dinámicos | IdP, Menu, Configuration |
-| 8 | Reporting Foundation | Contratos de reportes y autorización; sin lógica de dominio | Security, Content |
-| 9 | Audit retention jobs | Archivo/purga controlada posterior a 365 días | Data/operaciones |
-| 10 | Multi-tenancy real | Provisionamiento y aislamiento verificado | Todos los contextos |
+| 1 | IdP productivo/OIDC | EXTERNAL GATE | Boundary OIDC implementado; faltan inputs/aprobaciones de `ExternalProductionActivationInputs` |
+| 2 | Revocación + JWT E2E | CLOSED | Revocación foundation y E2E HTTP validados |
+| 3 | Catalog API Foundation | CLOSED | API, persistencia, tenant isolation y lifecycle E2E validados |
+| 4 | Content/File Foundation | CLOSED | API, metadata, almacenamiento, tenant isolation y lifecycle E2E validados |
+| 5 | Integration | CLOSED PROD-local | Outbox/Inbox, idempotencia, worker y transporte desacoplado validados |
+| 6 | Notification productiva | EXTERNAL GATE | Foundation/worker cerrados; proveedor y secretos reales requieren activación explícita |
+| 7 | Angular Shell | CLOSED | Angular 20, Menu/Configuration/Security y workspace integrados |
+| 8 | Reporting Foundation | CLOSED | Contratos, autorización y ejecución controlada integrados |
+| 9 | Audit retention jobs | CLOSED | Archive-before-purge transaccional con mínimo 365 días |
+| 10 | Multi-tenancy | CLOSED PROD-local | Tenant context e aislamiento formal validados en E2E |
 
 ## Broker
 

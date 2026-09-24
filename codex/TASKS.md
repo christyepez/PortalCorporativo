@@ -10,25 +10,24 @@
 - [x] P6 QA integrado y policies backend por permiso.
 - [x] Build limpio, 50/50 pruebas y smoke integrado.
 
-## Sprint 2 propuesto
+## Sprint 2 — cerrado para objetivo PROD-local
 
-- [ ] Catalog API Foundation.
-- [ ] Content/File API Foundation.
-- [ ] Reporting API Foundation.
-- [ ] Integration API y transporte productivos.
-- [ ] Portal Angular Shell integrado con Security/Menu/Configuration.
-- [ ] IdP productivo con OIDC/OAuth2.
-- [ ] Revocación de permisos y automatización E2E JWT.
-- [ ] Jobs de archivo/purga Audit después de 365 días.
-- [ ] Evaluar Kafka/RabbitMQ mediante ADR; no introducir broker por defecto.
+- [x] Catalog API Foundation.
+- [x] Content/File API Foundation.
+- [x] Reporting API Foundation.
+- [x] Integration API con SQL Outbox/Inbox, idempotencia y transporte desacoplado.
+- [x] Portal Angular Shell integrado con Security/Menu/Configuration.
+- [ ] IdP productivo con OIDC/OAuth2 — bloqueado por `ExternalProductionActivationInputs`; no es deuda de foundation local.
+- [x] Revocación de permisos y automatización E2E JWT.
+- [x] Jobs de archivo/purga Audit después de 365 días, con archive-before-purge transaccional.
+- [x] Evaluación Kafka/RabbitMQ mediante ADR; SQL Outbox/Inbox permanece como default y no se introduce broker sin métricas.
 
-## Riesgos diferidos
+## Riesgos diferidos / gates externos
 
-- IdP y SSO productivos; multi-tenant real y aislamiento formal.
-- Revocación/latencia de claims y diseño de roles de mínimo privilegio.
-- Proveedor productivo de notificaciones y gobierno avanzado de plantillas.
-- Outbox transaccional en cada contexto, leasing distribuido y broker productivo.
-- Retención automatizada de Audit, HA/observabilidad avanzada y E2E completos.
+- IdP y SSO productivos: requieren authority, audience/client registration, redirect/logout URIs, aprobaciones y secret provider externos.
+- Proveedor productivo de notificaciones y credenciales reales permanecen sujetos a activación explícita.
+- Broker productivo, HA/DR avanzado y observabilidad externa requieren ADR/gate propio con métricas y ownership.
+- Multi-tenant local, aislamiento formal, revocación foundation, retención Audit y E2E PROD-local están cerrados.
 
 Detalle y orden: `docs/coordination/sprint-02-roadmap.md`.
 
