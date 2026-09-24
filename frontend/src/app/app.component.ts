@@ -11,6 +11,12 @@ interface ShellModule {
 }
 
 type ModuleProbeState = 'idle' | 'checking' | 'available' | 'protected' | 'unavailable';
+
+interface ModuleProbeResult {
+  readonly state: ModuleProbeState;
+  readonly status?: number;
+  readonly checkedAt?: Date;
+}
 type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'audit' | 'operations';
 
 interface NavigationItem {
@@ -80,8 +86,21 @@ export class AppComponent {
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
-  protected readonly currentTenant = 'default';  protected selectSection(section: AdminSection): void {
+  protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
+  protected operationsRefreshing = false;
+  protected readonly currentTenant = 'default';
+
+  protected selectSection(section: AdminSection): void {
     this.activeSection = section;
+    if (section === 'operations') void this.refreshModuleHealth();
+  }
+
+  protected probeResult(module: ShellModule): ModuleProbeResult {
+    return this.moduleProbeResults.get(module.label) ?? { state: 'idle' };
+  }
+
+  protected probeCount(state: ModuleProbeState): number {
+    return this.modules.filter((module) => this.probeResult(module).state === state).length;
   }
 
   protected openApplication(application: ApplicationCard): void {
@@ -101,8 +120,27 @@ export class AppComponent {
   protected async selectModule(module: ShellModule): Promise<void> {
     if (!module.enabled) return;
     this.selectedModule = module;
-    this.moduleProbeState = 'checking';
-    this.moduleProbeStatus = undefined;
+    const result = await this.probeModule(module);
+    this.moduleProbeState = result.state;
+    this.moduleProbeStatus = result.status;
+  }
+
+  protected async refreshModuleHealth(): Promise<void> {
+    if (this.operationsRefreshing) return;
+    this.operationsRefreshing = true;
+
+    try {
+      await Promise.all(this.modules.filter((module) => module.enabled).map((module) => this.probeModule(module)));
+      const selected = this.probeResult(this.selectedModule);
+      this.moduleProbeState = selected.state;
+      this.moduleProbeStatus = selected.status;
+    } finally {
+      this.operationsRefreshing = false;
+    }
+  }
+
+  private async probeModule(module: ShellModule): Promise<ModuleProbeResult> {
+    this.moduleProbeResults.set(module.label, { state: 'checking' });
 
     try {
       const response = await fetch(module.probePath, {
@@ -111,14 +149,17 @@ export class AppComponent {
         cache: 'no-store',
         headers: { 'X-Correlation-ID': `portal-shell-${crypto.randomUUID()}` }
       });
-      this.moduleProbeStatus = response.status;
-      this.moduleProbeState = response.ok
-        ? 'available'
-        : response.status === 401 || response.status === 403
-          ? 'protected'
-          : 'unavailable';
+      const result: ModuleProbeResult = {
+        state: response.ok ? 'available' : response.status === 401 || response.status === 403 ? 'protected' : 'unavailable',
+        status: response.status,
+        checkedAt: new Date()
+      };
+      this.moduleProbeResults.set(module.label, result);
+      return result;
     } catch {
-      this.moduleProbeState = 'unavailable';
+      const result: ModuleProbeResult = { state: 'unavailable', checkedAt: new Date() };
+      this.moduleProbeResults.set(module.label, result);
+      return result;
     }
   }
 }

@@ -181,8 +181,19 @@
         </section>
       }      @if (activeSection === 'operations') {
         <section class="section-block">
-          <div class="section-heading"><div><p class="eyebrow">Operación local</p><h2>Estado de servicios</h2></div></div>
+          <div class="section-heading">
+            <div><p class="eyebrow">Operación local</p><h2>Estado de servicios</h2></div>
+            <button type="button" class="secondary" [disabled]="operationsRefreshing" (click)="refreshModuleHealth()">
+              {{ operationsRefreshing ? 'Actualizando…' : 'Actualizar estado' }}
+            </button>
+          </div>
           <p class="lead">CRM, Financiero, Talento Humano e HistoriasPaolin comparten una única entrada HTTP mediante el API Gateway.</p>
+          <div class="metrics health-summary" aria-live="polite">
+            <article><strong>{{ probeCount('available') }}</strong><span>Disponibles</span></article>
+            <article><strong>{{ probeCount('protected') }}</strong><span>Disponibles · protegidos</span></article>
+            <article><strong>{{ probeCount('unavailable') }}</strong><span>No disponibles</span></article>
+            <article><strong>{{ probeCount('checking') }}</strong><span>Verificando</span></article>
+          </div>
           <div class="service-grid">
             @for (module of modules; track module.label) {
               <button type="button"
@@ -194,6 +205,16 @@
                 <strong>{{ module.label }}</strong>
                 <span>{{ module.status }}</span>
                 <small>{{ module.gatewayPath }}</small>
+                <span class="probe-state" [attr.data-state]="probeResult(module).state">
+                  @switch (probeResult(module).state) {
+                    @case ('checking') { Verificando… }
+                    @case ('available') { Disponible }
+                    @case ('protected') { Protegido }
+                    @case ('unavailable') { No disponible }
+                    @default { Sin validar }
+                  }
+                  @if (probeResult(module).status) { · HTTP {{ probeResult(module).status }} }
+                </span>
               </button>
             }
           </div>

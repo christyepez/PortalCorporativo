@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-09-23T21:14:36.7347014Z",
+    "CapturedUtc":  "2026-09-24T21:51:46.8355645Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -104,6 +104,6 @@
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
                           "integration-worker":  "sha256:a7a06c01c1906a9be50c95251a4ed40de70a2f611412dbff57ad3180441233ea",
-                          "portal-web":  "sha256:c7f33348845989e09deb993e31a85ede84ae5f1ae178495ccd4f4a6fde203f15"
+                          "portal-web":  "sha256:e3e7b09d41c7acf743ba5fc24f55054031ef42c1615a67eda3449064e035e957"
                       }
 }
