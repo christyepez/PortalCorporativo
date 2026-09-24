@@ -12,7 +12,7 @@
 
 Backend services validate JWT bearer tokens using issuer, audience, signing key and lifetime checks. The current symmetric key setup is local/NonProduction foundation only and requires a secret source before production.
 
-Frontend session handling is not buildable yet because no Angular package manifest exists. Therefore browser storage behavior is policy-only in P3 and must be validated once the Portal shell is implemented.
+The Angular shell is implemented and keeps access tokens in memory only. For PROD-local administration, an already-issued local JWT may be supplied to an ephemeral browser session to call protected Portal APIs; the token is cleared on reload or explicit logout and is never written to localStorage/sessionStorage. Real login remains subject to the approved OIDC production gate.
 
 ## Future Session Baseline
 

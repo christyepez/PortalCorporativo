@@ -3,6 +3,35 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
 
+export interface SecurityUser {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly email: string;
+  readonly name: string;
+  readonly isActive: boolean;
+}
+
+export interface SecurityRole {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly name: string;
+}
+
+export interface SecurityPermission {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly code: string;
+  readonly resourceKey: string;
+  readonly action: string;
+}
+
+export interface SecurityResource {
+  readonly id: string;
+  readonly tenantId: string;
+  readonly key: string;
+  readonly name: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PortalApiService {
   private accessToken: string | null = null;
@@ -19,6 +48,22 @@ export class PortalApiService {
 
   hasAuthenticatedSession(): boolean {
     return this.accessToken !== null;
+  }
+
+  loadUsers(): Observable<SecurityUser[]> {
+    return this.http.get<SecurityUser[]>(`${environment.apiBasePath}/security/users`, { headers: this.headers() });
+  }
+
+  loadRoles(): Observable<SecurityRole[]> {
+    return this.http.get<SecurityRole[]>(`${environment.apiBasePath}/security/roles`, { headers: this.headers() });
+  }
+
+  loadPermissions(): Observable<SecurityPermission[]> {
+    return this.http.get<SecurityPermission[]>(`${environment.apiBasePath}/security/permissions`, { headers: this.headers() });
+  }
+
+  loadResources(): Observable<SecurityResource[]> {
+    return this.http.get<SecurityResource[]>(`${environment.apiBasePath}/security/resources`, { headers: this.headers() });
   }
 
   loadUserPermissions(userId: string): Observable<unknown> {
