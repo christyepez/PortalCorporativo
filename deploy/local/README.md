@@ -1,5 +1,18 @@
 # Local Docker Compose Workspace
 
+> **Legacy workspace note (2026-09):** this `deploy/local` profile-based workspace is retained only as historical/reference material. The active and validated runtime is the repository-root PROD-local stack using `docker-compose.yml` + `docker-compose.prod-local.yml`, `.env.portal.local`, and `scripts/local/prod-local-*.ps1`. Do not use the legacy commands below for the current Portal runtime.
+>
+> Current entry points:
+> ```powershell
+> ./scripts/local/prod-local-up.ps1 -Build
+> ./scripts/local/prod-local-status.ps1
+> ./scripts/local/prod-local-verify.ps1 -ScanLogs
+> ./scripts/local/prod-local-drift-check.ps1
+> ```
+>
+> Current integrated consumers: CRM, Financiero, HistoriasPaolin and Talento Humano. Host-facing business APIs are exposed through the Portal Gateway only and published host ports remain loopback-bound.
+
+
 Esta guia define un ambiente local raiz para ejecutar `PortalCorporativo` junto con dominios consumidores como `Financiero` y `CRM`.
 
 ## Principios
