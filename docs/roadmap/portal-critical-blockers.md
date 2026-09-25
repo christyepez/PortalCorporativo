@@ -1,30 +1,33 @@
 # Portal Critical Blockers
 
-## Production blockers
+## Current PROD-local state
 
-- RuntimeDockerUpValidated: PendingControlledEnvironment.
-- HealthChecksValidated: PendingControlledEnvironment.
-- SmokeTestsValidated: PendingControlledEnvironment.
-- FrontendShellBuildable: false.
+The controlled local runtime is closed and validated on `trabajo`.
+
+- RuntimeDockerUpValidated: true.
+- HealthChecksValidated: true.
+- SmokeTestsValidated: true.
+- FrontendShellBuildable: true.
+- MultiTenantIsolationValidated: true.
+- ObservabilityScanValidated: true.
+- DriftCheckValidated: true.
+- CRM, Financiero, HistoriasPaolin and Talento Humano are runtime-enabled behind the Portal Gateway.
+
+## External production blockers
+
 - SsoOidcProductionConfigured: false.
 - SecretProviderProductionConfigured: false.
 - RealNotificationProvidersConfigured: false.
-- ExternalModuleRuntimeEnabled: false.
+- External/cloud production activation is not approved.
 
-## Consumer blockers
+## Security / operations blockers
 
-- CRM onboarding is contract-only and not runtime-enabled.
-- Financiero onboarding is contract-only and not runtime-enabled.
-- No productive CRM/Financiero gateway routes are approved.
-- No productive external navigation is approved.
-
-## Security blockers
-
-- Production identity provider is not selected.
-- Runtime secret source is not selected.
-- Token/session policy is not production-validated.
-- Notification provider secrets are not configured through an approved store.
+- Production identity provider and registration metadata are not approved.
+- Runtime secret provider and rotation ownership are not approved.
+- Token/session policy requires validation against the selected production IdP.
+- Notification provider credentials must come from an approved external secret store.
+- Architecture, Security and Operations approvals remain required by `ExternalProductionActivationInputs`.
 
 ## Closure decision
 
-These blockers do not prevent baseline closure, but they prevent production readiness.
+These blockers do not affect the closed PROD-local objective. They intentionally prevent external production activation until approved inputs and ownership are supplied.

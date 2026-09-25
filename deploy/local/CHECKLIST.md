@@ -1,5 +1,14 @@
 # Local Compose Checklist
 
+> **Legacy checklist:** the active runtime checklist is the root PROD-local lifecycle (`scripts/local/prod-local-*.ps1`). This file documents the older profile-based `deploy/local` workspace and must not be used to validate the current integrated Portal runtime.
+>
+> Current validation:
+> ```powershell
+> ./scripts/local/prod-local-status.ps1
+> ./scripts/local/prod-local-verify.ps1 -ScanLogs
+> ./scripts/local/prod-local-drift-check.ps1
+> ```
+
 ## Antes de ejecutar
 
 - [ ] `.env.local` existe y no esta versionado.
