@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { ConfigurationItem, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { CatalogEntry, ConfigurationItem, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -112,6 +112,11 @@ export class AppComponent {
   protected configurationLoading = false;
   protected configurationError?: string;
   protected configurationItems: ConfigurationItem[] = [];
+  protected catalogNameFilter = '';
+  protected catalogActiveFilter = 'all';
+  protected catalogLoading = false;
+  protected catalogError?: string;
+  protected catalogEntries: CatalogEntry[] = [];
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -120,6 +125,7 @@ export class AppComponent {
     if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
     if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
     if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
+    if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -150,6 +156,22 @@ export class AppComponent {
 
   protected selectSecurityTab(tab: SecurityTab): void {
     this.activeSecurityTab = tab;
+  }
+
+  protected async loadCatalogData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const catalog = this.catalogNameFilter.trim().toLowerCase();
+    const isActive = this.catalogActiveFilter === 'all' ? undefined : this.catalogActiveFilter === 'active';
+    this.catalogLoading = true;
+    this.catalogError = undefined;
+    try {
+      this.catalogEntries = await firstValueFrom(this.portalApi.loadCatalog(catalog || undefined, isActive));
+    } catch (error: unknown) {
+      this.catalogEntries = [];
+      this.catalogError = error instanceof Error ? error.message : 'No fue posible cargar Catalog API.';
+    } finally {
+      this.catalogLoading = false;
+    }
   }
 
   protected configurationScopeLabel(scope: number): string {

@@ -59,6 +59,18 @@ export interface ConfigurationItem {
   readonly isActive: boolean;
 }
 
+export interface CatalogEntry {
+  readonly id: string;
+  readonly catalog: string;
+  readonly code: string;
+  readonly name: string;
+  readonly description?: string | null;
+  readonly isActive: boolean;
+  readonly sortOrder: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -121,9 +133,12 @@ export class PortalApiService {
     return this.http.get<ApiResponse<ConfigurationItem[]>>(`${environment.apiBasePath}/configuration/scopes/${scope}${suffix}`, { headers: this.headers() });
   }
 
-  loadCatalog(catalog?: string): Observable<unknown> {
-    const suffix = catalog ? `?catalog=${encodeURIComponent(catalog)}` : '';
-    return this.http.get(`${environment.apiBasePath}/catalog/entries${suffix}`, { headers: this.headers() });
+  loadCatalog(catalog?: string, isActive?: boolean): Observable<CatalogEntry[]> {
+    const params = new URLSearchParams();
+    if (catalog) params.set('catalog', catalog);
+    if (isActive !== undefined) params.set('isActive', String(isActive));
+    const suffix = params.size ? `?${params.toString()}` : '';
+    return this.http.get<CatalogEntry[]>(`${environment.apiBasePath}/catalog/entries${suffix}`, { headers: this.headers() });
   }
 
   loadReports(): Observable<unknown> {

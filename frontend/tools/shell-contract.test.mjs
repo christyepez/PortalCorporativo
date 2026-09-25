@@ -102,6 +102,15 @@ test('configuration administration loads live scope data with valid scope filter
   assert.doesNotMatch(template, /Nuevo parámetro/);
 });
 
+test('catalog administration loads live entries with catalog and active filters', () => {
+  assert.match(apiService, /\/catalog\/entries\$\{suffix\}/);
+  assert.match(component, /async loadCatalogData\(\)/);
+  assert.match(component, /catalogActiveFilter\s*=\s*'all'/);
+  assert.match(template, /@for \(entry of catalogEntries; track entry\.id\)/);
+  assert.match(template, /portal-e2e/);
+  assert.doesNotMatch(template, /Nuevo valor/);
+});
+
 test('administrative shell exposes the central management sections', () => {
   for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'audit', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));

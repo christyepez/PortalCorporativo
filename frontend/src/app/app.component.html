@@ -337,10 +337,62 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Datos maestros</p><h2>Catálogos</h2></div>
-            <button type="button" class="primary">Nuevo valor</button>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="catalogLoading" (click)="loadCatalogData()">Recargar</button>
+            }
           </div>
-          <div class="toolbar"><label>Catálogo<select><option>Todos</option><option>Estados</option><option>Categorías</option><option>Tipos</option></select></label><label>Buscar<input type="search" placeholder="Código o nombre"></label></div>
-          <div class="empty-state compact-state"><h3>Catálogos reutilizables</h3><p>Catálogos y valores compartidos por las aplicaciones sin duplicar lógica en cada sistema.</p></div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Catalog API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            <div class="toolbar">
+              <label>Catálogo
+                <input type="search"
+                       [value]="catalogNameFilter"
+                       (input)="catalogNameFilter = $any($event.target).value"
+                       (keyup.enter)="loadCatalogData()"
+                       placeholder="Ej. portal-e2e">
+              </label>
+              <label>Estado
+                <select [value]="catalogActiveFilter" (change)="catalogActiveFilter = $any($event.target).value">
+                  <option value="all">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                </select>
+              </label>
+              <button type="button" class="primary" [disabled]="catalogLoading" (click)="loadCatalogData()">Consultar</button>
+            </div>
+
+            @if (catalogError) {
+              <div class="toolbar" role="alert">{{ catalogError }}</div>
+            }
+
+            @if (catalogLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Catalog API…</h3></div>
+            } @else {
+              <div class="table-card">
+                <div class="table-row table-row--header"><span>Catálogo</span><span>Código</span><span>Nombre</span><span>Orden</span><span>Estado</span></div>
+                @for (entry of catalogEntries; track entry.id) {
+                  <div class="table-row">
+                    <strong>{{ entry.catalog }}</strong>
+                    <span class="code">{{ entry.code }}</span>
+                    <span>{{ entry.name }}</span>
+                    <span>{{ entry.sortOrder }}</span>
+                    <span class="pill">{{ entry.isActive ? 'Activo' : 'Inactivo' }}</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state">
+                    <h3>No hay valores para los filtros actuales</h3>
+                    <p>Catalog API devolvió una colección vacía.</p>
+                  </div>
+                }
+              </div>
+            }
+          }
         </section>
       }
 
