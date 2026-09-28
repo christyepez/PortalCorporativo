@@ -118,6 +118,21 @@ export interface AuditSummary {
   readonly topActions: AuditMetric[];
 }
 
+export interface ReportDefinition {
+  readonly key: string;
+  readonly name: string;
+  readonly description: string;
+  readonly moduleCode: string;
+  readonly requiredParameters: string[];
+}
+
+export interface ReportExecution {
+  readonly key: string;
+  readonly generatedAt: string;
+  readonly rows: Record<string, unknown>[];
+  readonly sourceMode: string;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -219,8 +234,12 @@ export class PortalApiService {
     return this.http.get<ApiResponse<AuditSummary>>(`${environment.apiBasePath}/audit/events/summary?hours=${encodeURIComponent(hours)}`, { headers: this.headers() });
   }
 
-  loadReports(): Observable<unknown> {
-    return this.http.get(`${environment.apiBasePath}/reporting/reports`, { headers: this.headers() });
+  loadReports(): Observable<ReportDefinition[]> {
+    return this.http.get<ReportDefinition[]>(`${environment.apiBasePath}/reporting/reports`, { headers: this.headers() });
+  }
+
+  executeReport(key: string, parameters: Record<string, string>): Observable<ReportExecution> {
+    return this.http.post<ReportExecution>(`${environment.apiBasePath}/reporting/reports/${encodeURIComponent(key)}/execute`, { parameters }, { headers: this.headers() });
   }
 
   private headers(): HttpHeaders {

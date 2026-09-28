@@ -555,7 +555,104 @@
             }
           }
         </section>
-      }      @if (activeSection === 'operations') {
+      }
+
+      @if (activeSection === 'reporting') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Analítica transversal</p><h2>Reportes</h2></div>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="reportingLoading" (click)="loadReportingData()">Recargar</button>
+            }
+          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Reporting API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            @if (reportingError) {
+              <div class="toolbar" role="alert">{{ reportingError }}</div>
+            }
+
+            @if (reportingLoading && reportDefinitions.length === 0) {
+              <div class="empty-state compact-state"><h3>Cargando Reporting API…</h3></div>
+            } @else {
+              <div class="application-grid">
+                @for (report of reportDefinitions; track report.key) {
+                  <article class="application-card" [class.active]="selectedReportKey === report.key">
+                    <div class="application-card__icon">{{ report.name.charAt(0) }}</div>
+                    <div>
+                      <h4>{{ report.name }}</h4>
+                      <p>{{ report.description }}</p>
+                      <span class="code">{{ report.moduleCode }} · {{ report.key }}</span>
+                    </div>
+                    <div class="application-card__footer">
+                      <span class="pill">{{ report.requiredParameters.length }} parámetros</span>
+                      <button type="button" class="link-button" (click)="selectReport(report.key)">Seleccionar</button>
+                    </div>
+                  </article>
+                } @empty {
+                  <div class="empty-state compact-state"><h3>No hay definiciones disponibles</h3></div>
+                }
+              </div>
+
+              @if (selectedReport(); as report) {
+                <section class="module-panel">
+                  <div>
+                    <p class="eyebrow">Reporte seleccionado</p>
+                    <h3>{{ report.name }}</h3>
+                    <p>{{ report.description }}</p>
+                  </div>
+                  <div class="module-panel__details">
+                    @for (parameter of report.requiredParameters; track parameter) {
+                      <label>{{ parameter }}
+                        <input type="text"
+                               [value]="reportParameterValues[parameter] || ''"
+                               (input)="setReportParameter(parameter, $any($event.target).value)"
+                               [placeholder]="parameter">
+                      </label>
+                    } @empty {
+                      <span>Este reporte no requiere parámetros.</span>
+                    }
+                    <button type="button" class="primary" [disabled]="reportingLoading" (click)="executeSelectedReport()">
+                      {{ reportingLoading ? 'Ejecutando…' : 'Ejecutar reporte' }}
+                    </button>
+                  </div>
+                </section>
+              }
+
+              @if (reportExecution) {
+                <section class="section-block">
+                  <div class="section-heading">
+                    <div>
+                      <p class="eyebrow">{{ reportExecution.sourceMode }}</p>
+                      <h3>Resultado · {{ reportExecution.key }}</h3>
+                    </div>
+                    <span>{{ reportExecution.rows.length }} filas</span>
+                  </div>
+                  <div class="table-card">
+                    <div class="table-row table-row--header">
+                      @for (column of reportColumns(); track column) { <span>{{ column }}</span> }
+                    </div>
+                    @for (row of reportExecution.rows; track $index) {
+                      <div class="table-row">
+                        @for (column of reportColumns(); track column) { <span>{{ row[column] }}</span> }
+                      </div>
+                    } @empty {
+                      <div class="empty-state compact-state"><h3>El reporte no devolvió filas</h3></div>
+                    }
+                  </div>
+                </section>
+              }
+            }
+          }
+        </section>
+      }
+
+      @if (activeSection === 'operations') {
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Operación local</p><h2>Estado de servicios</h2></div>

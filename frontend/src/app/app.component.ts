@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -20,7 +20,7 @@ interface ModuleProbeResult {
   readonly status?: number;
   readonly checkedAt?: Date;
 }
-type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'operations';
+type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'reporting' | 'operations';
 
 interface NavigationItem {
   readonly id: AdminSection;
@@ -62,6 +62,7 @@ export class AppComponent {
     { id: 'catalogs', label: 'Catálogos', description: 'Valores parametrizables', icon: '≡' },
     { id: 'content', label: 'Contenido', description: 'Archivos y documentos', icon: '▤' },
     { id: 'audit', label: 'Auditoría', description: 'Trazabilidad y eventos', icon: '◎' },
+    { id: 'reporting', label: 'Reportes', description: 'Definiciones y ejecución', icon: '▥' },
     { id: 'operations', label: 'Operaciones', description: 'Salud de servicios', icon: '◌' }
   ];
 
@@ -136,6 +137,12 @@ export class AppComponent {
   protected auditPage = 1;
   protected readonly auditPageSize = 20;
   protected auditTotal = 0;
+  protected reportingLoading = false;
+  protected reportingError?: string;
+  protected reportDefinitions: ReportDefinition[] = [];
+  protected selectedReportKey = '';
+  protected reportParameterValues: Record<string, string> = {};
+  protected reportExecution?: ReportExecution;
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -147,6 +154,7 @@ export class AppComponent {
     if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
     if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
     if (section === 'audit' && this.portalApi.hasAuthenticatedSession()) void this.loadAuditData(1);
+    if (section === 'reporting' && this.portalApi.hasAuthenticatedSession()) void this.loadReportingData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -279,6 +287,72 @@ export class AppComponent {
 
   protected formatAuditTimestamp(value: string): string {
     return new Date(value).toLocaleString();
+  }
+
+  protected async loadReportingData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.reportingLoading = true;
+    this.reportingError = undefined;
+    try {
+      this.reportDefinitions = await firstValueFrom(this.portalApi.loadReports());
+      if (!this.selectedReportKey && this.reportDefinitions.length > 0) {
+        this.selectReport(this.reportDefinitions[0].key);
+      }
+    } catch (error: unknown) {
+      this.reportDefinitions = [];
+      this.reportExecution = undefined;
+      this.reportingError = error instanceof Error ? error.message : 'No fue posible cargar Reporting API.';
+    } finally {
+      this.reportingLoading = false;
+    }
+  }
+
+  protected selectReport(key: string): void {
+    this.selectedReportKey = key;
+    this.reportExecution = undefined;
+    this.reportingError = undefined;
+    const definition = this.selectedReport();
+    const nextValues: Record<string, string> = {};
+    for (const parameter of definition?.requiredParameters ?? []) nextValues[parameter] = this.reportParameterValues[parameter] ?? '';
+    this.reportParameterValues = nextValues;
+  }
+
+  protected selectedReport(): ReportDefinition | undefined {
+    return this.reportDefinitions.find((report) => report.key === this.selectedReportKey);
+  }
+
+  protected setReportParameter(name: string, value: string): void {
+    this.reportParameterValues = { ...this.reportParameterValues, [name]: value };
+  }
+
+  protected async executeSelectedReport(): Promise<void> {
+    const definition = this.selectedReport();
+    if (!definition || !this.portalApi.hasAuthenticatedSession()) return;
+    const parameters: Record<string, string> = {};
+    for (const name of definition.requiredParameters) {
+      const value = (this.reportParameterValues[name] ?? '').trim();
+      if (!value) {
+        this.reportingError = `Completa el parámetro requerido: ${name}.`;
+        this.reportExecution = undefined;
+        return;
+      }
+      parameters[name] = value;
+    }
+    this.reportingLoading = true;
+    this.reportingError = undefined;
+    try {
+      this.reportExecution = await firstValueFrom(this.portalApi.executeReport(definition.key, parameters));
+    } catch (error: unknown) {
+      this.reportExecution = undefined;
+      this.reportingError = error instanceof Error ? error.message : 'No fue posible ejecutar el reporte.';
+    } finally {
+      this.reportingLoading = false;
+    }
+  }
+
+  protected reportColumns(): string[] {
+    const firstRow = this.reportExecution?.rows[0];
+    return firstRow ? Object.keys(firstRow) : [];
   }
 
   protected configurationScopeLabel(scope: number): string {
