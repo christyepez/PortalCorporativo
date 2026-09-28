@@ -158,8 +158,20 @@ test('notification administration loads templates and messages with manual retry
   assert.match(template, /Cancelar/);
 });
 
+test('integration administration queries outbox and inbox status without enqueue actions', () => {
+  assert.match(apiService, /\/integration\/outbox\/\$\{encodeURIComponent\(messageId\)\}/);
+  assert.match(apiService, /\/integration\/outbox\/status\?\$\{params\.toString\(\)\}/);
+  assert.match(apiService, /\/integration\/inbox\/processed\?\$\{params\.toString\(\)\}/);
+  assert.match(component, /async lookupOutboxByMessageId\(\)/);
+  assert.match(component, /async lookupOutboxByIdempotencyKey\(\)/);
+  assert.match(component, /async lookupInboxProcessed\(\)/);
+  assert.match(template, /Consultar Outbox por clave/);
+  assert.match(template, /Verificar procesamiento/);
+  assert.doesNotMatch(template, /Encolar evento/);
+});
+
 test('administrative shell exposes the central management sections', () => {
-  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'reporting', 'notifications', 'operations']) {
+  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'reporting', 'notifications', 'integration', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
     assert.match(template, new RegExp(`activeSection === '${section}'`));
   }
