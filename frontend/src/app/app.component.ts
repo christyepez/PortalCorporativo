@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, NotificationMessage, NotificationTemplate, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -20,7 +20,7 @@ interface ModuleProbeResult {
   readonly status?: number;
   readonly checkedAt?: Date;
 }
-type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'reporting' | 'operations';
+type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'reporting' | 'notifications' | 'operations';
 
 interface NavigationItem {
   readonly id: AdminSection;
@@ -63,6 +63,7 @@ export class AppComponent {
     { id: 'content', label: 'Contenido', description: 'Archivos y documentos', icon: '▤' },
     { id: 'audit', label: 'Auditoría', description: 'Trazabilidad y eventos', icon: '◎' },
     { id: 'reporting', label: 'Reportes', description: 'Definiciones y ejecución', icon: '▥' },
+    { id: 'notifications', label: 'Notificaciones', description: 'Plantillas y entregas', icon: '✉' },
     { id: 'operations', label: 'Operaciones', description: 'Salud de servicios', icon: '◌' }
   ];
 
@@ -143,6 +144,11 @@ export class AppComponent {
   protected selectedReportKey = '';
   protected reportParameterValues: Record<string, string> = {};
   protected reportExecution?: ReportExecution;
+  protected notificationLoading = false;
+  protected notificationError?: string;
+  protected notificationTemplates: NotificationTemplate[] = [];
+  protected notificationMessages: NotificationMessage[] = [];
+  protected notificationActionId?: string;
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -155,6 +161,7 @@ export class AppComponent {
     if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
     if (section === 'audit' && this.portalApi.hasAuthenticatedSession()) void this.loadAuditData(1);
     if (section === 'reporting' && this.portalApi.hasAuthenticatedSession()) void this.loadReportingData();
+    if (section === 'notifications' && this.portalApi.hasAuthenticatedSession()) void this.loadNotificationData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -353,6 +360,70 @@ export class AppComponent {
   protected reportColumns(): string[] {
     const firstRow = this.reportExecution?.rows[0];
     return firstRow ? Object.keys(firstRow) : [];
+  }
+
+  protected async loadNotificationData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.notificationLoading = true;
+    this.notificationError = undefined;
+    try {
+      const [templatesResponse, messagesResponse] = await Promise.all([
+        firstValueFrom(this.portalApi.loadNotificationTemplates()),
+        firstValueFrom(this.portalApi.loadNotificationMessages())
+      ]);
+      this.notificationTemplates = templatesResponse.data ?? [];
+      this.notificationMessages = messagesResponse.data ?? [];
+    } catch (error: unknown) {
+      this.notificationTemplates = [];
+      this.notificationMessages = [];
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible cargar Notification API.';
+    } finally {
+      this.notificationLoading = false;
+    }
+  }
+
+  protected notificationChannelLabel(channel: number): string {
+    return ['Interno', 'Email Dev', 'Log Dev'][channel] ?? `Canal ${channel}`;
+  }
+
+  protected notificationStatusLabel(status: number): string {
+    return ['Pendiente', 'Procesando', 'Enviado', 'Fallido', 'Cancelado', 'Dead letter'][status] ?? `Estado ${status}`;
+  }
+
+  protected canRetryNotification(message: NotificationMessage): boolean {
+    return message.status === 3 || message.status === 5;
+  }
+
+  protected canCancelNotification(message: NotificationMessage): boolean {
+    return message.status !== 2 && message.status !== 4;
+  }
+
+  protected async retryNotification(message: NotificationMessage): Promise<void> {
+    if (!this.canRetryNotification(message) || !this.portalApi.hasAuthenticatedSession()) return;
+    this.notificationActionId = message.id;
+    this.notificationError = undefined;
+    try {
+      await firstValueFrom(this.portalApi.retryNotification(message.id));
+      await this.loadNotificationData();
+    } catch (error: unknown) {
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible reintentar la notificación.';
+    } finally {
+      this.notificationActionId = undefined;
+    }
+  }
+
+  protected async cancelNotification(message: NotificationMessage): Promise<void> {
+    if (!this.canCancelNotification(message) || !this.portalApi.hasAuthenticatedSession()) return;
+    this.notificationActionId = message.id;
+    this.notificationError = undefined;
+    try {
+      await firstValueFrom(this.portalApi.cancelNotification(message.id));
+      await this.loadNotificationData();
+    } catch (error: unknown) {
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible cancelar la notificación.';
+    } finally {
+      this.notificationActionId = undefined;
+    }
   }
 
   protected configurationScopeLabel(scope: number): string {

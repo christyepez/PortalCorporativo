@@ -652,6 +652,89 @@
         </section>
       }
 
+      @if (activeSection === 'notifications') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Mensajería transversal</p><h2>Notificaciones</h2></div>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="notificationLoading" (click)="loadNotificationData()">Recargar</button>
+            }
+          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Notification API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            @if (notificationError) {
+              <div class="toolbar" role="alert">{{ notificationError }}</div>
+            }
+
+            @if (notificationLoading && notificationTemplates.length === 0 && notificationMessages.length === 0) {
+              <div class="empty-state compact-state"><h3>Cargando Notification API…</h3></div>
+            } @else {
+              <section class="section-block">
+                <div class="section-heading">
+                  <div><p class="eyebrow">Gobierno</p><h3>Plantillas</h3></div>
+                  <span>{{ notificationTemplates.length }} registradas</span>
+                </div>
+                <div class="table-card">
+                  <div class="table-row table-row--header"><span>Código</span><span>Asunto</span><span>Canal</span><span>Versión</span><span>Estado</span></div>
+                  @for (template of notificationTemplates; track template.id) {
+                    <div class="table-row">
+                      <strong class="code">{{ template.code }}</strong>
+                      <span>{{ template.subject }}</span>
+                      <span>{{ notificationChannelLabel(template.defaultChannel) }}</span>
+                      <span>{{ template.version }}</span>
+                      <span class="pill">{{ template.isActive ? 'Activa' : 'Inactiva' }}</span>
+                    </div>
+                  } @empty {
+                    <div class="empty-state compact-state"><h3>No hay plantillas registradas</h3></div>
+                  }
+                </div>
+              </section>
+
+              <section class="section-block">
+                <div class="section-heading">
+                  <div><p class="eyebrow">Operación</p><h3>Mensajes</h3></div>
+                  <span>{{ notificationMessages.length }} mensajes</span>
+                </div>
+                <div class="table-card">
+                  <div class="table-row table-row--header"><span>Plantilla</span><span>Canal</span><span>Estado</span><span>Intentos</span><span>Acciones</span></div>
+                  @for (message of notificationMessages; track message.id) {
+                    <div class="table-row">
+                      <strong>{{ message.templateCode }}</strong>
+                      <span>{{ notificationChannelLabel(message.channel) }}</span>
+                      <span class="pill">{{ notificationStatusLabel(message.status) }}</span>
+                      <span>{{ message.attemptCount }}</span>
+                      <span>
+                        @if (canRetryNotification(message)) {
+                          <button type="button" class="link-button"
+                                  [disabled]="notificationActionId === message.id"
+                                  (click)="retryNotification(message)">Reintentar</button>
+                        }
+                        @if (canCancelNotification(message)) {
+                          <button type="button" class="link-button"
+                                  [disabled]="notificationActionId === message.id"
+                                  (click)="cancelNotification(message)">Cancelar</button>
+                        }
+                        @if (!canRetryNotification(message) && !canCancelNotification(message)) {
+                          <span class="muted">Sin acciones</span>
+                        }
+                      </span>
+                    </div>
+                  } @empty {
+                    <div class="empty-state compact-state"><h3>No hay mensajes registrados</h3></div>
+                  }
+                </div>
+              </section>
+            }
+          }
+        </section>
+      }
+
       @if (activeSection === 'operations') {
         <section class="section-block">
           <div class="section-heading">
