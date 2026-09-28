@@ -7,7 +7,7 @@
 }
 
 * { box-sizing: border-box; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .portal { min-height: 100vh; display: flex; flex-direction: column; }
 

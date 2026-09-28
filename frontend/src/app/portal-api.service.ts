@@ -59,6 +59,20 @@ export interface ConfigurationItem {
   readonly isActive: boolean;
 }
 
+export interface CreateConfigurationItem {
+  readonly key: string;
+  readonly scope: number;
+  readonly moduleCode?: string | null;
+  readonly userId?: string | null;
+  readonly category: number;
+  readonly valueJson: string;
+}
+
+export interface UpdateConfigurationItem {
+  readonly category: number;
+  readonly valueJson: string;
+}
+
 export interface CatalogEntry {
   readonly id: string;
   readonly catalog: string;
@@ -262,6 +276,19 @@ export class PortalApiService {
     if (userId) params.set('userId', userId);
     const suffix = params.size ? `?${params.toString()}` : '';
     return this.http.get<ApiResponse<ConfigurationItem[]>>(`${environment.apiBasePath}/configuration/scopes/${scope}${suffix}`, { headers: this.headers() });
+  }
+
+  createConfigurationItem(request: CreateConfigurationItem): Observable<ApiResponse<ConfigurationItem>> {
+    return this.http.post<ApiResponse<ConfigurationItem>>(`${environment.apiBasePath}/configuration/items`, request, { headers: this.headers() });
+  }
+
+  updateConfigurationItem(id: string, request: UpdateConfigurationItem): Observable<ApiResponse<ConfigurationItem>> {
+    return this.http.put<ApiResponse<ConfigurationItem>>(`${environment.apiBasePath}/configuration/items/${encodeURIComponent(id)}`, request, { headers: this.headers() });
+  }
+
+  setConfigurationActive(id: string, active: boolean): Observable<ApiResponse<ConfigurationItem>> {
+    const action = active ? 'activate' : 'deactivate';
+    return this.http.post<ApiResponse<ConfigurationItem>>(`${environment.apiBasePath}/configuration/items/${encodeURIComponent(id)}/${action}`, {}, { headers: this.headers() });
   }
 
   loadCatalog(catalog?: string, isActive?: boolean): Observable<CatalogEntry[]> {

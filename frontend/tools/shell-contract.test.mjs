@@ -91,15 +91,20 @@ test('menu administration loads the live module contract instead of hardcoded ro
   assert.doesNotMatch(template, /<strong>Administración<\/strong>/);
 });
 
-test('configuration administration loads live scope data with valid scope filters', () => {
-  assert.match(apiService, /\/configuration\/scopes\/\$\{scope\}/);
+test('configuration administration supports versioned CRUD with backend authorization', () => {
+  assert.match(apiService, /post<ApiResponse<ConfigurationItem>>\(`\$\{environment\.apiBasePath\}\/configuration\/items`/);
+  assert.match(apiService, /put<ApiResponse<ConfigurationItem>>\(`\$\{environment\.apiBasePath\}\/configuration\/items\/\$\{encodeURIComponent\(id\)\}`/);
+  assert.match(apiService, /\/configuration\/items\/\$\{encodeURIComponent\(id\)\}\/\$\{action\}/);
   assert.match(component, /async loadConfigurationData\(\)/);
-  assert.match(component, /configurationScopeLabel\(scope:\s*number\)/);
-  assert.match(component, /configurationCategoryLabel\(category:\s*number\)/);
-  assert.match(template, /configurationScope === 3/);
-  assert.match(template, /configurationScope >= 2/);
+  assert.match(component, /async saveConfigurationItem\(\)/);
+  assert.match(component, /async toggleConfigurationItem\(item:\s*ConfigurationItem\)/);
+  assert.match(component, /beginEditConfigurationItem\(item:\s*ConfigurationItem\)/);
+  assert.match(component, /JSON\.parse\(valueJson\)/);
+  assert.match(template, /configuration\.manage/);
+  assert.match(template, /Nuevo parámetro/);
+  assert.match(template, /Guardar cambios/);
+  assert.match(template, /Desactivar/);
   assert.match(template, /@for \(item of configurationItems; track item\.id\)/);
-  assert.doesNotMatch(template, /Nuevo parámetro/);
 });
 
 test('catalog administration supports managed CRUD with backend authorization', () => {

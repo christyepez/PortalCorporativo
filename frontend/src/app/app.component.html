@@ -267,14 +267,17 @@
           <div class="section-heading">
             <div><p class="eyebrow">Configuración funcional</p><h2>Parámetros del sistema</h2></div>
             @if (hasAuthenticatedSession()) {
-              <button type="button" class="secondary" [disabled]="configurationLoading" (click)="loadConfigurationData()">Recargar</button>
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="configurationLoading || configurationSaving" (click)="loadConfigurationData()">Recargar</button>
+                <button type="button" class="primary" [disabled]="configurationSaving" (click)="beginCreateConfigurationItem()">Nuevo parámetro</button>
+              </div>
             }
           </div>
 
           @if (!hasAuthenticatedSession()) {
             <div class="empty-state compact-state">
               <h3>Sesión administrativa requerida</h3>
-              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Configuration API.</p>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar y administrar Configuration API.</p>
               <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
             </div>
           } @else {
@@ -303,25 +306,107 @@
                          placeholder="00000000-0000-0000-0000-000000000000">
                 </label>
               }
-              <button type="button" class="primary" [disabled]="configurationLoading" (click)="loadConfigurationData()">Consultar</button>
+              <button type="button" class="primary" [disabled]="configurationLoading || configurationSaving" (click)="loadConfigurationData()">Consultar</button>
             </div>
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">{{ configurationFormMode === 'create' ? 'Nuevo parámetro' : 'Editar parámetro' }}</p>
+                <h3>{{ configurationFormMode === 'create' ? 'Crear configuración' : configurationFormKey }}</h3>
+                <p>Las mutaciones requieren el permiso backend <span class="code">configuration.manage</span> y generan una nueva versión.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Clave
+                  <input type="text"
+                         [disabled]="configurationFormMode === 'edit'"
+                         [value]="configurationFormKey"
+                         (input)="configurationFormKey = $any($event.target).value"
+                         placeholder="theme">
+                </label>
+                <label>Ámbito
+                  <select [disabled]="configurationFormMode === 'edit'"
+                          [value]="configurationFormScope"
+                          (change)="configurationFormScope = +$any($event.target).value">
+                    <option [value]="0">Global</option>
+                    <option [value]="1">Tenant</option>
+                    <option [value]="2">Módulo</option>
+                    <option [value]="3">Usuario</option>
+                  </select>
+                </label>
+                @if (configurationFormScope >= 2) {
+                  <label>Módulo
+                    <input type="text"
+                           [disabled]="configurationFormMode === 'edit'"
+                           [value]="configurationFormModuleCode"
+                           (input)="configurationFormModuleCode = $any($event.target).value"
+                           placeholder="portal">
+                  </label>
+                }
+                @if (configurationFormScope === 3) {
+                  <label>User ID
+                    <input type="text"
+                           [disabled]="configurationFormMode === 'edit'"
+                           [value]="configurationFormUserId"
+                           (input)="configurationFormUserId = $any($event.target).value"
+                           placeholder="00000000-0000-0000-0000-000000000000">
+                  </label>
+                }
+                <label>Categoría
+                  <select [value]="configurationFormCategory" (change)="configurationFormCategory = +$any($event.target).value">
+                    <option [value]="0">Visual</option>
+                    <option [value]="1">Funcional</option>
+                    <option [value]="2">Grid</option>
+                    <option [value]="3">Formulario</option>
+                    <option [value]="4">Acción</option>
+                    <option [value]="5">Layout</option>
+                    <option [value]="6">Tema</option>
+                  </select>
+                </label>
+                <label>ValueJson
+                  <textarea rows="5"
+                            [value]="configurationFormValueJson"
+                            (input)="configurationFormValueJson = $any($event.target).value"
+                            placeholder='{"enabled":true}'></textarea>
+                </label>
+                @if (configurationFormMode === 'edit') {
+                  <span class="pill">{{ configurationFormIsActive ? 'Activo' : 'Inactivo' }}</span>
+                }
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="configurationSaving" (click)="saveConfigurationItem()">
+                    {{ configurationSaving ? 'Guardando…' : (configurationFormMode === 'create' ? 'Crear parámetro' : 'Guardar cambios') }}
+                  </button>
+                  @if (configurationFormMode === 'edit') {
+                    <button type="button" class="secondary" [disabled]="configurationSaving" (click)="cancelConfigurationEdit()">Cancelar edición</button>
+                  }
+                </div>
+              </div>
+            </section>
 
             @if (configurationError) {
               <div class="toolbar" role="alert">{{ configurationError }}</div>
+            }
+            @if (configurationSuccess) {
+              <div class="toolbar" role="status">{{ configurationSuccess }}</div>
             }
 
             @if (configurationLoading) {
               <div class="empty-state compact-state"><h3>Cargando Configuration API…</h3></div>
             } @else {
               <div class="table-card">
-                <div class="table-row table-row--header"><span>Clave</span><span>Ámbito</span><span>Módulo</span><span>Categoría</span><span>Versión / Estado</span></div>
+                <div class="table-row table-row--header"><span>Clave</span><span>Ámbito</span><span>Módulo / Usuario</span><span>Categoría</span><span>Versión / Estado / Acciones</span></div>
                 @for (item of configurationItems; track item.id) {
                   <div class="table-row">
                     <strong>{{ item.key }}</strong>
                     <span>{{ configurationScopeLabel(item.scope) }}</span>
-                    <span>{{ item.moduleCode || '—' }}</span>
+                    <span>{{ item.moduleCode || '—' }}{{ item.userId ? ' · ' + item.userId : '' }}</span>
                     <span>{{ configurationCategoryLabel(item.category) }}</span>
-                    <span>{{ item.version }} · {{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
+                    <span>
+                      <span class="pill">v{{ item.version }} · {{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
+                      <button type="button" class="link-button" [disabled]="configurationSaving" (click)="beginEditConfigurationItem(item)">Editar</button>
+                      <button type="button" class="link-button" [disabled]="configurationSaving" (click)="toggleConfigurationItem(item)">
+                        {{ item.isActive ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    </span>
                   </div>
                 } @empty {
                   <div class="empty-state compact-state">
