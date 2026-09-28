@@ -71,6 +71,17 @@ export interface CatalogEntry {
   readonly updatedAt: string;
 }
 
+export interface ContentDocument {
+  readonly id: string;
+  readonly moduleCode: string;
+  readonly fileName: string;
+  readonly contentType: string;
+  readonly length: number;
+  readonly sha256: string;
+  readonly isActive: boolean;
+  readonly createdAt: string;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -139,6 +150,21 @@ export class PortalApiService {
     if (isActive !== undefined) params.set('isActive', String(isActive));
     const suffix = params.size ? `?${params.toString()}` : '';
     return this.http.get<CatalogEntry[]>(`${environment.apiBasePath}/catalog/entries${suffix}`, { headers: this.headers() });
+  }
+
+  loadContent(moduleCode?: string, isActive?: boolean): Observable<ContentDocument[]> {
+    const params = new URLSearchParams();
+    if (moduleCode) params.set('moduleCode', moduleCode);
+    if (isActive !== undefined) params.set('isActive', String(isActive));
+    const suffix = params.size ? `?${params.toString()}` : '';
+    return this.http.get<ContentDocument[]>(`${environment.apiBasePath}/content/documents${suffix}`, { headers: this.headers() });
+  }
+
+  downloadContent(id: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBasePath}/content/documents/${encodeURIComponent(id)}/download`, {
+      headers: this.headers(),
+      responseType: 'blob'
+    });
   }
 
   loadReports(): Observable<unknown> {

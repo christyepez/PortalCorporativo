@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { CatalogEntry, ConfigurationItem, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -20,7 +20,7 @@ interface ModuleProbeResult {
   readonly status?: number;
   readonly checkedAt?: Date;
 }
-type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'audit' | 'operations';
+type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'operations';
 
 interface NavigationItem {
   readonly id: AdminSection;
@@ -60,6 +60,7 @@ export class AppComponent {
     { id: 'menus', label: 'Menús', description: 'Navegación por aplicación', icon: '☰' },
     { id: 'configuration', label: 'Parámetros', description: 'Configuración funcional', icon: '⚙' },
     { id: 'catalogs', label: 'Catálogos', description: 'Valores parametrizables', icon: '≡' },
+    { id: 'content', label: 'Contenido', description: 'Archivos y documentos', icon: '▤' },
     { id: 'audit', label: 'Auditoría', description: 'Trazabilidad y eventos', icon: '◎' },
     { id: 'operations', label: 'Operaciones', description: 'Salud de servicios', icon: '◌' }
   ];
@@ -117,6 +118,12 @@ export class AppComponent {
   protected catalogLoading = false;
   protected catalogError?: string;
   protected catalogEntries: CatalogEntry[] = [];
+  protected contentModuleFilter = '';
+  protected contentActiveFilter = 'all';
+  protected contentLoading = false;
+  protected contentError?: string;
+  protected contentDocuments: ContentDocument[] = [];
+  protected downloadingContentId?: string;
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -126,6 +133,7 @@ export class AppComponent {
     if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
     if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
     if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
+    if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -172,6 +180,47 @@ export class AppComponent {
     } finally {
       this.catalogLoading = false;
     }
+  }
+
+  protected async loadContentData(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const moduleCode = this.contentModuleFilter.trim().toLowerCase();
+    const isActive = this.contentActiveFilter === 'all' ? undefined : this.contentActiveFilter === 'active';
+    this.contentLoading = true;
+    this.contentError = undefined;
+    try {
+      this.contentDocuments = await firstValueFrom(this.portalApi.loadContent(moduleCode || undefined, isActive));
+    } catch (error: unknown) {
+      this.contentDocuments = [];
+      this.contentError = error instanceof Error ? error.message : 'No fue posible cargar Content API.';
+    } finally {
+      this.contentLoading = false;
+    }
+  }
+
+  protected async downloadContentDocument(document: ContentDocument): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession() || !document.isActive) return;
+    this.downloadingContentId = document.id;
+    this.contentError = undefined;
+    try {
+      const blob = await firstValueFrom(this.portalApi.downloadContent(document.id));
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = document.fileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+      this.contentError = error instanceof Error ? error.message : 'No fue posible descargar el documento.';
+    } finally {
+      this.downloadingContentId = undefined;
+    }
+  }
+
+  protected formatFileSize(length: number): string {
+    if (length < 1024) return `${length} B`;
+    if (length < 1024 * 1024) return `${(length / 1024).toFixed(1)} KB`;
+    return `${(length / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected configurationScopeLabel(scope: number): string {
