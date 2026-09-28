@@ -145,8 +145,21 @@ test('reporting administration loads definitions and executes reports through Re
   assert.match(template, /reportExecution\.rows/);
 });
 
+test('notification administration loads templates and messages with manual retry/cancel actions', () => {
+  assert.match(apiService, /\/notifications\/templates/);
+  assert.match(apiService, /\/notifications\/\$\{encodeURIComponent\(id\)\}\/retry/);
+  assert.match(apiService, /\/notifications\/\$\{encodeURIComponent\(id\)\}\/cancel/);
+  assert.match(component, /async loadNotificationData\(\)/);
+  assert.match(component, /notificationStatusLabel\(status:\s*number\)/);
+  assert.match(component, /canRetryNotification\(message:\s*NotificationMessage\)/);
+  assert.match(template, /@for \(template of notificationTemplates; track template\.id\)/);
+  assert.match(template, /@for \(message of notificationMessages; track message\.id\)/);
+  assert.match(template, /Reintentar/);
+  assert.match(template, /Cancelar/);
+});
+
 test('administrative shell exposes the central management sections', () => {
-  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'reporting', 'operations']) {
+  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'reporting', 'notifications', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
     assert.match(template, new RegExp(`activeSection === '${section}'`));
   }

@@ -133,6 +133,31 @@ export interface ReportExecution {
   readonly sourceMode: string;
 }
 
+export interface NotificationTemplate {
+  readonly id: string;
+  readonly code: string;
+  readonly subject: string;
+  readonly body: string;
+  readonly allowedVariables: string[];
+  readonly defaultChannel: number;
+  readonly version: number;
+  readonly isActive: boolean;
+}
+
+export interface NotificationMessage {
+  readonly id: string;
+  readonly templateCode: string;
+  readonly channel: number;
+  readonly status: number;
+  readonly attemptCount: number;
+  readonly createdAtUtc: string;
+  readonly scheduledAtUtc?: string | null;
+  readonly sentAtUtc?: string | null;
+  readonly failedAtUtc?: string | null;
+  readonly lastError?: string | null;
+  readonly correlationId: string;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -240,6 +265,22 @@ export class PortalApiService {
 
   executeReport(key: string, parameters: Record<string, string>): Observable<ReportExecution> {
     return this.http.post<ReportExecution>(`${environment.apiBasePath}/reporting/reports/${encodeURIComponent(key)}/execute`, { parameters }, { headers: this.headers() });
+  }
+
+  loadNotificationTemplates(): Observable<ApiResponse<NotificationTemplate[]>> {
+    return this.http.get<ApiResponse<NotificationTemplate[]>>(`${environment.apiBasePath}/notifications/templates`, { headers: this.headers() });
+  }
+
+  loadNotificationMessages(): Observable<ApiResponse<NotificationMessage[]>> {
+    return this.http.get<ApiResponse<NotificationMessage[]>>(`${environment.apiBasePath}/notifications/`, { headers: this.headers() });
+  }
+
+  retryNotification(id: string): Observable<ApiResponse<NotificationMessage>> {
+    return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/${encodeURIComponent(id)}/retry`, {}, { headers: this.headers() });
+  }
+
+  cancelNotification(id: string): Observable<ApiResponse<NotificationMessage>> {
+    return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/${encodeURIComponent(id)}/cancel`, {}, { headers: this.headers() });
   }
 
   private headers(): HttpHeaders {
