@@ -18,22 +18,22 @@ public static class CatalogEndpoints
             => await service.GetAsync(tenantContext.TenantId, id, cancellationToken) is { } entry ? Results.Ok(entry) : Results.NotFound())
             .RequireAuthorization(PortalPermissions.CatalogRead);
 
-        group.MapPost("/entries", async (CreateCatalogEntryRequest request, CatalogService service, IPortalTenantContext tenantContext, CancellationToken cancellationToken) =>
+        group.MapPost("/entries", async (CreateCatalogEntryRequest request, CatalogService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             try
             {
-                var entry = await service.CreateAsync(tenantContext.TenantId, request, cancellationToken);
+                var entry = await service.CreateAsync(tenantContext.TenantId, request, httpContext.TraceIdentifier, cancellationToken);
                 return Results.Created($"/api/catalog/entries/{entry.Id}", entry);
             }
             catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
             catch (InvalidOperationException ex) { return Results.Conflict(new { error = ex.Message }); }
         }).RequireAuthorization(PortalPermissions.CatalogManage);
 
-        group.MapPut("/entries/{id:guid}", async (Guid id, UpdateCatalogEntryRequest request, CatalogService service, IPortalTenantContext tenantContext, CancellationToken cancellationToken) =>
+        group.MapPut("/entries/{id:guid}", async (Guid id, UpdateCatalogEntryRequest request, CatalogService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             try
             {
-                return await service.UpdateAsync(tenantContext.TenantId, id, request, cancellationToken) is { } entry ? Results.Ok(entry) : Results.NotFound();
+                return await service.UpdateAsync(tenantContext.TenantId, id, request, httpContext.TraceIdentifier, cancellationToken) is { } entry ? Results.Ok(entry) : Results.NotFound();
             }
             catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
         }).RequireAuthorization(PortalPermissions.CatalogManage);

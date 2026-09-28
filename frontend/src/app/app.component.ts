@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -121,6 +121,16 @@ export class AppComponent {
   protected catalogLoading = false;
   protected catalogError?: string;
   protected catalogEntries: CatalogEntry[] = [];
+  protected catalogFormMode: 'create' | 'edit' = 'create';
+  protected catalogEditingId?: string;
+  protected catalogFormCatalog = '';
+  protected catalogFormCode = '';
+  protected catalogFormName = '';
+  protected catalogFormDescription = '';
+  protected catalogFormSortOrder = 0;
+  protected catalogFormIsActive = true;
+  protected catalogSaving = false;
+  protected catalogSuccess?: string;
   protected contentModuleFilter = '';
   protected contentActiveFilter = 'all';
   protected contentLoading = false;
@@ -217,6 +227,102 @@ export class AppComponent {
       this.catalogError = error instanceof Error ? error.message : 'No fue posible cargar Catalog API.';
     } finally {
       this.catalogLoading = false;
+    }
+  }
+
+  protected beginCreateCatalogEntry(): void {
+    this.catalogFormMode = 'create';
+    this.catalogEditingId = undefined;
+    this.catalogFormCatalog = this.catalogNameFilter.trim().toLowerCase();
+    this.catalogFormCode = '';
+    this.catalogFormName = '';
+    this.catalogFormDescription = '';
+    this.catalogFormSortOrder = 0;
+    this.catalogFormIsActive = true;
+    this.catalogError = undefined;
+    this.catalogSuccess = undefined;
+  }
+
+  protected beginEditCatalogEntry(entry: CatalogEntry): void {
+    this.catalogFormMode = 'edit';
+    this.catalogEditingId = entry.id;
+    this.catalogFormCatalog = entry.catalog;
+    this.catalogFormCode = entry.code;
+    this.catalogFormName = entry.name;
+    this.catalogFormDescription = entry.description ?? '';
+    this.catalogFormSortOrder = entry.sortOrder;
+    this.catalogFormIsActive = entry.isActive;
+    this.catalogError = undefined;
+    this.catalogSuccess = undefined;
+  }
+
+  protected cancelCatalogEdit(): void {
+    this.beginCreateCatalogEntry();
+  }
+
+  protected async saveCatalogEntry(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const name = this.catalogFormName.trim();
+    const description = this.catalogFormDescription.trim() || null;
+    const sortOrder = Number(this.catalogFormSortOrder) || 0;
+
+    if (!name) {
+      this.catalogError = 'Ingresa el nombre del valor de catálogo.';
+      return;
+    }
+
+    this.catalogSaving = true;
+    this.catalogError = undefined;
+    this.catalogSuccess = undefined;
+    try {
+      let successMessage = '';
+      if (this.catalogFormMode === 'create') {
+        const catalog = this.catalogFormCatalog.trim().toLowerCase();
+        const code = this.catalogFormCode.trim().toLowerCase();
+        if (!catalog || !code) {
+          this.catalogError = 'Catálogo y código son obligatorios para crear un valor.';
+          return;
+        }
+        const request: CreateCatalogEntry = { catalog, code, name, description, sortOrder };
+        const created = await firstValueFrom(this.portalApi.createCatalogEntry(request));
+        successMessage = `Valor ${created.code} creado correctamente.`;
+        this.catalogNameFilter = created.catalog;
+      } else if (this.catalogEditingId) {
+        const request: UpdateCatalogEntry = { name, description, isActive: this.catalogFormIsActive, sortOrder };
+        const updated = await firstValueFrom(this.portalApi.updateCatalogEntry(this.catalogEditingId, request));
+        successMessage = `Valor ${updated.code} actualizado correctamente.`;
+      }
+      await this.loadCatalogData();
+      this.beginCreateCatalogEntry();
+      this.catalogSuccess = successMessage;
+    } catch (error: unknown) {
+      this.catalogError = error instanceof Error ? error.message : 'No fue posible guardar el valor de catálogo.';
+    } finally {
+      this.catalogSaving = false;
+    }
+  }
+
+  protected async toggleCatalogEntry(entry: CatalogEntry): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.catalogSaving = true;
+    this.catalogError = undefined;
+    this.catalogSuccess = undefined;
+    try {
+      const request: UpdateCatalogEntry = {
+        name: entry.name,
+        description: entry.description ?? null,
+        isActive: !entry.isActive,
+        sortOrder: entry.sortOrder
+      };
+      const updated = await firstValueFrom(this.portalApi.updateCatalogEntry(entry.id, request));
+      const successMessage = `${updated.code} quedó ${updated.isActive ? 'activo' : 'inactivo'}.`;
+      await this.loadCatalogData();
+      if (this.catalogEditingId === entry.id) this.beginEditCatalogEntry(updated);
+      this.catalogSuccess = successMessage;
+    } catch (error: unknown) {
+      this.catalogError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del catálogo.';
+    } finally {
+      this.catalogSaving = false;
     }
   }
 

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Portal.Catalog.Application;
 using Portal.Catalog.Domain;
 
@@ -57,6 +58,15 @@ public sealed class EfCatalogRepository(CatalogDbContext db) : ICatalogRepositor
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 }
 
+public sealed class StructuredCatalogChangeRecorder(ILogger<StructuredCatalogChangeRecorder> logger) : ICatalogChangeRecorder
+{
+    public Task RecordAsync(string action, string entityId, object payload, string correlationId, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Catalog change {Action} {EntityId} {CorrelationId} {@Payload}", action, entityId, correlationId, payload);
+        return Task.CompletedTask;
+    }
+}
+
 public static class CatalogDependencyInjection
 {
     public static IServiceCollection AddCatalogFoundation(this IServiceCollection services, IConfiguration configuration)
@@ -65,6 +75,7 @@ public static class CatalogDependencyInjection
             ?? throw new InvalidOperationException("CatalogDb is required.");
         services.AddDbContext<CatalogDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ICatalogRepository, EfCatalogRepository>();
+        services.AddScoped<ICatalogChangeRecorder, StructuredCatalogChangeRecorder>();
         services.AddScoped<CatalogService>();
         if (string.Equals(configuration["Catalog:InitializeDatabase"], "true", StringComparison.OrdinalIgnoreCase))
             services.AddHostedService<CatalogDatabaseInitializer>();

@@ -12,7 +12,12 @@ public interface ICatalogRepository
     Task SaveChangesAsync(CancellationToken cancellationToken);
 }
 
-public sealed class CatalogService(ICatalogRepository repository, TimeProvider timeProvider)
+public interface ICatalogChangeRecorder
+{
+    Task RecordAsync(string action, string entityId, object payload, string correlationId, CancellationToken cancellationToken);
+}
+
+public sealed class CatalogService(ICatalogRepository repository, ICatalogChangeRecorder recorder, TimeProvider timeProvider)
 {
     public async Task<IReadOnlyCollection<CatalogEntryDto>> ListAsync(string tenantId, string? catalog, bool? isActive, CancellationToken cancellationToken)
         => (await repository.ListAsync(tenantId, catalog, isActive, cancellationToken)).Select(Map).ToArray();
@@ -20,7 +25,7 @@ public sealed class CatalogService(ICatalogRepository repository, TimeProvider t
     public async Task<CatalogEntryDto?> GetAsync(string tenantId, Guid id, CancellationToken cancellationToken)
         => (await repository.GetAsync(tenantId, id, cancellationToken)) is { } entry ? Map(entry) : null;
 
-    public async Task<CatalogEntryDto> CreateAsync(string tenantId, CreateCatalogEntryRequest request, CancellationToken cancellationToken)
+    public async Task<CatalogEntryDto> CreateAsync(string tenantId, CreateCatalogEntryRequest request, string correlationId, CancellationToken cancellationToken)
     {
         if (await repository.FindByCodeAsync(tenantId, request.Catalog, request.Code, cancellationToken) is not null)
             throw new InvalidOperationException("A catalog entry with the same catalog and code already exists for this tenant.");
@@ -28,16 +33,20 @@ public sealed class CatalogService(ICatalogRepository repository, TimeProvider t
         var entry = CatalogEntry.Create(tenantId, request.Catalog, request.Code, request.Name, request.Description, request.SortOrder, timeProvider.GetUtcNow());
         await repository.AddAsync(entry, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("created", entry.Id.ToString(), new { entry.TenantId, entry.Catalog, entry.Code, entry.Name, entry.SortOrder }, correlationId, cancellationToken);
         return Map(entry);
     }
 
-    public async Task<CatalogEntryDto?> UpdateAsync(string tenantId, Guid id, UpdateCatalogEntryRequest request, CancellationToken cancellationToken)
+    public async Task<CatalogEntryDto?> UpdateAsync(string tenantId, Guid id, UpdateCatalogEntryRequest request, string correlationId, CancellationToken cancellationToken)
     {
         var entry = await repository.GetAsync(tenantId, id, cancellationToken);
         if (entry is null) return null;
 
+        var previousActive = entry.IsActive;
         entry.Update(request.Name, request.Description, request.IsActive, request.SortOrder, timeProvider.GetUtcNow());
         await repository.SaveChangesAsync(cancellationToken);
+        var action = previousActive == entry.IsActive ? "updated" : entry.IsActive ? "activated" : "deactivated";
+        await recorder.RecordAsync(action, entry.Id.ToString(), new { entry.TenantId, entry.Catalog, entry.Code, entry.Name, entry.IsActive, entry.SortOrder }, correlationId, cancellationToken);
         return Map(entry);
     }
 
