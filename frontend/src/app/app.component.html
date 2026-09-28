@@ -471,9 +471,89 @@
 
       @if (activeSection === 'audit') {
         <section class="section-block">
-          <div class="section-heading"><div><p class="eyebrow">Trazabilidad</p><h2>Auditoría</h2></div><button type="button" class="secondary">Exportar</button></div>
-          <div class="toolbar"><label>Aplicación<select><option>Todas</option><option>Portal</option><option>Conjunto al Día</option></select></label><label>Evento<input type="search" placeholder="Acción, usuario o recurso"></label></div>
-          <div class="empty-state compact-state"><h3>Eventos centralizados</h3><p>Consulta de operaciones, cambios de configuración, accesos y acciones administrativas.</p></div>
+          <div class="section-heading">
+            <div><p class="eyebrow">Trazabilidad</p><h2>Auditoría</h2></div>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="auditLoading" (click)="loadAuditData(1)">Recargar</button>
+            }
+          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Audit API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            @if (auditSummary) {
+              <div class="metrics">
+                <article><strong>{{ auditSummary.total }}</strong><span>Eventos · últimas 24h</span></article>
+                <article><strong>{{ auditSummary.warningOrHigher }}</strong><span>Advertencia o superior</span></article>
+                <article><strong>{{ auditSummary.errorOrHigher }}</strong><span>Error o superior</span></article>
+                <article>
+                  <strong>{{ auditSummary.topResources[0]?.key || '—' }}</strong>
+                  <span>Recurso principal</span>
+                </article>
+              </div>
+            }
+
+            <div class="toolbar">
+              <label>Recurso
+                <input type="search" [value]="auditResourceFilter" (input)="auditResourceFilter = $any($event.target).value" placeholder="portal.security">
+              </label>
+              <label>Acción
+                <input type="search" [value]="auditActionFilter" (input)="auditActionFilter = $any($event.target).value" placeholder="update">
+              </label>
+              <label>Actor
+                <input type="search" [value]="auditActorFilter" (input)="auditActorFilter = $any($event.target).value" placeholder="usuario o servicio">
+              </label>
+              <label>Severidad
+                <select [value]="auditSeverityFilter" (change)="auditSeverityFilter = $any($event.target).value">
+                  <option value="all">Todas</option>
+                  <option value="0">Información</option>
+                  <option value="1">Advertencia</option>
+                  <option value="2">Error</option>
+                  <option value="3">Crítico</option>
+                </select>
+              </label>
+              <label>Correlación
+                <input type="search" [value]="auditCorrelationFilter" (input)="auditCorrelationFilter = $any($event.target).value" (keyup.enter)="loadAuditData(1)" placeholder="correlationId">
+              </label>
+              <button type="button" class="primary" [disabled]="auditLoading" (click)="loadAuditData(1)">Consultar</button>
+            </div>
+
+            @if (auditError) {
+              <div class="toolbar" role="alert">{{ auditError }}</div>
+            }
+
+            @if (auditLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Audit API…</h3></div>
+            } @else {
+              <div class="table-card">
+                <div class="table-row table-row--header"><span>Fecha</span><span>Recurso</span><span>Acción</span><span>Actor</span><span>Severidad</span></div>
+                @for (event of auditEvents; track event.id) {
+                  <div class="table-row">
+                    <strong>{{ formatAuditTimestamp(event.createdAtUtc) }}</strong>
+                    <span class="code">{{ event.resource }}</span>
+                    <span>{{ event.action }}</span>
+                    <span>{{ event.actorId }}</span>
+                    <span class="pill">{{ auditSeverityLabel(event.severity) }}</span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state">
+                    <h3>No hay eventos para los filtros actuales</h3>
+                    <p>Audit API devolvió una colección vacía.</p>
+                  </div>
+                }
+              </div>
+
+              <div class="toolbar">
+                <button type="button" class="secondary" [disabled]="auditPage <= 1" (click)="loadAuditData(auditPage - 1)">Anterior</button>
+                <span>Página {{ auditPage }} de {{ auditLastPage() }} · {{ auditTotal }} eventos</span>
+                <button type="button" class="secondary" [disabled]="auditPage >= auditLastPage()" (click)="loadAuditData(auditPage + 1)">Siguiente</button>
+              </div>
+            }
+          }
         </section>
       }      @if (activeSection === 'operations') {
         <section class="section-block">

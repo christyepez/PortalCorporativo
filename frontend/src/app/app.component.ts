@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, PortalApiService, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -124,6 +124,18 @@ export class AppComponent {
   protected contentError?: string;
   protected contentDocuments: ContentDocument[] = [];
   protected downloadingContentId?: string;
+  protected auditResourceFilter = '';
+  protected auditActionFilter = '';
+  protected auditActorFilter = '';
+  protected auditCorrelationFilter = '';
+  protected auditSeverityFilter = 'all';
+  protected auditLoading = false;
+  protected auditError?: string;
+  protected auditEvents: AuditEvent[] = [];
+  protected auditSummary?: AuditSummary;
+  protected auditPage = 1;
+  protected readonly auditPageSize = 20;
+  protected auditTotal = 0;
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -134,6 +146,7 @@ export class AppComponent {
     if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
     if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
     if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
+    if (section === 'audit' && this.portalApi.hasAuthenticatedSession()) void this.loadAuditData(1);
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -221,6 +234,51 @@ export class AppComponent {
     if (length < 1024) return `${length} B`;
     if (length < 1024 * 1024) return `${(length / 1024).toFixed(1)} KB`;
     return `${(length / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  protected async loadAuditData(page = 1): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const severity = this.auditSeverityFilter === 'all' ? undefined : Number(this.auditSeverityFilter);
+    this.auditLoading = true;
+    this.auditError = undefined;
+    try {
+      const [eventsResponse, summaryResponse] = await Promise.all([
+        firstValueFrom(this.portalApi.loadAudit({
+          resource: this.auditResourceFilter.trim() || undefined,
+          action: this.auditActionFilter.trim() || undefined,
+          actorId: this.auditActorFilter.trim() || undefined,
+          correlationId: this.auditCorrelationFilter.trim() || undefined,
+          severity,
+          page,
+          pageSize: this.auditPageSize
+        })),
+        firstValueFrom(this.portalApi.loadAuditSummary(24))
+      ]);
+      const auditPage = eventsResponse.data;
+      this.auditEvents = auditPage?.items ?? [];
+      this.auditPage = auditPage?.page ?? page;
+      this.auditTotal = auditPage?.total ?? 0;
+      this.auditSummary = summaryResponse.data;
+    } catch (error: unknown) {
+      this.auditEvents = [];
+      this.auditTotal = 0;
+      this.auditSummary = undefined;
+      this.auditError = error instanceof Error ? error.message : 'No fue posible cargar Audit API.';
+    } finally {
+      this.auditLoading = false;
+    }
+  }
+
+  protected auditLastPage(): number {
+    return Math.max(1, Math.ceil(this.auditTotal / this.auditPageSize));
+  }
+
+  protected auditSeverityLabel(severity: number): string {
+    return ['Información', 'Advertencia', 'Error', 'Crítico'][severity] ?? `Nivel ${severity}`;
+  }
+
+  protected formatAuditTimestamp(value: string): string {
+    return new Date(value).toLocaleString();
   }
 
   protected configurationScopeLabel(scope: number): string {

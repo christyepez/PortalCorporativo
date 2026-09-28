@@ -122,6 +122,18 @@ test('content administration loads live documents and downloads through Content 
   assert.match(template, /Descargar/);
 });
 
+test('audit administration loads paged events and 24h summary through Audit API', () => {
+  assert.match(apiService, /\/audit\/events\/\?\$\{params\.toString\(\)\}/);
+  assert.match(apiService, /\/audit\/events\/summary\?hours=/);
+  assert.match(component, /async loadAuditData\(page = 1\)/);
+  assert.match(component, /auditSeverityLabel\(severity:\s*number\)/);
+  assert.match(component, /auditLastPage\(\)/);
+  assert.match(template, /@for \(event of auditEvents; track event\.id\)/);
+  assert.match(template, /Eventos · últimas 24h/);
+  assert.match(template, /Página {{ auditPage }} de {{ auditLastPage\(\) }}/);
+  assert.doesNotMatch(template, />Exportar<\/button>/);
+});
+
 test('administrative shell exposes the central management sections', () => {
   for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
