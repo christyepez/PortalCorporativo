@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, MenuItem, NotificationMessage, NotificationTemplate, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -20,7 +20,7 @@ interface ModuleProbeResult {
   readonly status?: number;
   readonly checkedAt?: Date;
 }
-type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'reporting' | 'notifications' | 'operations';
+type AdminSection = 'dashboard' | 'applications' | 'security' | 'menus' | 'configuration' | 'catalogs' | 'content' | 'audit' | 'reporting' | 'notifications' | 'integration' | 'operations';
 
 interface NavigationItem {
   readonly id: AdminSection;
@@ -64,6 +64,7 @@ export class AppComponent {
     { id: 'audit', label: 'Auditoría', description: 'Trazabilidad y eventos', icon: '◎' },
     { id: 'reporting', label: 'Reportes', description: 'Definiciones y ejecución', icon: '▥' },
     { id: 'notifications', label: 'Notificaciones', description: 'Plantillas y entregas', icon: '✉' },
+    { id: 'integration', label: 'Integración', description: 'Outbox, Inbox y trazabilidad', icon: '⇄' },
     { id: 'operations', label: 'Operaciones', description: 'Salud de servicios', icon: '◌' }
   ];
 
@@ -149,6 +150,15 @@ export class AppComponent {
   protected notificationTemplates: NotificationTemplate[] = [];
   protected notificationMessages: NotificationMessage[] = [];
   protected notificationActionId?: string;
+  protected integrationLoading = false;
+  protected integrationError?: string;
+  protected integrationMessageId = '';
+  protected integrationIdempotencyKey = '';
+  protected integrationInboxSource = '';
+  protected integrationInboxKey = '';
+  protected outboxByMessageId?: OutboxMessageStatus;
+  protected outboxByIdempotencyKey?: OutboxStatus;
+  protected inboxProcessedStatus?: InboxProcessedStatus;
   protected readonly currentTenant = 'default';
 
   protected selectSection(section: AdminSection): void {
@@ -423,6 +433,67 @@ export class AppComponent {
       this.notificationError = error instanceof Error ? error.message : 'No fue posible cancelar la notificación.';
     } finally {
       this.notificationActionId = undefined;
+    }
+  }
+
+  protected async lookupOutboxByMessageId(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const messageId = this.integrationMessageId.trim();
+    if (!messageId) {
+      this.integrationError = 'Ingresa un messageId válido.';
+      this.outboxByMessageId = undefined;
+      return;
+    }
+    this.integrationLoading = true;
+    this.integrationError = undefined;
+    try {
+      this.outboxByMessageId = await firstValueFrom(this.portalApi.loadOutboxByMessageId(messageId));
+    } catch (error: unknown) {
+      this.outboxByMessageId = undefined;
+      this.integrationError = error instanceof Error ? error.message : 'No fue posible consultar el Outbox.';
+    } finally {
+      this.integrationLoading = false;
+    }
+  }
+
+  protected async lookupOutboxByIdempotencyKey(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const key = this.integrationIdempotencyKey.trim();
+    if (!key) {
+      this.integrationError = 'Ingresa una idempotencyKey válida.';
+      this.outboxByIdempotencyKey = undefined;
+      return;
+    }
+    this.integrationLoading = true;
+    this.integrationError = undefined;
+    try {
+      this.outboxByIdempotencyKey = await firstValueFrom(this.portalApi.loadOutboxByIdempotencyKey(this.currentTenant, key));
+    } catch (error: unknown) {
+      this.outboxByIdempotencyKey = undefined;
+      this.integrationError = error instanceof Error ? error.message : 'No fue posible consultar el Outbox por idempotencia.';
+    } finally {
+      this.integrationLoading = false;
+    }
+  }
+
+  protected async lookupInboxProcessed(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const source = this.integrationInboxSource.trim();
+    const key = this.integrationInboxKey.trim();
+    if (!source || !key) {
+      this.integrationError = 'Ingresa source e idempotencyKey para consultar Inbox.';
+      this.inboxProcessedStatus = undefined;
+      return;
+    }
+    this.integrationLoading = true;
+    this.integrationError = undefined;
+    try {
+      this.inboxProcessedStatus = await firstValueFrom(this.portalApi.checkInboxProcessed(this.currentTenant, source, key));
+    } catch (error: unknown) {
+      this.inboxProcessedStatus = undefined;
+      this.integrationError = error instanceof Error ? error.message : 'No fue posible consultar el Inbox.';
+    } finally {
+      this.integrationLoading = false;
     }
   }
 

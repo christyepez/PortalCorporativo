@@ -158,6 +158,35 @@ export interface NotificationMessage {
   readonly correlationId: string;
 }
 
+export interface OutboxMessageStatus {
+  readonly messageId: string;
+  readonly tenantId: string;
+  readonly eventType: string;
+  readonly status: string;
+  readonly attempts: number;
+  readonly processedAtUtc?: string | null;
+  readonly lastError?: string | null;
+}
+
+export interface OutboxStatus {
+  readonly messageId: string;
+  readonly tenantId: string;
+  readonly idempotencyKey?: string | null;
+  readonly status: string;
+  readonly attempts: number;
+  readonly createdAtUtc: string;
+  readonly processedAtUtc?: string | null;
+  readonly nextRetryAtUtc?: string | null;
+  readonly lastError?: string | null;
+}
+
+export interface InboxProcessedStatus {
+  readonly tenantId: string;
+  readonly source: string;
+  readonly idempotencyKey: string;
+  readonly processed: boolean;
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -281,6 +310,20 @@ export class PortalApiService {
 
   cancelNotification(id: string): Observable<ApiResponse<NotificationMessage>> {
     return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/${encodeURIComponent(id)}/cancel`, {}, { headers: this.headers() });
+  }
+
+  loadOutboxByMessageId(messageId: string): Observable<OutboxMessageStatus> {
+    return this.http.get<OutboxMessageStatus>(`${environment.apiBasePath}/integration/outbox/${encodeURIComponent(messageId)}`, { headers: this.headers() });
+  }
+
+  loadOutboxByIdempotencyKey(tenantId: string, idempotencyKey: string): Observable<OutboxStatus> {
+    const params = new URLSearchParams({ tenantId, idempotencyKey });
+    return this.http.get<OutboxStatus>(`${environment.apiBasePath}/integration/outbox/status?${params.toString()}`, { headers: this.headers() });
+  }
+
+  checkInboxProcessed(tenantId: string, source: string, idempotencyKey: string): Observable<InboxProcessedStatus> {
+    const params = new URLSearchParams({ tenantId, source, idempotencyKey });
+    return this.http.get<InboxProcessedStatus>(`${environment.apiBasePath}/integration/inbox/processed?${params.toString()}`, { headers: this.headers() });
   }
 
   private headers(): HttpHeaders {

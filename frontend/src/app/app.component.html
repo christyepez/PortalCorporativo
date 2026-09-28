@@ -735,6 +735,112 @@
         </section>
       }
 
+      @if (activeSection === 'integration') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Mensajería confiable</p><h2>Integración</h2></div>
+          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Integration API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            @if (integrationError) {
+              <div class="toolbar" role="alert">{{ integrationError }}</div>
+            }
+
+            <section class="section-block">
+              <div class="section-heading">
+                <div><p class="eyebrow">Outbox</p><h3>Consultar por messageId</h3></div>
+              </div>
+              <div class="toolbar">
+                <label>Message ID
+                  <input type="search"
+                         [value]="integrationMessageId"
+                         (input)="integrationMessageId = $any($event.target).value"
+                         (keyup.enter)="lookupOutboxByMessageId()"
+                         placeholder="00000000-0000-0000-0000-000000000000">
+                </label>
+                <button type="button" class="primary" [disabled]="integrationLoading" (click)="lookupOutboxByMessageId()">Consultar</button>
+              </div>
+              @if (outboxByMessageId) {
+                <div class="table-card">
+                  <div class="table-row table-row--header"><span>Evento</span><span>Estado</span><span>Intentos</span><span>Procesado</span><span>Error</span></div>
+                  <div class="table-row">
+                    <strong>{{ outboxByMessageId.eventType }}</strong>
+                    <span class="pill">{{ outboxByMessageId.status }}</span>
+                    <span>{{ outboxByMessageId.attempts }}</span>
+                    <span>{{ outboxByMessageId.processedAtUtc || '—' }}</span>
+                    <span>{{ outboxByMessageId.lastError || '—' }}</span>
+                  </div>
+                </div>
+              }
+            </section>
+
+            <section class="section-block">
+              <div class="section-heading">
+                <div><p class="eyebrow">Idempotencia</p><h3>Consultar Outbox por clave</h3></div>
+              </div>
+              <div class="toolbar">
+                <label>Idempotency key
+                  <input type="search"
+                         [value]="integrationIdempotencyKey"
+                         (input)="integrationIdempotencyKey = $any($event.target).value"
+                         (keyup.enter)="lookupOutboxByIdempotencyKey()"
+                         placeholder="portal-e2e-...">
+                </label>
+                <button type="button" class="primary" [disabled]="integrationLoading" (click)="lookupOutboxByIdempotencyKey()">Consultar</button>
+              </div>
+              @if (outboxByIdempotencyKey) {
+                <div class="table-card">
+                  <div class="table-row table-row--header"><span>Message ID</span><span>Estado</span><span>Intentos</span><span>Creado</span><span>Próximo retry</span></div>
+                  <div class="table-row">
+                    <strong class="code">{{ outboxByIdempotencyKey.messageId }}</strong>
+                    <span class="pill">{{ outboxByIdempotencyKey.status }}</span>
+                    <span>{{ outboxByIdempotencyKey.attempts }}</span>
+                    <span>{{ outboxByIdempotencyKey.createdAtUtc }}</span>
+                    <span>{{ outboxByIdempotencyKey.nextRetryAtUtc || '—' }}</span>
+                  </div>
+                </div>
+              }
+            </section>
+
+            <section class="section-block">
+              <div class="section-heading">
+                <div><p class="eyebrow">Inbox</p><h3>Verificar procesamiento</h3></div>
+              </div>
+              <div class="toolbar">
+                <label>Source
+                  <input type="search"
+                         [value]="integrationInboxSource"
+                         (input)="integrationInboxSource = $any($event.target).value"
+                         placeholder="crm">
+                </label>
+                <label>Idempotency key
+                  <input type="search"
+                         [value]="integrationInboxKey"
+                         (input)="integrationInboxKey = $any($event.target).value"
+                         (keyup.enter)="lookupInboxProcessed()"
+                         placeholder="integration-key">
+                </label>
+                <button type="button" class="primary" [disabled]="integrationLoading" (click)="lookupInboxProcessed()">Consultar</button>
+              </div>
+              @if (inboxProcessedStatus) {
+                <div class="metrics">
+                  <article><strong>{{ inboxProcessedStatus.processed ? 'Sí' : 'No' }}</strong><span>Procesado</span></article>
+                  <article><strong>{{ inboxProcessedStatus.source }}</strong><span>Origen</span></article>
+                  <article><strong>{{ inboxProcessedStatus.tenantId }}</strong><span>Tenant</span></article>
+                  <article><strong class="code">{{ inboxProcessedStatus.idempotencyKey }}</strong><span>Idempotency key</span></article>
+                </div>
+              }
+            </section>
+          }
+        </section>
+      }
+
       @if (activeSection === 'operations') {
         <section class="section-block">
           <div class="section-heading">
