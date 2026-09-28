@@ -82,6 +82,42 @@ export interface ContentDocument {
   readonly createdAt: string;
 }
 
+export interface AuditEvent {
+  readonly id: string;
+  readonly actorId: string;
+  readonly tenantId: string;
+  readonly resource: string;
+  readonly action: string;
+  readonly entityName: string;
+  readonly entityId?: string | null;
+  readonly correlationId: string;
+  readonly severity: number;
+  readonly createdAtUtc: string;
+}
+
+export interface AuditPage {
+  readonly items: AuditEvent[];
+  readonly page: number;
+  readonly pageSize: number;
+  readonly total: number;
+}
+
+export interface AuditMetric {
+  readonly key: string;
+  readonly count: number;
+}
+
+export interface AuditSummary {
+  readonly tenantId: string;
+  readonly fromUtc: string;
+  readonly toUtc: string;
+  readonly total: number;
+  readonly warningOrHigher: number;
+  readonly errorOrHigher: number;
+  readonly topResources: AuditMetric[];
+  readonly topActions: AuditMetric[];
+}
+
 interface ApiResponse<T> {
   readonly data: T;
   readonly error?: unknown;
@@ -165,6 +201,22 @@ export class PortalApiService {
       headers: this.headers(),
       responseType: 'blob'
     });
+  }
+
+  loadAudit(filters: { resource?: string; action?: string; actorId?: string; severity?: number; correlationId?: string; page?: number; pageSize?: number }): Observable<ApiResponse<AuditPage>> {
+    const params = new URLSearchParams();
+    if (filters.resource) params.set('resource', filters.resource);
+    if (filters.action) params.set('action', filters.action);
+    if (filters.actorId) params.set('actorId', filters.actorId);
+    if (filters.severity !== undefined) params.set('severity', String(filters.severity));
+    if (filters.correlationId) params.set('correlationId', filters.correlationId);
+    params.set('page', String(filters.page ?? 1));
+    params.set('pageSize', String(filters.pageSize ?? 20));
+    return this.http.get<ApiResponse<AuditPage>>(`${environment.apiBasePath}/audit/events/?${params.toString()}`, { headers: this.headers() });
+  }
+
+  loadAuditSummary(hours = 24): Observable<ApiResponse<AuditSummary>> {
+    return this.http.get<ApiResponse<AuditSummary>>(`${environment.apiBasePath}/audit/events/summary?hours=${encodeURIComponent(hours)}`, { headers: this.headers() });
   }
 
   loadReports(): Observable<unknown> {
