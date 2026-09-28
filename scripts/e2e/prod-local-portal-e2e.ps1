@@ -241,6 +241,33 @@ if (@($tenantBConfigPayload.data | Where-Object { $_.key -eq $tenantConfigKey })
 }
 Write-Host "PASS Configuration tenant isolation"
 
+$tenantConfigId = [string]$tenantConfig.data.id
+$tenantConfigUpdateBody = @{
+    category = 1
+    valueJson = '{"tenant":"a","updated":true}'
+} | ConvertTo-Json -Compress
+$tenantConfigUpdate = Invoke-E2E "Update Configuration in tenant A" "$web/api/configuration/items/$tenantConfigId" @(200) $tenantAAuth "PUT" $tenantConfigUpdateBody
+$tenantConfigUpdated = $tenantConfigUpdate.Body | ConvertFrom-Json
+if ($tenantConfigUpdated.data.version -ne 2 -or $tenantConfigUpdated.data.category -ne 1) {
+    throw "Configuration update did not increment version or persist category."
+}
+if ($tenantConfigUpdated.data.isActive -ne $false) { throw "Configuration should remain inactive after update." }
+Write-Host "PASS Configuration update increments version"
+
+$tenantConfigActivate = Invoke-E2E "Activate Configuration in tenant A" "$web/api/configuration/items/$tenantConfigId/activate" @(200) $tenantAAuth "POST"
+$tenantConfigActivated = $tenantConfigActivate.Body | ConvertFrom-Json
+if ($tenantConfigActivated.data.isActive -ne $true -or $tenantConfigActivated.data.version -ne 2) {
+    throw "Configuration activation did not preserve version/state contract."
+}
+Write-Host "PASS Configuration activation"
+
+$tenantConfigDeactivate = Invoke-E2E "Deactivate Configuration in tenant A" "$web/api/configuration/items/$tenantConfigId/deactivate" @(200) $tenantAAuth "POST"
+$tenantConfigDeactivated = $tenantConfigDeactivate.Body | ConvertFrom-Json
+if ($tenantConfigDeactivated.data.isActive -ne $false -or $tenantConfigDeactivated.data.version -ne 2) {
+    throw "Configuration deactivation did not preserve version/state contract."
+}
+Write-Host "PASS Configuration deactivation"
+
 $tenantTemplateCode = "tenant.e2e.$([Guid]::NewGuid().ToString('N').Substring(0,12))"
 $tenantTemplateBody = @{
     code = $tenantTemplateCode

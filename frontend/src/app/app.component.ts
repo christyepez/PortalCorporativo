@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -116,6 +116,17 @@ export class AppComponent {
   protected configurationLoading = false;
   protected configurationError?: string;
   protected configurationItems: ConfigurationItem[] = [];
+  protected configurationFormMode: 'create' | 'edit' = 'create';
+  protected configurationEditingId?: string;
+  protected configurationFormKey = '';
+  protected configurationFormScope = 0;
+  protected configurationFormModuleCode = '';
+  protected configurationFormUserId = '';
+  protected configurationFormCategory = 0;
+  protected configurationFormValueJson = '{}';
+  protected configurationFormIsActive = true;
+  protected configurationSaving = false;
+  protected configurationSuccess?: string;
   protected catalogNameFilter = '';
   protected catalogActiveFilter = 'all';
   protected catalogLoading = false;
@@ -600,6 +611,118 @@ export class AppComponent {
       this.integrationError = error instanceof Error ? error.message : 'No fue posible consultar el Inbox.';
     } finally {
       this.integrationLoading = false;
+    }
+  }
+
+  protected beginCreateConfigurationItem(): void {
+    this.configurationFormMode = 'create';
+    this.configurationEditingId = undefined;
+    this.configurationFormKey = '';
+    this.configurationFormScope = Number(this.configurationScope);
+    this.configurationFormModuleCode = this.configurationScope >= 2 ? this.configurationModuleCode.trim().toLowerCase() : '';
+    this.configurationFormUserId = this.configurationScope === 3 ? this.configurationUserId.trim() : '';
+    this.configurationFormCategory = 0;
+    this.configurationFormValueJson = '{}';
+    this.configurationFormIsActive = true;
+    this.configurationError = undefined;
+    this.configurationSuccess = undefined;
+  }
+
+  protected beginEditConfigurationItem(item: ConfigurationItem): void {
+    this.configurationFormMode = 'edit';
+    this.configurationEditingId = item.id;
+    this.configurationFormKey = item.key;
+    this.configurationFormScope = item.scope;
+    this.configurationFormModuleCode = item.moduleCode ?? '';
+    this.configurationFormUserId = item.userId ?? '';
+    this.configurationFormCategory = item.category;
+    this.configurationFormValueJson = item.valueJson;
+    this.configurationFormIsActive = item.isActive;
+    this.configurationError = undefined;
+    this.configurationSuccess = undefined;
+  }
+
+  protected cancelConfigurationEdit(): void {
+    this.beginCreateConfigurationItem();
+  }
+
+  protected async saveConfigurationItem(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const key = this.configurationFormKey.trim().toLowerCase();
+    const scope = Number(this.configurationFormScope);
+    const moduleCode = scope >= 2 ? this.configurationFormModuleCode.trim().toLowerCase() : '';
+    const userId = scope === 3 ? this.configurationFormUserId.trim() : '';
+    const valueJson = this.configurationFormValueJson.trim();
+
+    if (!key) {
+      this.configurationError = 'Ingresa la clave del parámetro.';
+      return;
+    }
+    if (scope >= 2 && !moduleCode) {
+      this.configurationError = 'El código de módulo es obligatorio para scope Módulo o Usuario.';
+      return;
+    }
+    if (scope === 3 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+      this.configurationError = 'Ingresa un User ID GUID válido para scope Usuario.';
+      return;
+    }
+    try {
+      JSON.parse(valueJson);
+    } catch {
+      this.configurationError = 'ValueJson debe contener JSON válido.';
+      return;
+    }
+
+    this.configurationSaving = true;
+    this.configurationError = undefined;
+    this.configurationSuccess = undefined;
+    try {
+      let successMessage = '';
+      if (this.configurationFormMode === 'create') {
+        const request: CreateConfigurationItem = {
+          key,
+          scope,
+          moduleCode: moduleCode || null,
+          userId: userId || null,
+          category: Number(this.configurationFormCategory),
+          valueJson
+        };
+        const response = await firstValueFrom(this.portalApi.createConfigurationItem(request));
+        successMessage = `Parámetro ${response.data.key} creado en versión ${response.data.version}.`;
+        this.configurationScope = response.data.scope;
+        this.configurationModuleCode = response.data.moduleCode ?? '';
+        this.configurationUserId = response.data.userId ?? '';
+      } else if (this.configurationEditingId) {
+        const request: UpdateConfigurationItem = { category: Number(this.configurationFormCategory), valueJson };
+        const response = await firstValueFrom(this.portalApi.updateConfigurationItem(this.configurationEditingId, request));
+        successMessage = `Parámetro ${response.data.key} actualizado a versión ${response.data.version}.`;
+      }
+      await this.loadConfigurationData();
+      this.beginCreateConfigurationItem();
+      this.configurationSuccess = successMessage;
+    } catch (error: unknown) {
+      this.configurationError = error instanceof Error ? error.message : 'No fue posible guardar el parámetro.';
+    } finally {
+      this.configurationSaving = false;
+    }
+  }
+
+  protected async toggleConfigurationItem(item: ConfigurationItem): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.configurationSaving = true;
+    this.configurationError = undefined;
+    this.configurationSuccess = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.setConfigurationActive(item.id, !item.isActive));
+      const updated = response.data;
+      const successMessage = `${updated.key} quedó ${updated.isActive ? 'activo' : 'inactivo'} en versión ${updated.version}.`;
+      await this.loadConfigurationData();
+      if (this.configurationEditingId === item.id) this.beginEditConfigurationItem(updated);
+      this.configurationSuccess = successMessage;
+    } catch (error: unknown) {
+      this.configurationError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del parámetro.';
+    } finally {
+      this.configurationSaving = false;
     }
   }
 
