@@ -111,8 +111,19 @@ test('catalog administration loads live entries with catalog and active filters'
   assert.doesNotMatch(template, /Nuevo valor/);
 });
 
+test('content administration loads live documents and downloads through Content API', () => {
+  assert.match(apiService, /\/content\/documents\$\{suffix\}/);
+  assert.match(apiService, /\/content\/documents\/\$\{encodeURIComponent\(id\)\}\/download/);
+  assert.match(component, /async loadContentData\(\)/);
+  assert.match(component, /async downloadContentDocument\(document:\s*ContentDocument\)/);
+  assert.match(component, /formatFileSize\(length:\s*number\)/);
+  assert.match(template, /@for \(document of contentDocuments; track document\.id\)/);
+  assert.match(template, /Archivos y documentos/);
+  assert.match(template, /Descargar/);
+});
+
 test('administrative shell exposes the central management sections', () => {
-  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'audit', 'operations']) {
+  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
     assert.match(template, new RegExp(`activeSection === '${section}'`));
   }

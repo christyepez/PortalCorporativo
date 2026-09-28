@@ -396,6 +396,79 @@
         </section>
       }
 
+      @if (activeSection === 'content') {
+        <section class="section-block">
+          <div class="section-heading">
+            <div><p class="eyebrow">Contenido transversal</p><h2>Archivos y documentos</h2></div>
+            @if (hasAuthenticatedSession()) {
+              <button type="button" class="secondary" [disabled]="contentLoading" (click)="loadContentData()">Recargar</button>
+            }
+          </div>
+
+          @if (!hasAuthenticatedSession()) {
+            <div class="empty-state compact-state">
+              <h3>Sesión administrativa requerida</h3>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Content API.</p>
+              <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
+            </div>
+          } @else {
+            <div class="toolbar">
+              <label>Módulo
+                <input type="search"
+                       [value]="contentModuleFilter"
+                       (input)="contentModuleFilter = $any($event.target).value"
+                       (keyup.enter)="loadContentData()"
+                       placeholder="Ej. portal">
+              </label>
+              <label>Estado
+                <select [value]="contentActiveFilter" (change)="contentActiveFilter = $any($event.target).value">
+                  <option value="all">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="inactive">Inactivos</option>
+                </select>
+              </label>
+              <button type="button" class="primary" [disabled]="contentLoading" (click)="loadContentData()">Consultar</button>
+            </div>
+
+            @if (contentError) {
+              <div class="toolbar" role="alert">{{ contentError }}</div>
+            }
+
+            @if (contentLoading) {
+              <div class="empty-state compact-state"><h3>Cargando Content API…</h3></div>
+            } @else {
+              <div class="table-card">
+                <div class="table-row table-row--header"><span>Archivo</span><span>Módulo</span><span>Tipo</span><span>Tamaño</span><span>Estado / Acción</span></div>
+                @for (document of contentDocuments; track document.id) {
+                  <div class="table-row">
+                    <strong>{{ document.fileName }}</strong>
+                    <span class="code">{{ document.moduleCode }}</span>
+                    <span>{{ document.contentType }}</span>
+                    <span>{{ formatFileSize(document.length) }}</span>
+                    <span>
+                      <span class="pill">{{ document.isActive ? 'Activo' : 'Inactivo' }}</span>
+                      @if (document.isActive) {
+                        <button type="button"
+                                class="link-button"
+                                [disabled]="downloadingContentId === document.id"
+                                (click)="downloadContentDocument(document)">
+                          {{ downloadingContentId === document.id ? 'Descargando…' : 'Descargar' }}
+                        </button>
+                      }
+                    </span>
+                  </div>
+                } @empty {
+                  <div class="empty-state compact-state">
+                    <h3>No hay documentos para los filtros actuales</h3>
+                    <p>Content API devolvió una colección vacía.</p>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+
       @if (activeSection === 'audit') {
         <section class="section-block">
           <div class="section-heading"><div><p class="eyebrow">Trazabilidad</p><h2>Auditoría</h2></div><button type="button" class="secondary">Exportar</button></div>
