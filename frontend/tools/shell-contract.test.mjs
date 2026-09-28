@@ -134,8 +134,19 @@ test('audit administration loads paged events and 24h summary through Audit API'
   assert.doesNotMatch(template, />Exportar<\/button>/);
 });
 
+test('reporting administration loads definitions and executes reports through Reporting API', () => {
+  assert.match(apiService, /\/reporting\/reports`/);
+  assert.match(apiService, /\/reporting\/reports\/\$\{encodeURIComponent\(key\)\}\/execute/);
+  assert.match(component, /async loadReportingData\(\)/);
+  assert.match(component, /async executeSelectedReport\(\)/);
+  assert.match(component, /reportColumns\(\)/);
+  assert.match(template, /@for \(report of reportDefinitions; track report\.key\)/);
+  assert.match(template, /Ejecutar reporte/);
+  assert.match(template, /reportExecution\.rows/);
+});
+
 test('administrative shell exposes the central management sections', () => {
-  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'operations']) {
+  for (const section of ['applications', 'security', 'menus', 'configuration', 'catalogs', 'content', 'audit', 'reporting', 'operations']) {
     assert.match(component, new RegExp(`id:\\s*'${section}'`));
     assert.match(template, new RegExp(`activeSection === '${section}'`));
   }
