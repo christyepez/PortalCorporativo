@@ -71,6 +71,21 @@ export interface CatalogEntry {
   readonly updatedAt: string;
 }
 
+export interface CreateCatalogEntry {
+  readonly catalog: string;
+  readonly code: string;
+  readonly name: string;
+  readonly description?: string | null;
+  readonly sortOrder: number;
+}
+
+export interface UpdateCatalogEntry {
+  readonly name: string;
+  readonly description?: string | null;
+  readonly isActive: boolean;
+  readonly sortOrder: number;
+}
+
 export interface ContentDocument {
   readonly id: string;
   readonly moduleCode: string;
@@ -255,6 +270,14 @@ export class PortalApiService {
     if (isActive !== undefined) params.set('isActive', String(isActive));
     const suffix = params.size ? `?${params.toString()}` : '';
     return this.http.get<CatalogEntry[]>(`${environment.apiBasePath}/catalog/entries${suffix}`, { headers: this.headers() });
+  }
+
+  createCatalogEntry(request: CreateCatalogEntry): Observable<CatalogEntry> {
+    return this.http.post<CatalogEntry>(`${environment.apiBasePath}/catalog/entries`, request, { headers: this.headers() });
+  }
+
+  updateCatalogEntry(id: string, request: UpdateCatalogEntry): Observable<CatalogEntry> {
+    return this.http.put<CatalogEntry>(`${environment.apiBasePath}/catalog/entries/${encodeURIComponent(id)}`, request, { headers: this.headers() });
   }
 
   loadContent(moduleCode?: string, isActive?: boolean): Observable<ContentDocument[]> {

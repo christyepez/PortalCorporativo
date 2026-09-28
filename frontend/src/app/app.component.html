@@ -338,14 +338,17 @@
           <div class="section-heading">
             <div><p class="eyebrow">Datos maestros</p><h2>Catálogos</h2></div>
             @if (hasAuthenticatedSession()) {
-              <button type="button" class="secondary" [disabled]="catalogLoading" (click)="loadCatalogData()">Recargar</button>
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="catalogLoading || catalogSaving" (click)="loadCatalogData()">Recargar</button>
+                <button type="button" class="primary" [disabled]="catalogSaving" (click)="beginCreateCatalogEntry()">Nuevo valor</button>
+              </div>
             }
           </div>
 
           @if (!hasAuthenticatedSession()) {
             <div class="empty-state compact-state">
               <h3>Sesión administrativa requerida</h3>
-              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Catalog API.</p>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar y administrar Catalog API.</p>
               <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
             </div>
           } @else {
@@ -364,25 +367,92 @@
                   <option value="inactive">Inactivos</option>
                 </select>
               </label>
-              <button type="button" class="primary" [disabled]="catalogLoading" (click)="loadCatalogData()">Consultar</button>
+              <button type="button" class="primary" [disabled]="catalogLoading || catalogSaving" (click)="loadCatalogData()">Consultar</button>
             </div>
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">{{ catalogFormMode === 'create' ? 'Nuevo valor' : 'Editar valor' }}</p>
+                <h3>{{ catalogFormMode === 'create' ? 'Crear valor de catálogo' : catalogFormCode }}</h3>
+                <p>Las mutaciones requieren el permiso backend <span class="code">catalog.manage</span>.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Catálogo
+                  <input type="text"
+                         [disabled]="catalogFormMode === 'edit'"
+                         [value]="catalogFormCatalog"
+                         (input)="catalogFormCatalog = $any($event.target).value"
+                         placeholder="tipo-documento">
+                </label>
+                <label>Código
+                  <input type="text"
+                         [disabled]="catalogFormMode === 'edit'"
+                         [value]="catalogFormCode"
+                         (input)="catalogFormCode = $any($event.target).value"
+                         placeholder="cedula">
+                </label>
+                <label>Nombre
+                  <input type="text"
+                         [value]="catalogFormName"
+                         (input)="catalogFormName = $any($event.target).value"
+                         placeholder="Cédula">
+                </label>
+                <label>Descripción
+                  <input type="text"
+                         [value]="catalogFormDescription"
+                         (input)="catalogFormDescription = $any($event.target).value"
+                         placeholder="Descripción opcional">
+                </label>
+                <label>Orden
+                  <input type="number"
+                         [value]="catalogFormSortOrder"
+                         (input)="catalogFormSortOrder = +$any($event.target).value">
+                </label>
+                @if (catalogFormMode === 'edit') {
+                  <label>Estado
+                    <select [value]="catalogFormIsActive ? 'active' : 'inactive'"
+                            (change)="catalogFormIsActive = $any($event.target).value === 'active'">
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                    </select>
+                  </label>
+                }
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="catalogSaving" (click)="saveCatalogEntry()">
+                    {{ catalogSaving ? 'Guardando…' : (catalogFormMode === 'create' ? 'Crear valor' : 'Guardar cambios') }}
+                  </button>
+                  @if (catalogFormMode === 'edit') {
+                    <button type="button" class="secondary" [disabled]="catalogSaving" (click)="cancelCatalogEdit()">Cancelar edición</button>
+                  }
+                </div>
+              </div>
+            </section>
 
             @if (catalogError) {
               <div class="toolbar" role="alert">{{ catalogError }}</div>
+            }
+            @if (catalogSuccess) {
+              <div class="toolbar" role="status">{{ catalogSuccess }}</div>
             }
 
             @if (catalogLoading) {
               <div class="empty-state compact-state"><h3>Cargando Catalog API…</h3></div>
             } @else {
               <div class="table-card">
-                <div class="table-row table-row--header"><span>Catálogo</span><span>Código</span><span>Nombre</span><span>Orden</span><span>Estado</span></div>
+                <div class="table-row table-row--header"><span>Catálogo</span><span>Código</span><span>Nombre</span><span>Orden</span><span>Estado / Acciones</span></div>
                 @for (entry of catalogEntries; track entry.id) {
                   <div class="table-row">
                     <strong>{{ entry.catalog }}</strong>
                     <span class="code">{{ entry.code }}</span>
                     <span>{{ entry.name }}</span>
                     <span>{{ entry.sortOrder }}</span>
-                    <span class="pill">{{ entry.isActive ? 'Activo' : 'Inactivo' }}</span>
+                    <span>
+                      <span class="pill">{{ entry.isActive ? 'Activo' : 'Inactivo' }}</span>
+                      <button type="button" class="link-button" [disabled]="catalogSaving" (click)="beginEditCatalogEntry(entry)">Editar</button>
+                      <button type="button" class="link-button" [disabled]="catalogSaving" (click)="toggleCatalogEntry(entry)">
+                        {{ entry.isActive ? 'Desactivar' : 'Activar' }}
+                      </button>
+                    </span>
                   </div>
                 } @empty {
                   <div class="empty-state compact-state">

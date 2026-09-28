@@ -102,13 +102,18 @@ test('configuration administration loads live scope data with valid scope filter
   assert.doesNotMatch(template, /Nuevo parámetro/);
 });
 
-test('catalog administration loads live entries with catalog and active filters', () => {
-  assert.match(apiService, /\/catalog\/entries\$\{suffix\}/);
+test('catalog administration supports managed CRUD with backend authorization', () => {
+  assert.match(apiService, /post<CatalogEntry>\(`\$\{environment\.apiBasePath\}\/catalog\/entries`/);
+  assert.match(apiService, /put<CatalogEntry>\(`\$\{environment\.apiBasePath\}\/catalog\/entries\/\$\{encodeURIComponent\(id\)\}`/);
   assert.match(component, /async loadCatalogData\(\)/);
-  assert.match(component, /catalogActiveFilter\s*=\s*'all'/);
+  assert.match(component, /async saveCatalogEntry\(\)/);
+  assert.match(component, /async toggleCatalogEntry\(entry:\s*CatalogEntry\)/);
+  assert.match(component, /beginEditCatalogEntry\(entry:\s*CatalogEntry\)/);
+  assert.match(template, /catalog\.manage/);
+  assert.match(template, /Nuevo valor/);
+  assert.match(template, /Guardar cambios/);
+  assert.match(template, /Desactivar/);
   assert.match(template, /@for \(entry of catalogEntries; track entry\.id\)/);
-  assert.match(template, /portal-e2e/);
-  assert.doesNotMatch(template, /Nuevo valor/);
 });
 
 test('content administration loads live documents and downloads through Content API', () => {

@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-09-28T18:43:27.0314991Z",
+    "CapturedUtc":  "2026-09-28T20:30:38.4240698Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -100,10 +100,10 @@
                           "minio":  "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
                           "financial-api":  "sha256:a93d5d532cfe4451175c2c0c34548f442d92aba1225221aacdf4a51aa4330b65",
                           "content-api":  "sha256:f0e1d744509dcc047e1e9a6d329ee3fa979a1d06e80ca33ee68d742dc0ac6fd2",
-                          "catalog-api":  "sha256:e247fab190d3cfc3575ffbb7725627d147db1dcb97664acd877c3c70a950515f",
+                          "catalog-api":  "sha256:e9bf6865b028186855d86f001e553773f24722b676662af436fd0c0abdc2de48",
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
                           "integration-worker":  "sha256:a7a06c01c1906a9be50c95251a4ed40de70a2f611412dbff57ad3180441233ea",
-                          "portal-web":  "sha256:050b5de983709d5ab8cb55b2b3945d5ab43b595814abe9a4a56c179653fbb4ab"
+                          "portal-web":  "sha256:88093e2fe5c1c1e4dd4a5a6eb8d38f97aaa4726bd332bf02b6cf06947be8d58c"
                       }
 }
