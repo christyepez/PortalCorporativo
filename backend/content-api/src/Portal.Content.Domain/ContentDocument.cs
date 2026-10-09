@@ -36,5 +36,16 @@ public sealed class ContentDocument
         return new ContentDocument(Guid.NewGuid(), tenantId.Trim().ToLowerInvariant(), moduleCode.Trim(), fileName.Trim(), contentType.Trim(), length, sha256.ToLowerInvariant(), true, now);
     }
 
+    public void UpdateMetadata(string moduleCode, string fileName, string contentType)
+    {
+        if (string.IsNullOrWhiteSpace(moduleCode) || moduleCode.Trim().Length > 80) throw new ArgumentException("ModuleCode is required and must be <= 80 characters.", nameof(moduleCode));
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Trim().Length > 255) throw new ArgumentException("FileName is required and must be <= 255 characters.", nameof(fileName));
+        if (string.IsNullOrWhiteSpace(contentType) || contentType.Trim().Length > 120) throw new ArgumentException("ContentType is required and must be <= 120 characters.", nameof(contentType));
+        ModuleCode = moduleCode.Trim();
+        FileName = fileName.Trim();
+        ContentType = contentType.Trim();
+    }
+
+    public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
 }

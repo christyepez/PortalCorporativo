@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Portal.Content.Application;
 using Portal.Content.Domain;
 
@@ -78,6 +79,15 @@ public sealed class EfContentRepository(ContentDbContext db) : IContentRepositor
     public Task SaveChangesAsync(CancellationToken cancellationToken) => db.SaveChangesAsync(cancellationToken);
 }
 
+public sealed class StructuredContentChangeRecorder(ILogger<StructuredContentChangeRecorder> logger) : IContentChangeRecorder
+{
+    public Task RecordAsync(string action, string entityId, object payload, string correlationId, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("Content change {Action} {EntityId} {CorrelationId} {@Payload}", action, entityId, correlationId, payload);
+        return Task.CompletedTask;
+    }
+}
+
 public static class ContentDependencyInjection
 {
     public static IServiceCollection AddContentFoundation(this IServiceCollection services, IConfiguration configuration)
@@ -86,6 +96,7 @@ public static class ContentDependencyInjection
             ?? throw new InvalidOperationException("ContentDb is required.");
         services.AddDbContext<ContentDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<IContentRepository, EfContentRepository>();
+        services.AddScoped<IContentChangeRecorder, StructuredContentChangeRecorder>();
         services.AddScoped<ContentService>();
         if (string.Equals(configuration["Content:InitializeDatabase"], "true", StringComparison.OrdinalIgnoreCase))
             services.AddHostedService<ContentDatabaseInitializer>();

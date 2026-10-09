@@ -556,14 +556,17 @@
           <div class="section-heading">
             <div><p class="eyebrow">Contenido transversal</p><h2>Archivos y documentos</h2></div>
             @if (hasAuthenticatedSession()) {
-              <button type="button" class="secondary" [disabled]="contentLoading" (click)="loadContentData()">Recargar</button>
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="contentLoading || contentSaving" (click)="loadContentData()">Recargar</button>
+                <button type="button" class="primary" [disabled]="contentSaving" (click)="beginCreateContentDocument()">Nuevo documento</button>
+              </div>
             }
           </div>
 
           @if (!hasAuthenticatedSession()) {
             <div class="empty-state compact-state">
               <h3>Sesión administrativa requerida</h3>
-              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Content API.</p>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar y administrar Content API.</p>
               <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
             </div>
           } @else {
@@ -582,26 +585,77 @@
                   <option value="inactive">Inactivos</option>
                 </select>
               </label>
-              <button type="button" class="primary" [disabled]="contentLoading" (click)="loadContentData()">Consultar</button>
+              <button type="button" class="primary" [disabled]="contentLoading || contentSaving" (click)="loadContentData()">Consultar</button>
             </div>
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">{{ contentFormMode === 'create' ? 'Nuevo documento' : 'Editar metadatos' }}</p>
+                <h3>{{ contentFormMode === 'create' ? 'Cargar archivo' : contentFormFileName }}</h3>
+                <p>Las mutaciones requieren <span class="code">content.manage</span>. El binario y SHA-256 permanecen inmutables al editar metadatos.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Módulo
+                  <input type="text"
+                         [value]="contentFormModuleCode"
+                         (input)="contentFormModuleCode = $any($event.target).value"
+                         placeholder="portal">
+                </label>
+                <label>Nombre de archivo
+                  <input type="text"
+                         [value]="contentFormFileName"
+                         (input)="contentFormFileName = $any($event.target).value"
+                         placeholder="documento.pdf">
+                </label>
+                <label>Tipo MIME
+                  <input type="text"
+                         [value]="contentFormContentType"
+                         (input)="contentFormContentType = $any($event.target).value"
+                         placeholder="application/pdf">
+                </label>
+                @if (contentFormMode === 'create') {
+                  <label>Archivo · máximo 10 MB
+                    <input type="file" (change)="selectContentFile($event)">
+                  </label>
+                  @if (contentSelectedFile) {
+                    <span>{{ contentSelectedFile.name }} · {{ formatFileSize(contentSelectedFile.size) }}</span>
+                  }
+                }
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="contentSaving" (click)="saveContentDocument()">
+                    {{ contentSaving ? 'Guardando…' : (contentFormMode === 'create' ? 'Cargar documento' : 'Guardar metadatos') }}
+                  </button>
+                  @if (contentFormMode === 'edit') {
+                    <button type="button" class="secondary" [disabled]="contentSaving" (click)="beginCreateContentDocument()">Cancelar edición</button>
+                  }
+                </div>
+              </div>
+            </section>
 
             @if (contentError) {
               <div class="toolbar" role="alert">{{ contentError }}</div>
+            }
+            @if (contentSuccess) {
+              <div class="toolbar" role="status">{{ contentSuccess }}</div>
             }
 
             @if (contentLoading) {
               <div class="empty-state compact-state"><h3>Cargando Content API…</h3></div>
             } @else {
               <div class="table-card">
-                <div class="table-row table-row--header"><span>Archivo</span><span>Módulo</span><span>Tipo</span><span>Tamaño</span><span>Estado / Acción</span></div>
+                <div class="table-row table-row--header"><span>Archivo</span><span>Módulo</span><span>Tipo / SHA</span><span>Tamaño</span><span>Estado / Acciones</span></div>
                 @for (document of contentDocuments; track document.id) {
                   <div class="table-row">
                     <strong>{{ document.fileName }}</strong>
                     <span class="code">{{ document.moduleCode }}</span>
-                    <span>{{ document.contentType }}</span>
+                    <span><span>{{ document.contentType }}</span><br><span class="code">{{ document.sha256.slice(0, 16) }}…</span></span>
                     <span>{{ formatFileSize(document.length) }}</span>
                     <span>
                       <span class="pill">{{ document.isActive ? 'Activo' : 'Inactivo' }}</span>
+                      <button type="button" class="link-button" [disabled]="contentSaving" (click)="beginEditContentDocument(document)">Editar</button>
+                      <button type="button" class="link-button" [disabled]="contentSaving" (click)="toggleContentDocument(document)">
+                        {{ document.isActive ? 'Desactivar' : 'Activar' }}
+                      </button>
                       @if (document.isActive) {
                         <button type="button"
                                 class="link-button"

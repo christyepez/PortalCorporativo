@@ -121,15 +121,21 @@ test('catalog administration supports managed CRUD with backend authorization', 
   assert.match(template, /@for \(entry of catalogEntries; track entry\.id\)/);
 });
 
-test('content administration loads live documents and downloads through Content API', () => {
-  assert.match(apiService, /\/content\/documents\$\{suffix\}/);
+test('content administration supports upload metadata lifecycle and protected download', () => {
+  assert.match(apiService, /post<ContentDocument>\(`\$\{environment\.apiBasePath\}\/content\/documents`/);
+  assert.match(apiService, /put<ContentDocument>\(`\$\{environment\.apiBasePath\}\/content\/documents\/\$\{encodeURIComponent\(id\)\}\/metadata`/);
+  assert.match(apiService, /\/content\/documents\/\$\{encodeURIComponent\(id\)\}\/\$\{action\}/);
   assert.match(apiService, /\/content\/documents\/\$\{encodeURIComponent\(id\)\}\/download/);
-  assert.match(component, /async loadContentData\(\)/);
-  assert.match(component, /async downloadContentDocument\(document:\s*ContentDocument\)/);
-  assert.match(component, /formatFileSize\(length:\s*number\)/);
+  assert.match(component, /async saveContentDocument\(\)/);
+  assert.match(component, /async toggleContentDocument\(document:\s*ContentDocument\)/);
+  assert.match(component, /selectContentFile\(event:\s*Event\)/);
+  assert.match(component, /file\.size > 10 \* 1024 \* 1024/);
+  assert.match(component, /btoa\(binary\)/);
+  assert.match(template, /content\.manage/);
+  assert.match(template, /Nuevo documento/);
+  assert.match(template, /Guardar metadatos/);
+  assert.match(template, /SHA-256/);
   assert.match(template, /@for \(document of contentDocuments; track document\.id\)/);
-  assert.match(template, /Archivos y documentos/);
-  assert.match(template, /Descargar/);
 });
 
 test('audit administration loads paged events and 24h summary through Audit API', () => {

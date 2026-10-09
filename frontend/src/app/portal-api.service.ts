@@ -111,6 +111,19 @@ export interface ContentDocument {
   readonly createdAt: string;
 }
 
+export interface CreateContentDocument {
+  readonly moduleCode: string;
+  readonly fileName: string;
+  readonly contentType: string;
+  readonly content: string;
+}
+
+export interface UpdateContentMetadata {
+  readonly moduleCode: string;
+  readonly fileName: string;
+  readonly contentType: string;
+}
+
 export interface AuditEvent {
   readonly id: string;
   readonly actorId: string;
@@ -320,6 +333,19 @@ export class PortalApiService {
       headers: this.headers(),
       responseType: 'blob'
     });
+  }
+
+  createContentDocument(request: CreateContentDocument): Observable<ContentDocument> {
+    return this.http.post<ContentDocument>(`${environment.apiBasePath}/content/documents`, request, { headers: this.headers() });
+  }
+
+  updateContentMetadata(id: string, request: UpdateContentMetadata): Observable<ContentDocument> {
+    return this.http.put<ContentDocument>(`${environment.apiBasePath}/content/documents/${encodeURIComponent(id)}/metadata`, request, { headers: this.headers() });
+  }
+
+  setContentActive(id: string, active: boolean): Observable<ContentDocument> {
+    const action = active ? 'activate' : 'deactivate';
+    return this.http.post<ContentDocument>(`${environment.apiBasePath}/content/documents/${encodeURIComponent(id)}/${action}`, {}, { headers: this.headers() });
   }
 
   loadAudit(filters: { resource?: string; action?: string; actorId?: string; severity?: number; correlationId?: string; page?: number; pageSize?: number }): Observable<ApiResponse<AuditPage>> {
