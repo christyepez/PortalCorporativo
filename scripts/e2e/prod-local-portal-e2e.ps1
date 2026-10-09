@@ -609,9 +609,14 @@ if (-not ($reportDefinitions | Where-Object { $_.key -eq "portal-overview" })) {
 $reportBody = @{ parameters = @{} } | ConvertTo-Json -Compress
 $reportExecution = Invoke-E2E "Execute Portal Overview report through Portal Web" "$web/api/reporting/reports/portal-overview/execute" @(200) $auth "POST" $reportBody
 $report = $reportExecution.Body | ConvertFrom-Json
-if ($report.key -ne "portal-overview" -or -not $report.rows) { throw "Portal Overview report execution payload is invalid." }
-$activityBody = @{ parameters = @{ moduleCode = "PORTAL" } } | ConvertTo-Json -Compress
-Invoke-E2E "Execute Module Activity report through Portal Web" "$web/api/reporting/reports/module-activity/execute" @(200) $auth "POST" $activityBody | Out-Null
+if ($report.key -ne "portal-overview" -or -not $report.rows -or $report.sourceMode -ne "OperationalReadiness") { throw "Portal Overview operational report payload is invalid." }
+if (-not ($report.rows | Where-Object { $_.ModuleCode -eq "reporting" -and $_.Ready -eq $true })) { throw "Portal Overview did not report Reporting API as ready." }
+Write-Host "PASS Reporting operational overview"
+$activityBody = @{ parameters = @{ moduleCode = "catalog" } } | ConvertTo-Json -Compress
+$activityExecution = Invoke-E2E "Execute Module Activity report through Portal Web" "$web/api/reporting/reports/module-activity/execute" @(200) $auth "POST" $activityBody
+$activity = $activityExecution.Body | ConvertFrom-Json
+if ($activity.sourceMode -ne "OperationalReadiness" -or $activity.rows[0].ModuleCode -ne "catalog" -or $activity.rows[0].Ready -ne $true) { throw "Module operational status is invalid." }
+Write-Host "PASS Reporting module operational status"
 
 $revocableToken = New-LocalJwt @("portal.menu.read")
 $revocableAuth = @{ Authorization = "Bearer $revocableToken"; "X-Correlation-ID" = "$correlationId-revocation" }
