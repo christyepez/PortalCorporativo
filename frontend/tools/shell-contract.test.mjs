@@ -174,15 +174,23 @@ test('reporting administration loads definitions and executes reports through Re
   assert.match(template, /reportExecution\.rows/);
 });
 
-test('notification administration loads templates and messages with manual retry/cancel actions', () => {
-  assert.match(apiService, /\/notifications\/templates/);
+test('notification administration supports template lifecycle, controlled send, schedule and message actions', () => {
+  assert.match(apiService, /post<ApiResponse<NotificationTemplate>>\(`\$\{environment\.apiBasePath\}\/notifications\/templates`/);
+  assert.match(apiService, /put<ApiResponse<NotificationTemplate>>\(`\$\{environment\.apiBasePath\}\/notifications\/templates\/\$\{encodeURIComponent\(id\)\}`/);
+  assert.match(apiService, /\/notifications\/templates\/\$\{encodeURIComponent\(id\)\}\/\$\{action\}/);
+  assert.match(apiService, /\/notifications\/send/);
+  assert.match(apiService, /\/notifications\/schedule/);
   assert.match(apiService, /\/notifications\/\$\{encodeURIComponent\(id\)\}\/retry/);
   assert.match(apiService, /\/notifications\/\$\{encodeURIComponent\(id\)\}\/cancel/);
-  assert.match(component, /async loadNotificationData\(\)/);
+  assert.match(component, /async saveNotificationTemplate\(\)/);
+  assert.match(component, /async toggleNotificationTemplate\(template:\s*NotificationTemplate\)/);
+  assert.match(component, /async submitNotification\(schedule:\s*boolean\)/);
   assert.match(component, /notificationStatusLabel\(status:\s*number\)/);
-  assert.match(component, /canRetryNotification\(message:\s*NotificationMessage\)/);
-  assert.match(template, /@for \(template of notificationTemplates; track template\.id\)/);
-  assert.match(template, /@for \(message of notificationMessages; track message\.id\)/);
+  assert.match(template, /notification\.manage/);
+  assert.match(template, /notification\.send/);
+  assert.match(template, /Nueva plantilla/);
+  assert.match(template, /Enviar ahora/);
+  assert.match(template, /Programar/);
   assert.match(template, /Reintentar/);
   assert.match(template, /Cancelar/);
 });

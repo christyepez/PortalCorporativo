@@ -958,77 +958,110 @@
           <div class="section-heading">
             <div><p class="eyebrow">Mensajería transversal</p><h2>Notificaciones</h2></div>
             @if (hasAuthenticatedSession()) {
-              <button type="button" class="secondary" [disabled]="notificationLoading" (click)="loadNotificationData()">Recargar</button>
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="notificationLoading || notificationSaving" (click)="loadNotificationData()">Recargar</button>
+                <button type="button" class="primary" [disabled]="notificationSaving" (click)="beginCreateNotificationTemplate()">Nueva plantilla</button>
+              </div>
             }
           </div>
 
           @if (!hasAuthenticatedSession()) {
             <div class="empty-state compact-state">
               <h3>Sesión administrativa requerida</h3>
-              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Notification API.</p>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar y administrar Notification API.</p>
               <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
             </div>
           } @else {
-            @if (notificationError) {
-              <div class="toolbar" role="alert">{{ notificationError }}</div>
-            }
+            @if (notificationError) { <div class="toolbar" role="alert">{{ notificationError }}</div> }
+            @if (notificationSuccess) { <div class="toolbar" role="status">{{ notificationSuccess }}</div> }
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">{{ notificationTemplateMode === 'create' ? 'Nueva plantilla' : 'Editar plantilla' }}</p>
+                <h3>{{ notificationTemplateMode === 'create' ? 'Definir plantilla' : notificationTemplateCode }}</h3>
+                <p>Gestión protegida por <span class="code">notification.manage</span>. Las actualizaciones incrementan la versión.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Código<input type="text" [disabled]="notificationTemplateMode === 'edit'" [value]="notificationTemplateCode" (input)="notificationTemplateCode = $any($event.target).value" placeholder="portal.notification.custom"></label>
+                <label>Asunto<input type="text" [value]="notificationTemplateSubject" (input)="notificationTemplateSubject = $any($event.target).value" placeholder="Asunto con variable name"></label>
+                <label>Cuerpo<textarea rows="4" [value]="notificationTemplateBody" (input)="notificationTemplateBody = $any($event.target).value" placeholder="Cuerpo con variable name"></textarea></label>
+                <label>Variables permitidas<input type="text" [value]="notificationTemplateVariables" (input)="notificationTemplateVariables = $any($event.target).value" placeholder="name, role"></label>
+                <label>Canal
+                  <select [value]="notificationTemplateChannel" (change)="notificationTemplateChannel = +$any($event.target).value">
+                    <option [value]="0">Interno</option><option [value]="1">Email Dev</option><option [value]="2">Log Dev</option>
+                  </select>
+                </label>
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="notificationSaving" (click)="saveNotificationTemplate()">{{ notificationTemplateMode === 'create' ? 'Crear plantilla' : 'Guardar nueva versión' }}</button>
+                  @if (notificationTemplateMode === 'edit') { <button type="button" class="secondary" [disabled]="notificationSaving" (click)="beginCreateNotificationTemplate()">Cancelar edición</button> }
+                </div>
+              </div>
+            </section>
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">Envío controlado</p><h3>Solicitar o programar notificación</h3>
+                <p>Los proveedores locales son únicamente InternalDev, EmailDev y LogDev. Requiere <span class="code">notification.send</span>.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Plantilla
+                  <select [value]="notificationSendTemplateCode" (change)="notificationSendTemplateCode = $any($event.target).value">
+                    <option value="">Selecciona plantilla</option>
+                    @for (template of notificationTemplates; track template.id) { @if (template.isActive) { <option [value]="template.code">{{ template.code }}</option> } }
+                  </select>
+                </label>
+                <label>Destinatarios<textarea rows="2" [value]="notificationSendRecipients" (input)="notificationSendRecipients = $any($event.target).value" placeholder="usuario@local; otro@local"></textarea></label>
+                <label>Variables JSON<textarea rows="4" [value]="notificationSendVariablesJson" (input)="notificationSendVariablesJson = $any($event.target).value">{}</textarea></label>
+                <label>Canal
+                  <select [value]="notificationSendChannel" (change)="notificationSendChannel = $any($event.target).value">
+                    <option value="">Usar canal de plantilla</option><option value="0">Interno</option><option value="1">Email Dev</option><option value="2">Log Dev</option>
+                  </select>
+                </label>
+                <label>Idempotency key<input type="text" [value]="notificationSendIdempotencyKey" (input)="notificationSendIdempotencyKey = $any($event.target).value" placeholder="portal-ui-..."></label>
+                <label>Metadata JSON<input type="text" [value]="notificationSendMetadataJson" (input)="notificationSendMetadataJson = $any($event.target).value" placeholder='{"source":"portal"}'></label>
+                <label>Programar para<input type="datetime-local" [value]="notificationScheduleAt" (input)="notificationScheduleAt = $any($event.target).value"></label>
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="notificationSaving" (click)="submitNotification(false)">Enviar ahora</button>
+                  <button type="button" class="secondary" [disabled]="notificationSaving" (click)="submitNotification(true)">Programar</button>
+                </div>
+              </div>
+            </section>
 
             @if (notificationLoading && notificationTemplates.length === 0 && notificationMessages.length === 0) {
               <div class="empty-state compact-state"><h3>Cargando Notification API…</h3></div>
             } @else {
               <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="eyebrow">Gobierno</p><h3>Plantillas</h3></div>
-                  <span>{{ notificationTemplates.length }} registradas</span>
-                </div>
+                <div class="section-heading"><div><p class="eyebrow">Gobierno</p><h3>Plantillas</h3></div><span>{{ notificationTemplates.length }} registradas</span></div>
                 <div class="table-card">
-                  <div class="table-row table-row--header"><span>Código</span><span>Asunto</span><span>Canal</span><span>Versión</span><span>Estado</span></div>
+                  <div class="table-row table-row--header"><span>Código</span><span>Asunto</span><span>Canal</span><span>Versión</span><span>Estado / Acciones</span></div>
                   @for (template of notificationTemplates; track template.id) {
                     <div class="table-row">
-                      <strong class="code">{{ template.code }}</strong>
-                      <span>{{ template.subject }}</span>
-                      <span>{{ notificationChannelLabel(template.defaultChannel) }}</span>
-                      <span>{{ template.version }}</span>
-                      <span class="pill">{{ template.isActive ? 'Activa' : 'Inactiva' }}</span>
+                      <strong class="code">{{ template.code }}</strong><span>{{ template.subject }}</span><span>{{ notificationChannelLabel(template.defaultChannel) }}</span><span>v{{ template.version }}</span>
+                      <span><span class="pill">{{ template.isActive ? 'Activa' : 'Inactiva' }}</span>
+                        <button type="button" class="link-button" [disabled]="notificationSaving" (click)="beginEditNotificationTemplate(template)">Editar</button>
+                        <button type="button" class="link-button" [disabled]="notificationSaving" (click)="toggleNotificationTemplate(template)">{{ template.isActive ? 'Desactivar' : 'Activar' }}</button>
+                        @if (template.isActive) { <button type="button" class="link-button" (click)="prepareNotificationSend(template)">Preparar envío</button> }
+                      </span>
                     </div>
-                  } @empty {
-                    <div class="empty-state compact-state"><h3>No hay plantillas registradas</h3></div>
-                  }
+                  } @empty { <div class="empty-state compact-state"><h3>No hay plantillas registradas</h3></div> }
                 </div>
               </section>
 
               <section class="section-block">
-                <div class="section-heading">
-                  <div><p class="eyebrow">Operación</p><h3>Mensajes</h3></div>
-                  <span>{{ notificationMessages.length }} mensajes</span>
-                </div>
+                <div class="section-heading"><div><p class="eyebrow">Operación</p><h3>Mensajes</h3></div><span>{{ notificationMessages.length }} mensajes</span></div>
                 <div class="table-card">
-                  <div class="table-row table-row--header"><span>Plantilla</span><span>Canal</span><span>Estado</span><span>Intentos</span><span>Acciones</span></div>
+                  <div class="table-row table-row--header"><span>Plantilla</span><span>Canal</span><span>Estado</span><span>Intentos / Fecha</span><span>Acciones</span></div>
                   @for (message of notificationMessages; track message.id) {
                     <div class="table-row">
-                      <strong>{{ message.templateCode }}</strong>
-                      <span>{{ notificationChannelLabel(message.channel) }}</span>
-                      <span class="pill">{{ notificationStatusLabel(message.status) }}</span>
-                      <span>{{ message.attemptCount }}</span>
+                      <strong>{{ message.templateCode }}</strong><span>{{ notificationChannelLabel(message.channel) }}</span><span class="pill">{{ notificationStatusLabel(message.status) }}</span>
+                      <span>{{ message.attemptCount }} · {{ message.scheduledAtUtc || message.createdAtUtc }}</span>
                       <span>
-                        @if (canRetryNotification(message)) {
-                          <button type="button" class="link-button"
-                                  [disabled]="notificationActionId === message.id"
-                                  (click)="retryNotification(message)">Reintentar</button>
-                        }
-                        @if (canCancelNotification(message)) {
-                          <button type="button" class="link-button"
-                                  [disabled]="notificationActionId === message.id"
-                                  (click)="cancelNotification(message)">Cancelar</button>
-                        }
-                        @if (!canRetryNotification(message) && !canCancelNotification(message)) {
-                          <span class="muted">Sin acciones</span>
-                        }
+                        @if (canRetryNotification(message)) { <button type="button" class="link-button" [disabled]="notificationActionId === message.id" (click)="retryNotification(message)">Reintentar</button> }
+                        @if (canCancelNotification(message)) { <button type="button" class="link-button" [disabled]="notificationActionId === message.id" (click)="cancelNotification(message)">Cancelar</button> }
+                        @if (!canRetryNotification(message) && !canCancelNotification(message)) { <span class="muted">Sin acciones</span> }
                       </span>
                     </div>
-                  } @empty {
-                    <div class="empty-state compact-state"><h3>No hay mensajes registrados</h3></div>
-                  }
+                  } @empty { <div class="empty-state compact-state"><h3>No hay mensajes registrados</h3></div> }
                 </div>
               </section>
             }

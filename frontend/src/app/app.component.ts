@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -198,6 +198,22 @@ export class AppComponent {
   protected notificationTemplates: NotificationTemplate[] = [];
   protected notificationMessages: NotificationMessage[] = [];
   protected notificationActionId?: string;
+  protected notificationSaving = false;
+  protected notificationSuccess?: string;
+  protected notificationTemplateMode: 'create' | 'edit' = 'create';
+  protected notificationTemplateEditingId?: string;
+  protected notificationTemplateCode = '';
+  protected notificationTemplateSubject = '';
+  protected notificationTemplateBody = '';
+  protected notificationTemplateVariables = '';
+  protected notificationTemplateChannel = 2;
+  protected notificationSendTemplateCode = '';
+  protected notificationSendRecipients = '';
+  protected notificationSendVariablesJson = '{}';
+  protected notificationSendChannel = '';
+  protected notificationSendIdempotencyKey = '';
+  protected notificationSendMetadataJson = '';
+  protected notificationScheduleAt = '';
   protected integrationLoading = false;
   protected integrationError?: string;
   protected integrationMessageId = '';
@@ -746,6 +762,128 @@ export class AppComponent {
   protected reportColumns(): string[] {
     const firstRow = this.reportExecution?.rows[0];
     return firstRow ? Object.keys(firstRow) : [];
+  }
+
+  protected beginCreateNotificationTemplate(): void {
+    this.notificationTemplateMode = 'create';
+    this.notificationTemplateEditingId = undefined;
+    this.notificationTemplateCode = '';
+    this.notificationTemplateSubject = '';
+    this.notificationTemplateBody = '';
+    this.notificationTemplateVariables = '';
+    this.notificationTemplateChannel = 2;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+  }
+
+  protected beginEditNotificationTemplate(template: NotificationTemplate): void {
+    this.notificationTemplateMode = 'edit';
+    this.notificationTemplateEditingId = template.id;
+    this.notificationTemplateCode = template.code;
+    this.notificationTemplateSubject = template.subject;
+    this.notificationTemplateBody = template.body;
+    this.notificationTemplateVariables = template.allowedVariables.join(', ');
+    this.notificationTemplateChannel = template.defaultChannel;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+  }
+
+  protected async saveNotificationTemplate(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const code = this.notificationTemplateCode.trim().toLowerCase();
+    const subject = this.notificationTemplateSubject.trim();
+    const body = this.notificationTemplateBody.trim();
+    const allowedVariables = this.notificationTemplateVariables.split(',').map(x => x.trim()).filter(Boolean);
+    if (!code || !subject || !body) {
+      this.notificationError = 'Código, asunto y cuerpo son obligatorios.';
+      return;
+    }
+    this.notificationSaving = true;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+    try {
+      let message = '';
+      if (this.notificationTemplateMode === 'create') {
+        const request: CreateNotificationTemplate = { code, subject, body, allowedVariables, defaultChannel: Number(this.notificationTemplateChannel) };
+        const response = await firstValueFrom(this.portalApi.createNotificationTemplate(request));
+        message = `Plantilla ${response.data.code} creada en versión ${response.data.version}.`;
+      } else if (this.notificationTemplateEditingId) {
+        const request: UpdateNotificationTemplate = { subject, body, allowedVariables, defaultChannel: Number(this.notificationTemplateChannel) };
+        const response = await firstValueFrom(this.portalApi.updateNotificationTemplate(this.notificationTemplateEditingId, request));
+        message = `Plantilla ${response.data.code} actualizada a versión ${response.data.version}.`;
+      }
+      await this.loadNotificationData();
+      this.beginCreateNotificationTemplate();
+      this.notificationSuccess = message;
+    } catch (error: unknown) {
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible guardar la plantilla.';
+    } finally {
+      this.notificationSaving = false;
+    }
+  }
+
+  protected async toggleNotificationTemplate(template: NotificationTemplate): Promise<void> {
+    this.notificationSaving = true;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.setNotificationTemplateActive(template.id, !template.isActive));
+      await this.loadNotificationData();
+      this.notificationSuccess = `${response.data.code} quedó ${response.data.isActive ? 'activa' : 'inactiva'}.`;
+    } catch (error: unknown) {
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible cambiar el estado de la plantilla.';
+    } finally {
+      this.notificationSaving = false;
+    }
+  }
+
+  protected prepareNotificationSend(template: NotificationTemplate): void {
+    this.notificationSendTemplateCode = template.code;
+    this.notificationSendVariablesJson = JSON.stringify(Object.fromEntries(template.allowedVariables.map(x => [x, ''])), null, 2);
+    this.notificationSendChannel = String(template.defaultChannel);
+    this.notificationSendIdempotencyKey = `portal-ui-${Date.now()}`;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+  }
+
+  protected async submitNotification(schedule: boolean): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const templateCode = this.notificationSendTemplateCode.trim().toLowerCase();
+    const recipients = this.notificationSendRecipients.split(/[;,\n]/).map(x => x.trim()).filter(Boolean);
+    const idempotencyKey = this.notificationSendIdempotencyKey.trim();
+    if (!templateCode || recipients.length === 0 || !idempotencyKey) {
+      this.notificationError = 'Plantilla, destinatarios e idempotency key son obligatorios.';
+      return;
+    }
+    let variables: Record<string,string>;
+    let metadataJson: string | null = this.notificationSendMetadataJson.trim() || null;
+    try {
+      variables = JSON.parse(this.notificationSendVariablesJson || '{}') as Record<string,string>;
+      if (metadataJson) JSON.parse(metadataJson);
+    } catch {
+      this.notificationError = 'Variables y metadata deben contener JSON válido.';
+      return;
+    }
+    if (schedule && !this.notificationScheduleAt) {
+      this.notificationError = 'Selecciona fecha y hora para programar la notificación.';
+      return;
+    }
+    const channel = this.notificationSendChannel === '' ? null : Number(this.notificationSendChannel);
+    const base: NotificationRequest = { templateCode, recipients, variables, channel, idempotencyKey, metadataJson };
+    this.notificationSaving = true;
+    this.notificationError = undefined;
+    this.notificationSuccess = undefined;
+    try {
+      const response = schedule
+        ? await firstValueFrom(this.portalApi.scheduleNotification({ ...base, scheduledAtUtc: new Date(this.notificationScheduleAt).toISOString() } as ScheduleNotificationRequest))
+        : await firstValueFrom(this.portalApi.sendNotification(base));
+      await this.loadNotificationData();
+      this.notificationSuccess = `Notificación ${response.data.id} ${schedule ? 'programada' : 'solicitada'} correctamente.`;
+    } catch (error: unknown) {
+      this.notificationError = error instanceof Error ? error.message : 'No fue posible solicitar la notificación.';
+    } finally {
+      this.notificationSaving = false;
+    }
   }
 
   protected async loadNotificationData(): Promise<void> {
