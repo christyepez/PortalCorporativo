@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-10-09T19:34:28.2854046Z",
+    "CapturedUtc":  "2026-10-09T19:52:54.4845276Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -88,7 +88,7 @@
                           "historiaspaolin-api":  "sha256:5c996d93f224c2603cd6bdaadc2333764e6b933cc4a596819c1ddac86c2f5dc7",
                           "notification-api":  "sha256:1f0f054613342761718250250da486503621e7674f9c89ad2202f579db50ccc3",
                           "hr-api":  "sha256:45256c6eeac3c0d60e557f5387c568eade1e786809bf593e1f3bbf8b0aadf54a",
-                          "reporting-api":  "sha256:ff5dfd067c95097c0c874c9993ceaf08de24b646a33c77f8d2eefe97ecd84c93",
+                          "reporting-api":  "sha256:e76d9318beace3518538d2f8e5ff6e391ca568bcf17714d3569f1404411501ba",
                           "menu-api":  "sha256:b64ba6ba658bbfc9f9141991615d17b7e5934716eb06f532b224c98f415264a1",
                           "audit-api":  "sha256:cd567a68e24d10ec2bd7400d2c779440437fa809fdf16573b233259f488408d2",
                           "seq":  "sha256:a9d266df8cbbfd3735e85d39f5fda7cd3d7cbbb2b653b6d39403597da16a17b1",
