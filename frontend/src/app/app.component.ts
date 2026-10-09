@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
+import consumerRegistry from '../../config/consumer-registry.json';
 import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
@@ -68,13 +69,15 @@ export class AppComponent {
     { id: 'operations', label: 'Operaciones', description: 'Salud de servicios', icon: '◌' }
   ];
 
-  protected readonly applications: ApplicationCard[] = [
-    { name: 'Conjunto al Día', code: 'APP_CONDOMINIO', description: 'Administración de propiedades y condominios.', port: 4210, status: 'Local' },
-    { name: 'CRM', code: 'CRM', description: 'Gestión comercial y clientes.', path: '/api/crm', status: 'Integrado' },
-    { name: 'Financiero', code: 'FINANCIAL', description: 'Operación financiera y presupuestaria.', path: '/api/financial', status: 'Integrado' },
-    { name: 'Talento Humano', code: 'HR', description: 'Gestión de personas y colaboradores.', path: '/api/hr', status: 'Integrado' },
-    { name: 'HistoriasPaolin', code: 'HISTORIAS', description: 'Aplicación integrada mediante Gateway.', path: '/api/historiaspaolin', status: 'Integrado' }
-  ];  protected readonly modules: ShellModule[] = [
+  protected readonly applications: ApplicationCard[] = consumerRegistry.consumers.map((consumer) => ({
+    name: consumer.name,
+    code: consumer.code,
+    description: consumer.description,
+    path: consumer.gatewayPath,
+    status: consumer.status
+  }));
+
+  protected readonly modules: ShellModule[] = [
     { label: 'Security', status: 'Portal Core', enabled: true, gatewayPath: '/api/security', probePath: '/api/security/users/00000000-0000-0000-0000-000000000000' },
     { label: 'Configuration', status: 'Portal Core', enabled: true, gatewayPath: '/api/configuration', probePath: '/api/configuration/scopes/0' },
     { label: 'Menu', status: 'Portal Core', enabled: true, gatewayPath: '/api/menu', probePath: '/api/menu/modules/portal' },
@@ -84,10 +87,13 @@ export class AppComponent {
     { label: 'Content / File', status: 'Portal Core', enabled: true, gatewayPath: '/api/content', probePath: '/api/content/documents' },
     { label: 'Reporting', status: 'Portal Core', enabled: true, gatewayPath: '/api/reporting', probePath: '/api/reporting/reports' },
     { label: 'Integration', status: 'Portal Core', enabled: true, gatewayPath: '/api/integration', probePath: '/api/integration/inbox/processed?tenantId=default&source=shell&idempotencyKey=probe' },
-    { label: 'CRM', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/crm', probePath: '/api/crm/health/ready' },
-    { label: 'Financiero', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/financial', probePath: '/api/financial/health/ready' },
-    { label: 'HistoriasPaolin', status: 'Integrado por Gateway', enabled: true, gatewayPath: '/api/historiaspaolin', probePath: '/api/historiaspaolin/health/ready' },
-    { label: 'Talento Humano', status: 'Integrado PROD local', enabled: true, gatewayPath: '/api/hr', probePath: '/api/hr/health/ready' }
+    ...consumerRegistry.consumers.map((consumer) => ({
+      label: consumer.name,
+      status: consumer.status,
+      enabled: true,
+      gatewayPath: consumer.gatewayPath,
+      probePath: consumer.probePath
+    }))
   ];
 
   protected activeSection: AdminSection = 'dashboard';

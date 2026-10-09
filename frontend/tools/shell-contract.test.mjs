@@ -7,16 +7,19 @@ const template = readFileSync(new URL('../src/app/app.component.html', import.me
 const apiService = readFileSync(new URL('../src/app/portal-api.service.ts', import.meta.url), 'utf8');
 const environment = readFileSync(new URL('../src/environments/environment.ts', import.meta.url), 'utf8');
 const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.url), 'utf8'));
+const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-registry.json', import.meta.url), 'utf8'));
 
-test('integrated domain routes are enabled in the shell contract', () => {
-  const required = ['/api/crm', '/api/financial', '/api/historiaspaolin', '/api/hr'];
-  for (const route of required) {
-    assert.match(component, new RegExp(`enabled:\\s*true,\\s*gatewayPath:\\s*'${route.replaceAll('/', '\\/')}'`));
-  }
+test('integrated consumers are sourced from the governed registry', () => {
+  assert.equal(consumerRegistry.version, 1);
+  assert.deepEqual(consumerRegistry.consumers.map((consumer) => consumer.code).sort(), ['CRM', 'FINANCIAL', 'HISTORIAS', 'HR']);
+  assert.match(component, /consumerRegistry\.consumers\.map/);
+  assert.doesNotMatch(template, /Registrar aplicación/);
 });
 
 test('gateway routes are unique and use the Portal API boundary', () => {
-  const routes = [...component.matchAll(/gatewayPath:\s*'([^']+)'/g)].map((match) => match[1]);
+  const coreRoutes = [...component.matchAll(/gatewayPath:\s*'([^']+)'/g)].map((match) => match[1]);
+  const consumerRoutes = consumerRegistry.consumers.map((consumer) => consumer.gatewayPath);
+  const routes = [...coreRoutes, ...consumerRoutes];
   assert.equal(routes.length, 13);
   assert.equal(new Set(routes).size, routes.length);
   for (const route of routes) assert.match(route, /^\/api\//);
