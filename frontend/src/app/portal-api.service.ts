@@ -198,6 +198,11 @@ export interface NotificationTemplate {
   readonly isActive: boolean;
 }
 
+export interface CreateNotificationTemplate { readonly code:string; readonly subject:string; readonly body:string; readonly allowedVariables:string[]; readonly defaultChannel:number; }
+export interface UpdateNotificationTemplate { readonly subject:string; readonly body:string; readonly allowedVariables:string[]; readonly defaultChannel:number; }
+export interface NotificationRequest { readonly templateCode:string; readonly recipients:string[]; readonly variables:Record<string,string>; readonly channel?:number|null; readonly idempotencyKey:string; readonly metadataJson?:string|null; }
+export interface ScheduleNotificationRequest extends NotificationRequest { readonly scheduledAtUtc:string; }
+
 export interface NotificationMessage {
   readonly id: string;
   readonly templateCode: string;
@@ -419,6 +424,12 @@ export class PortalApiService {
   loadNotificationMessages(): Observable<ApiResponse<NotificationMessage[]>> {
     return this.http.get<ApiResponse<NotificationMessage[]>>(`${environment.apiBasePath}/notifications/`, { headers: this.headers() });
   }
+
+  createNotificationTemplate(request: CreateNotificationTemplate): Observable<ApiResponse<NotificationTemplate>> { return this.http.post<ApiResponse<NotificationTemplate>>(`${environment.apiBasePath}/notifications/templates`, request, { headers: this.headers() }); }
+  updateNotificationTemplate(id:string, request: UpdateNotificationTemplate): Observable<ApiResponse<NotificationTemplate>> { return this.http.put<ApiResponse<NotificationTemplate>>(`${environment.apiBasePath}/notifications/templates/${encodeURIComponent(id)}`, request, { headers: this.headers() }); }
+  setNotificationTemplateActive(id:string, active:boolean): Observable<ApiResponse<NotificationTemplate>> { const action=active?'activate':'deactivate'; return this.http.post<ApiResponse<NotificationTemplate>>(`${environment.apiBasePath}/notifications/templates/${encodeURIComponent(id)}/${action}`, {}, { headers: this.headers() }); }
+  sendNotification(request: NotificationRequest): Observable<ApiResponse<NotificationMessage>> { return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/send`, request, { headers: this.headers() }); }
+  scheduleNotification(request: ScheduleNotificationRequest): Observable<ApiResponse<NotificationMessage>> { return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/schedule`, request, { headers: this.headers() }); }
 
   retryNotification(id: string): Observable<ApiResponse<NotificationMessage>> {
     return this.http.post<ApiResponse<NotificationMessage>>(`${environment.apiBasePath}/notifications/${encodeURIComponent(id)}/retry`, {}, { headers: this.headers() });

@@ -108,6 +108,7 @@ $readPermissions = @(
     "portal.audit.read",
     "portal.audit.write",
     "portal.notification.read",
+    "portal.notification.send",
     "portal.catalog.read",
     "portal.catalog.manage",
     "portal.content.read",
@@ -189,6 +190,7 @@ $tenantPermissions = @(
     "portal.configuration.manage",
     "portal.notification.read",
     "portal.notification.manage",
+    "portal.notification.send",
     "portal.catalog.read",
     "portal.catalog.manage",
     "portal.content.read",
@@ -313,7 +315,53 @@ $tenantTemplateBody = @{
     allowedVariables = @()
     defaultChannel = 2
 } | ConvertTo-Json -Compress
-Invoke-E2E "Create Notification template in tenant A" "$web/api/notifications/templates" @(201) $tenantAAuth "POST" $tenantTemplateBody | Out-Null
+$tenantTemplateCreate = Invoke-E2E "Create Notification template in tenant A" "$web/api/notifications/templates" @(201) $tenantAAuth "POST" $tenantTemplateBody
+$tenantTemplate = $tenantTemplateCreate.Body | ConvertFrom-Json
+$tenantTemplateId = [string]$tenantTemplate.data.id
+
+$tenantTemplateUpdateBody = @{
+    subject = "Tenant A E2E v2"
+    body = "Tenant A isolated notification v2"
+    allowedVariables = @()
+    defaultChannel = 2
+} | ConvertTo-Json -Compress
+$tenantTemplateUpdate = Invoke-E2E "Update Notification template in tenant A" "$web/api/notifications/templates/$tenantTemplateId" @(200) $tenantAAuth "PUT" $tenantTemplateUpdateBody
+if (($tenantTemplateUpdate.Body | ConvertFrom-Json).data.version -ne 2) { throw "Notification template version did not increment." }
+
+$tenantTemplateDeactivate = Invoke-E2E "Deactivate Notification template in tenant A" "$web/api/notifications/templates/$tenantTemplateId/deactivate" @(200) $tenantAAuth "POST"
+if (($tenantTemplateDeactivate.Body | ConvertFrom-Json).data.isActive -ne $false) { throw "Notification template did not deactivate." }
+$tenantTemplateActivate = Invoke-E2E "Activate Notification template in tenant A" "$web/api/notifications/templates/$tenantTemplateId/activate" @(200) $tenantAAuth "POST"
+if (($tenantTemplateActivate.Body | ConvertFrom-Json).data.isActive -ne $true) { throw "Notification template did not activate." }
+
+$tenantNotificationKey = "notification-$([Guid]::NewGuid().ToString('N'))"
+$tenantSendBody = @{
+    templateCode = $tenantTemplateCode
+    recipients = @("local-user@example.local")
+    variables = @{}
+    channel = 2
+    idempotencyKey = $tenantNotificationKey
+    metadataJson = '{"source":"e2e"}'
+} | ConvertTo-Json -Depth 4 -Compress
+$tenantSend = Invoke-E2E "Send Notification in tenant A" "$web/api/notifications/send" @(202) $tenantAAuth "POST" $tenantSendBody
+$tenantSendRepeat = Invoke-E2E "Repeat idempotent Notification send" "$web/api/notifications/send" @(202) $tenantAAuth "POST" $tenantSendBody
+if (($tenantSend.Body | ConvertFrom-Json).data.id -ne ($tenantSendRepeat.Body | ConvertFrom-Json).data.id) { throw "Notification idempotency returned a different message." }
+
+$tenantScheduleKey = "notification-scheduled-$([Guid]::NewGuid().ToString('N'))"
+$tenantScheduleBody = @{
+    templateCode = $tenantTemplateCode
+    recipients = @("scheduled-user@example.local")
+    variables = @{}
+    channel = 2
+    idempotencyKey = $tenantScheduleKey
+    metadataJson = '{"source":"e2e-scheduled"}'
+    scheduledAtUtc = [DateTimeOffset]::UtcNow.AddHours(2).ToString("o")
+} | ConvertTo-Json -Depth 4 -Compress
+$tenantScheduled = Invoke-E2E "Schedule Notification in tenant A" "$web/api/notifications/schedule" @(202) $tenantAAuth "POST" $tenantScheduleBody
+$tenantScheduledId = [string](($tenantScheduled.Body | ConvertFrom-Json).data.id)
+$tenantCancelled = Invoke-E2E "Cancel scheduled Notification in tenant A" "$web/api/notifications/$tenantScheduledId/cancel" @(200) $tenantAAuth "POST"
+if (($tenantCancelled.Body | ConvertFrom-Json).data.status -ne 4) { throw "Scheduled Notification was not cancelled." }
+Write-Host "PASS Notification managed lifecycle and idempotency"
+
 $tenantBTemplates = Invoke-E2E "List Notification templates in tenant B" "$web/api/notifications/templates" @(200) $tenantBAuth
 $tenantBTemplatesPayload = $tenantBTemplates.Body | ConvertFrom-Json
 if (@($tenantBTemplatesPayload.data | Where-Object { $_.code -eq $tenantTemplateCode }).Count -ne 0) {
