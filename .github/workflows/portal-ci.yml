@@ -49,6 +49,14 @@ jobs:
         shell: pwsh
         run: ./scripts/production/test-validate-activation-inputs.ps1
 
+  consumer-expansion-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Portal consumer expansion contract
+        shell: pwsh
+        run: ./scripts/quality/test-consumer-expansion-gate.ps1
+
   compose:
     runs-on: ubuntu-latest
     steps:

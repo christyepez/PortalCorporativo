@@ -58,6 +58,12 @@ Use this template when an explicit new domain/application is selected for Portal
 
 ## 6. Quality gates
 
+Before runtime validation, execute:
+
+`powershell.exe -ExecutionPolicy Bypass -File .\scripts\quality\test-consumer-expansion-gate.ps1`
+
+Require `PORTAL_CONSUMER_EXPANSION_GATE_PASS`.
+
 - [ ] Consumer build passes.
 - [ ] Consumer unit/integration tests pass.
 - [ ] Portal Compose config validates.
