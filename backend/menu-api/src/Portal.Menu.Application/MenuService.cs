@@ -32,5 +32,5 @@ public sealed class MenuService(IMenuStore store, IPermissionChecker permissions
     { var menu = await store.GetMenuByModuleAsync(tenantContext.TenantId, module.ToLowerInvariant(), ct); if (menu is null) return Result<IReadOnlyCollection<MenuItemResponse>>.Failure("menu.not_found", "Menu was not found."); return Result<IReadOnlyCollection<MenuItemResponse>>.Success((await store.GetItemsAsync(tenantContext.TenantId, menu.Id, ct)).OrderBy(x => x.Order).Select(Map).ToArray()); }
     private Task Changed(MenuItem x, string type, string correlation, CancellationToken ct) => recorder.RecordAsync(type.ToLowerInvariant(), x.Id.ToString(), new MenuChangedV1(x.MenuId, x.Id, type, correlation), correlation, ct);
     private static Result<MenuItemResponse> NotFound() => Result<MenuItemResponse>.Failure("menu.not_found", "Menu or item was not found.");
-    private static MenuItemResponse Map(MenuItem x) => new(x.Id, x.MenuId, x.ParentId, x.Code, x.Label, x.Route, x.Icon, x.Order, x.ResourceKey, x.PermissionCode, x.MetadataJson);
+    private static MenuItemResponse Map(MenuItem x) => new(x.Id, x.MenuId, x.ParentId, x.Code, x.Label, x.Route, x.Icon, x.Order, x.ResourceKey, x.PermissionCode, x.MetadataJson, x.IsActive);
 }

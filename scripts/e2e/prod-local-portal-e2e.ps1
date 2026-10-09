@@ -188,6 +188,8 @@ $tenantPermissions = @(
     "portal.security.manage",
     "portal.configuration.read",
     "portal.configuration.manage",
+    "portal.menu.read",
+    "portal.menu.manage",
     "portal.notification.read",
     "portal.notification.manage",
     "portal.notification.send",
@@ -260,6 +262,55 @@ if (@($tenantBRoles.Body | ConvertFrom-Json | Where-Object { $_.name -eq $tenant
     throw "Tenant B can read tenant A Security data."
 }
 Write-Host "PASS Security tenant isolation"
+
+$menuSuffix = [Guid]::NewGuid().ToString('N').Substring(0,10)
+$tenantMenuModule = "e2e-menu-$menuSuffix"
+$tenantMenuBody = @{ moduleCode = $tenantMenuModule; name = "E2E Menu $menuSuffix" } | ConvertTo-Json -Compress
+$tenantMenuCreate = Invoke-E2E "Create Menu definition in tenant A" "$web/api/menu/" @(201) $tenantAAuth "POST" $tenantMenuBody
+$tenantMenuPayload = $tenantMenuCreate.Body | ConvertFrom-Json
+$tenantMenuId = [string]$tenantMenuPayload.data
+if ([string]::IsNullOrWhiteSpace($tenantMenuId)) { throw "Menu create did not return an id." }
+
+$tenantMenuItemBody = @{
+    menuId = $tenantMenuId
+    parentId = $null
+    code = "root-$menuSuffix"
+    label = "Root $menuSuffix"
+    route = "/e2e/$menuSuffix"
+    icon = "test"
+    order = 1
+    resourceKey = "e2e.resource.$menuSuffix"
+    permissionCode = "e2e.resource.$menuSuffix.read"
+    metadataJson = '{"source":"e2e"}'
+} | ConvertTo-Json -Compress
+$tenantMenuItemCreate = Invoke-E2E "Create Menu item in tenant A" "$web/api/menu/items" @(201) $tenantAAuth "POST" $tenantMenuItemBody
+$tenantMenuItem = $tenantMenuItemCreate.Body | ConvertFrom-Json
+if ($tenantMenuItem.data.isActive -ne $true) { throw "New Menu item should be active." }
+
+$tenantMenuUpdateBody = @{
+    label = "Root Updated $menuSuffix"
+    route = "/e2e/$menuSuffix/updated"
+    icon = "test-updated"
+    resourceKey = "e2e.resource.$menuSuffix"
+    permissionCode = "e2e.resource.$menuSuffix.read"
+    metadataJson = '{"source":"e2e","updated":true}'
+} | ConvertTo-Json -Compress
+$tenantMenuUpdate = Invoke-E2E "Update Menu item in tenant A" "$web/api/menu/items/$($tenantMenuItem.data.id)" @(200) $tenantAAuth "PUT" $tenantMenuUpdateBody
+if (($tenantMenuUpdate.Body | ConvertFrom-Json).data.label -notlike "Root Updated*") { throw "Menu item update was not persisted." }
+
+$tenantMenuReorderBody = @{ items = @(@{ itemId = $tenantMenuItem.data.id; parentId = $null; order = 7 }) } | ConvertTo-Json -Depth 5 -Compress
+Invoke-E2E "Reorder Menu item in tenant A" "$web/api/menu/reorder" @(200) $tenantAAuth "POST" $tenantMenuReorderBody | Out-Null
+
+$tenantMenuDeactivate = Invoke-E2E "Deactivate Menu item in tenant A" "$web/api/menu/items/$($tenantMenuItem.data.id)/deactivate" @(200) $tenantAAuth "POST"
+if (($tenantMenuDeactivate.Body | ConvertFrom-Json).data.isActive -ne $false) { throw "Menu item deactivation did not persist." }
+$tenantMenuActivate = Invoke-E2E "Activate Menu item in tenant A" "$web/api/menu/items/$($tenantMenuItem.data.id)/activate" @(200) $tenantAAuth "POST"
+if (($tenantMenuActivate.Body | ConvertFrom-Json).data.isActive -ne $true) { throw "Menu item activation did not persist." }
+
+$tenantAMenuRead = Invoke-E2E "Read Menu module in tenant A" "$web/api/menu/modules/$tenantMenuModule" @(200) $tenantAAuth
+$tenantAMenuItems = @((($tenantAMenuRead.Body | ConvertFrom-Json).data))
+if ($tenantAMenuItems.Count -ne 1 -or $tenantAMenuItems[0].order -ne 7) { throw "Menu reorder/read lifecycle failed." }
+Invoke-E2E "Tenant B cannot read tenant A Menu module" "$web/api/menu/modules/$tenantMenuModule" @(404) $tenantBAuth | Out-Null
+Write-Host "PASS Menu managed lifecycle and tenant isolation"
 
 $tenantConfigKey = "tenant.e2e.$([Guid]::NewGuid().ToString('N').Substring(0,12))"
 $tenantConfigBody = @{
