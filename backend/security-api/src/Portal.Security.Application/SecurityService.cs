@@ -4,7 +4,12 @@ using Portal.Security.Domain;
 
 namespace Portal.Security.Application;
 
-public sealed class SecurityService(ISecurityStore store, IPortalTenantContext tenantContext)
+public interface ISecurityChangeRecorder
+{
+    Task RecordAsync(string action, string entityId, object payload, CancellationToken cancellationToken);
+}
+
+public sealed class SecurityService(ISecurityStore store, IPortalTenantContext tenantContext, ISecurityChangeRecorder recorder)
 {
     public async Task<Result<UserResponse>> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken)
     {
@@ -19,6 +24,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(user, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("user_created", user.Id.ToString(), new { user.TenantId, user.Email, user.Name }, cancellationToken);
         return Result<UserResponse>.Success(ToResponse(user));
     }
 
@@ -43,6 +49,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(role, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("role_created", role.Id.ToString(), new { role.TenantId, role.Name }, cancellationToken);
         return Result<RoleResponse>.Success(new RoleResponse(role.Id, role.TenantId, role.Name));
     }
 
@@ -59,6 +66,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(resource, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("resource_created", resource.Id.ToString(), new { resource.TenantId, resource.Key, resource.Name }, cancellationToken);
         return Result<ResourceResponse>.Success(new ResourceResponse(resource.Id, resource.TenantId, resource.Key, resource.Name));
     }
 
@@ -77,6 +85,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(permission, cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("permission_created", permission.Id.ToString(), new { permission.TenantId, permission.Code, permission.ResourceKey, permission.Action }, cancellationToken);
         return Result<PermissionResponse>.Success(ToResponse(permission));
     }
 
@@ -91,6 +100,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(UserRole.Create(tenantContext.TenantId, userId, roleId), cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("user_role_assigned", userId.ToString(), new { TenantId = tenantContext.TenantId, UserId = userId, RoleId = roleId }, cancellationToken);
         return Result<bool>.Success(true);
     }
 
@@ -105,6 +115,7 @@ public sealed class SecurityService(ISecurityStore store, IPortalTenantContext t
 
         await store.AddAsync(RolePermission.Create(tenantContext.TenantId, roleId, permissionId), cancellationToken);
         await store.SaveChangesAsync(cancellationToken);
+        await recorder.RecordAsync("role_permission_assigned", roleId.ToString(), new { TenantId = tenantContext.TenantId, RoleId = roleId, PermissionId = permissionId }, cancellationToken);
         return Result<bool>.Success(true);
     }
 

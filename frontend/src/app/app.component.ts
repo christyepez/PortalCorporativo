@@ -106,6 +106,25 @@ export class AppComponent {
   protected securityRoles: SecurityRole[] = [];
   protected securityPermissions: SecurityPermission[] = [];
   protected securityResources: SecurityResource[] = [];
+  protected securitySaving = false;
+  protected securitySuccess?: string;
+  protected securityUserEmail = '';
+  protected securityUserName = '';
+  protected securityRoleName = '';
+  protected securityResourceKey = '';
+  protected securityResourceName = '';
+  protected securityPermissionCode = '';
+  protected securityPermissionResourceKey = '';
+  protected securityPermissionAction = '';
+  protected securityAssignUserId = '';
+  protected securityAssignRoleId = '';
+  protected securityAssignPermissionRoleId = '';
+  protected securityAssignPermissionId = '';
+  protected securityInspectUserId = '';
+  protected securityUserPermissionCodes: string[] = [];
+  protected securityCheckResourceKey = '';
+  protected securityCheckAction = '';
+  protected securityCheckAllowed?: boolean;
   protected menuModuleCode = 'portal';
   protected menuLoading = false;
   protected menuError?: string;
@@ -226,11 +245,144 @@ export class AppComponent {
     this.securityRoles = [];
     this.securityPermissions = [];
     this.securityResources = [];
+    this.securityUserPermissionCodes = [];
+    this.securityCheckAllowed = undefined;
     this.securityError = undefined;
+    this.securitySuccess = undefined;
   }
 
   protected selectSecurityTab(tab: SecurityTab): void {
     this.activeSecurityTab = tab;
+  }
+
+  protected async createSecurityUser(): Promise<void> {
+    const email = this.securityUserEmail.trim().toLowerCase();
+    const name = this.securityUserName.trim();
+    if (!email || !name) {
+      this.securityError = 'Email y nombre son obligatorios.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      const response = await firstValueFrom(this.portalApi.createUser(email, name));
+      this.securityUserEmail = '';
+      this.securityUserName = '';
+      this.securitySuccess = `Usuario ${response.data.email} creado correctamente.`;
+    });
+  }
+
+  protected async createSecurityRole(): Promise<void> {
+    const name = this.securityRoleName.trim();
+    if (!name) {
+      this.securityError = 'El nombre del rol es obligatorio.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      const response = await firstValueFrom(this.portalApi.createRole(name));
+      this.securityRoleName = '';
+      this.securitySuccess = `Rol ${response.data.name} creado correctamente.`;
+    });
+  }
+
+  protected async createSecurityResource(): Promise<void> {
+    const key = this.securityResourceKey.trim().toLowerCase();
+    const name = this.securityResourceName.trim();
+    if (!key || !name) {
+      this.securityError = 'Clave y nombre del recurso son obligatorios.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      const response = await firstValueFrom(this.portalApi.createResource(key, name));
+      this.securityResourceKey = '';
+      this.securityResourceName = '';
+      this.securitySuccess = `Recurso ${response.data.key} registrado correctamente.`;
+    });
+  }
+
+  protected async createSecurityPermission(): Promise<void> {
+    const code = this.securityPermissionCode.trim().toLowerCase();
+    const resourceKey = this.securityPermissionResourceKey.trim().toLowerCase();
+    const action = this.securityPermissionAction.trim().toLowerCase();
+    if (!code || !resourceKey || !action) {
+      this.securityError = 'Código, recurso y acción son obligatorios.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      const response = await firstValueFrom(this.portalApi.createPermission(code, resourceKey, action));
+      this.securityPermissionCode = '';
+      this.securityPermissionAction = '';
+      this.securitySuccess = `Permiso ${response.data.code} creado correctamente.`;
+    });
+  }
+
+  protected async assignSecurityRoleToUser(): Promise<void> {
+    if (!this.securityAssignUserId || !this.securityAssignRoleId) {
+      this.securityError = 'Selecciona usuario y rol.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      await firstValueFrom(this.portalApi.assignRoleToUser(this.securityAssignUserId, this.securityAssignRoleId));
+      this.securitySuccess = 'Rol asignado al usuario correctamente.';
+      this.securityInspectUserId = this.securityAssignUserId;
+      await this.loadSecurityUserPermissions();
+    }, false);
+  }
+
+  protected async assignSecurityPermissionToRole(): Promise<void> {
+    if (!this.securityAssignPermissionRoleId || !this.securityAssignPermissionId) {
+      this.securityError = 'Selecciona rol y permiso.';
+      return;
+    }
+    await this.runSecurityMutation(async () => {
+      await firstValueFrom(this.portalApi.assignPermissionToRole(this.securityAssignPermissionRoleId, this.securityAssignPermissionId));
+      this.securitySuccess = 'Permiso asignado al rol correctamente.';
+    }, false);
+  }
+
+  protected async loadSecurityUserPermissions(): Promise<void> {
+    if (!this.securityInspectUserId) {
+      this.securityUserPermissionCodes = [];
+      return;
+    }
+    this.securityError = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.loadUserPermissions(this.securityInspectUserId));
+      this.securityUserPermissionCodes = response.data.permissions ?? [];
+    } catch (error: unknown) {
+      this.securityUserPermissionCodes = [];
+      this.securityError = error instanceof Error ? error.message : 'No fue posible consultar los permisos efectivos del usuario.';
+    }
+  }
+
+  protected async checkSecurityPermission(): Promise<void> {
+    const resourceKey = this.securityCheckResourceKey.trim().toLowerCase();
+    const action = this.securityCheckAction.trim().toLowerCase();
+    if (!this.securityInspectUserId || !resourceKey || !action) {
+      this.securityError = 'Selecciona usuario e ingresa recurso y acción.';
+      return;
+    }
+    this.securityError = undefined;
+    this.securityCheckAllowed = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.checkPermission(this.securityInspectUserId, resourceKey, action));
+      this.securityCheckAllowed = response.data.allowed;
+    } catch (error: unknown) {
+      this.securityError = error instanceof Error ? error.message : 'No fue posible evaluar el permiso.';
+    }
+  }
+
+  private async runSecurityMutation(operation: () => Promise<void>, reload = true): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession() || this.securitySaving) return;
+    this.securitySaving = true;
+    this.securityError = undefined;
+    this.securitySuccess = undefined;
+    try {
+      await operation();
+      if (reload) await this.loadSecurityData();
+    } catch (error: unknown) {
+      this.securityError = error instanceof Error ? error.message : 'No fue posible completar la operación de seguridad.';
+    } finally {
+      this.securitySaving = false;
+    }
   }
 
   protected async loadCatalogData(): Promise<void> {

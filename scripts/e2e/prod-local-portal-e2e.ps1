@@ -212,6 +212,43 @@ $tenantRoleCreate = Invoke-E2E "Create Security role in tenant A" "$web/api/secu
 $tenantRole = $tenantRoleCreate.Body | ConvertFrom-Json
 if ($tenantRole.data.tenantId -ne $tenantA) { throw "Security role was not created in tenant A." }
 
+$securitySuffix = [Guid]::NewGuid().ToString('N').Substring(0,10)
+$tenantUserEmail = "security-$securitySuffix@example.local"
+$tenantUserBody = @{ email = $tenantUserEmail; name = "Security E2E $securitySuffix" } | ConvertTo-Json -Compress
+$tenantUserCreate = Invoke-E2E "Create Security user in tenant A" "$web/api/security/users" @(201) $tenantAAuth "POST" $tenantUserBody
+$tenantUser = $tenantUserCreate.Body | ConvertFrom-Json
+if ($tenantUser.data.tenantId -ne $tenantA) { throw "Security user was not created in tenant A." }
+
+$tenantResourceKey = "e2e.resource.$securitySuffix"
+$tenantResourceBody = @{ key = $tenantResourceKey; name = "E2E Resource $securitySuffix" } | ConvertTo-Json -Compress
+$tenantResourceCreate = Invoke-E2E "Create Security resource in tenant A" "$web/api/security/resources" @(201) $tenantAAuth "POST" $tenantResourceBody
+$tenantResource = $tenantResourceCreate.Body | ConvertFrom-Json
+if ($tenantResource.data.tenantId -ne $tenantA) { throw "Security resource was not created in tenant A." }
+
+$tenantPermissionCode = "$tenantResourceKey.read"
+$tenantPermissionBody = @{ code = $tenantPermissionCode; resourceKey = $tenantResourceKey; action = "read" } | ConvertTo-Json -Compress
+$tenantPermissionCreate = Invoke-E2E "Create Security permission in tenant A" "$web/api/security/permissions" @(201) $tenantAAuth "POST" $tenantPermissionBody
+$tenantPermission = $tenantPermissionCreate.Body | ConvertFrom-Json
+
+$rolePermissionBody = @{ permissionId = $tenantPermission.data.id } | ConvertTo-Json -Compress
+Invoke-E2E "Assign Security permission to role in tenant A" "$web/api/security/roles/$($tenantRole.data.id)/permissions" @(200) $tenantAAuth "POST" $rolePermissionBody | Out-Null
+
+$userRoleBody = @{ roleId = $tenantRole.data.id } | ConvertTo-Json -Compress
+Invoke-E2E "Assign Security role to user in tenant A" "$web/api/security/users/$($tenantUser.data.id)/roles" @(200) $tenantAAuth "POST" $userRoleBody | Out-Null
+
+$userPermissions = Invoke-E2E "Read effective Security permissions in tenant A" "$web/api/security/users/$($tenantUser.data.id)/permissions" @(200) $tenantAAuth
+$userPermissionsPayload = $userPermissions.Body | ConvertFrom-Json
+if (-not (@($userPermissionsPayload.data.permissions) -contains $tenantPermissionCode)) {
+    throw "Assigned Security permission was not effective for the user."
+}
+
+$checkPermissionBody = @{ userId = $tenantUser.data.id; resourceKey = $tenantResourceKey; action = "read" } | ConvertTo-Json -Compress
+$permissionDecision = Invoke-E2E "Check effective Security permission in tenant A" "$web/api/security/check-permission" @(200) $tenantAAuth "POST" $checkPermissionBody
+if (($permissionDecision.Body | ConvertFrom-Json).data.allowed -ne $true) {
+    throw "Security permission decision should be allowed after assignments."
+}
+Write-Host "PASS Security managed assignment lifecycle"
+
 $tenantARoles = Invoke-E2E "List Security roles in tenant A" "$web/api/security/roles" @(200) $tenantAAuth
 if (-not (@($tenantARoles.Body | ConvertFrom-Json | Where-Object { $_.name -eq $tenantRoleName }))) {
     throw "Tenant A cannot read its own role."

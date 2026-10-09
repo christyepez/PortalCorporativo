@@ -18,7 +18,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Role_is_unique_per_tenant()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         Assert.True((await service.CreateRoleAsync(new("PortalAdmin"), default)).IsSuccess);
 
         var duplicate = await service.CreateRoleAsync(new("portaladmin"), default);
@@ -30,7 +30,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Assign_role_rejects_duplicates()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         var user = (await service.CreateUserAsync(new("user@example.com", "User"), default)).Value!;
         var role = (await service.CreateRoleAsync(new("Reader"), default)).Value!;
 
@@ -43,7 +43,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Assign_permission_rejects_duplicates()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         var role = (await service.CreateRoleAsync(new("Reader"), default)).Value!;
         await service.RegisterResourceAsync(new("portal.audit", "Audit"), default);
         var permission = (await service.CreatePermissionAsync(new("portal.audit.read", "portal.audit", "read"), default)).Value!;
@@ -57,7 +57,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Check_permission_allows_assigned_permission()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         var user = (await service.CreateUserAsync(new("user@example.com", "User"), default)).Value!;
         var role = (await service.CreateRoleAsync(new("Auditor"), default)).Value!;
         await service.RegisterResourceAsync(new("portal.audit", "Audit"), default);
@@ -74,7 +74,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Check_permission_denies_unassigned_and_validates_resource_action()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         var user = (await service.CreateUserAsync(new("user@example.com", "User"), default)).Value!;
         await service.RegisterResourceAsync(new("portal.audit", "Audit"), default);
         await service.CreatePermissionAsync(new("portal.audit.read", "portal.audit", "read"), default);
@@ -90,7 +90,7 @@ public sealed class SecurityServiceTests
     public async Task Create_role_provisions_and_uses_authenticated_tenant()
     {
         var store = new InMemorySecurityStore();
-        var service = new SecurityService(store, new FixedTenantContext("tenant-a"));
+        var service = CreateService(store, new FixedTenantContext("tenant-a"));
 
         var result = await service.CreateRoleAsync(new("TenantAdmin"), default);
 
@@ -102,7 +102,7 @@ public sealed class SecurityServiceTests
     [Fact]
     public async Task Administrative_lists_return_tenant_entities()
     {
-        var service = new SecurityService(new InMemorySecurityStore(), new PortalTenantContext());
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext());
         await service.CreateUserAsync(new("admin@example.com", "Admin User"), default);
         await service.CreateRoleAsync(new("PortalAdmin"), default);
         await service.RegisterResourceAsync(new("portal.audit", "Audit"), default);
@@ -112,6 +112,36 @@ public sealed class SecurityServiceTests
         Assert.Single(await service.ListRolesAsync(default));
         Assert.Single(await service.ListResourcesAsync(default));
         Assert.Single(await service.ListPermissionsAsync(default));
+    }
+
+    [Fact]
+    public async Task Mutations_record_security_changes()
+    {
+        var recorder = new RecordingSecurityChangeRecorder();
+        var service = CreateService(new InMemorySecurityStore(), new PortalTenantContext(), recorder);
+
+        var user = (await service.CreateUserAsync(new("audit@example.com", "Audit User"), default)).Value!;
+        var role = (await service.CreateRoleAsync(new("AuditRole"), default)).Value!;
+        await service.RegisterResourceAsync(new("portal.test", "Test"), default);
+        var permission = (await service.CreatePermissionAsync(new("portal.test.read", "portal.test", "read"), default)).Value!;
+        await service.AssignPermissionAsync(role.Id, permission.Id, default);
+        await service.AssignRoleAsync(user.Id, role.Id, default);
+
+        Assert.Equal(new[] { "user_created", "role_created", "resource_created", "permission_created", "role_permission_assigned", "user_role_assigned" }, recorder.Actions);
+    }
+
+    private static SecurityService CreateService(ISecurityStore store, IPortalTenantContext tenantContext, ISecurityChangeRecorder? recorder = null)
+        => new(store, tenantContext, recorder ?? new RecordingSecurityChangeRecorder());
+
+    private sealed class RecordingSecurityChangeRecorder : ISecurityChangeRecorder
+    {
+        public List<string> Actions { get; } = [];
+
+        public Task RecordAsync(string action, string entityId, object payload, CancellationToken cancellationToken)
+        {
+            Actions.Add(action);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed record FixedTenantContext(string TenantId) : IPortalTenantContext

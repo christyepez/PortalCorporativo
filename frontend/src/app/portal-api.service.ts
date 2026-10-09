@@ -32,6 +32,18 @@ export interface SecurityResource {
   readonly name: string;
 }
 
+export interface UserPermissionsResponse {
+  readonly userId: string;
+  readonly permissions: string[];
+}
+
+export interface PermissionDecisionResponse {
+  readonly userId: string;
+  readonly resourceKey: string;
+  readonly action: string;
+  readonly allowed: boolean;
+}
+
 export interface MenuItem {
   readonly id: string;
   readonly menuId: string;
@@ -269,8 +281,36 @@ export class PortalApiService {
     return this.http.get<SecurityResource[]>(`${environment.apiBasePath}/security/resources`, { headers: this.headers() });
   }
 
-  loadUserPermissions(userId: string): Observable<unknown> {
-    return this.http.get(`${environment.apiBasePath}/security/users/${encodeURIComponent(userId)}/permissions`, { headers: this.headers() });
+  loadUserPermissions(userId: string): Observable<ApiResponse<UserPermissionsResponse>> {
+    return this.http.get<ApiResponse<UserPermissionsResponse>>(`${environment.apiBasePath}/security/users/${encodeURIComponent(userId)}/permissions`, { headers: this.headers() });
+  }
+
+  createUser(email: string, name: string): Observable<ApiResponse<SecurityUser>> {
+    return this.http.post<ApiResponse<SecurityUser>>(`${environment.apiBasePath}/security/users`, { email, name }, { headers: this.headers() });
+  }
+
+  createRole(name: string): Observable<ApiResponse<SecurityRole>> {
+    return this.http.post<ApiResponse<SecurityRole>>(`${environment.apiBasePath}/security/roles`, { name }, { headers: this.headers() });
+  }
+
+  createResource(key: string, name: string): Observable<ApiResponse<SecurityResource>> {
+    return this.http.post<ApiResponse<SecurityResource>>(`${environment.apiBasePath}/security/resources`, { key, name }, { headers: this.headers() });
+  }
+
+  createPermission(code: string, resourceKey: string, action: string): Observable<ApiResponse<SecurityPermission>> {
+    return this.http.post<ApiResponse<SecurityPermission>>(`${environment.apiBasePath}/security/permissions`, { code, resourceKey, action }, { headers: this.headers() });
+  }
+
+  assignRoleToUser(userId: string, roleId: string): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${environment.apiBasePath}/security/users/${encodeURIComponent(userId)}/roles`, { roleId }, { headers: this.headers() });
+  }
+
+  assignPermissionToRole(roleId: string, permissionId: string): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${environment.apiBasePath}/security/roles/${encodeURIComponent(roleId)}/permissions`, { permissionId }, { headers: this.headers() });
+  }
+
+  checkPermission(userId: string, resourceKey: string, action: string): Observable<ApiResponse<PermissionDecisionResponse>> {
+    return this.http.post<ApiResponse<PermissionDecisionResponse>>(`${environment.apiBasePath}/security/check-permission`, { userId, resourceKey, action }, { headers: this.headers() });
   }
 
   loadMenu(moduleCode: string): Observable<ApiResponse<MenuItem[]>> {
