@@ -93,9 +93,9 @@
           <section class="section-block">
             <div class="section-heading">
               <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
-              <button type="button" class="secondary">Registrar aplicación</button>
+              <span class="pill">{{ applications.length }} registradas</span>
             </div>
-            <p class="lead">Cada aplicación conserva su dominio funcional y se abre dentro del área de trabajo del Portal, sin abandonar el contenedor corporativo.</p>
+            <p class="lead">El listado proviene del registro gobernado del Portal. Las nuevas integraciones se incorporan mediante el consumer onboarding gate y no desde una acción local de esta pantalla.</p>
             <div class="application-grid application-grid--wide">
               @for (app of applications; track app.code) {
                 <article class="application-card">
