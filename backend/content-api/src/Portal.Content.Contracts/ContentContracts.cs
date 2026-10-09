@@ -15,3 +15,8 @@ public sealed record CreateContentDocumentRequest(
     string FileName,
     string ContentType,
     byte[] Content);
+
+public sealed record UpdateContentMetadataRequest(
+    string ModuleCode,
+    string FileName,
+    string ContentType);

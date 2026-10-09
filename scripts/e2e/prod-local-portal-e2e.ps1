@@ -454,8 +454,18 @@ $contentDocument = $contentCreate.Body | ConvertFrom-Json
 if (-not $contentDocument.id) { throw "Content create response did not return id." }
 $contentDownload = Invoke-E2E "Download Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/download" @(200) $auth
 if ($contentDownload.Body -notmatch [regex]::Escape($correlationId)) { throw "Downloaded content does not match uploaded content." }
-Invoke-E2E "Deactivate Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/deactivate" @(204) $auth "POST" | Out-Null
+$contentMetadataBody = @{ moduleCode = "PORTAL"; fileName = "portal-e2e-updated.txt"; contentType = "text/plain" } | ConvertTo-Json -Compress
+$contentMetadataUpdate = Invoke-E2E "Update Content metadata through Portal Web" "$web/api/content/documents/$($contentDocument.id)/metadata" @(200) $auth "PUT" $contentMetadataBody
+$contentMetadata = $contentMetadataUpdate.Body | ConvertFrom-Json
+if ($contentMetadata.fileName -ne "portal-e2e-updated.txt" -or $contentMetadata.sha256 -ne $contentDocument.sha256) { throw "Content metadata update changed immutable content identity." }
+Write-Host "PASS Content metadata update preserves hash"
+$contentDeactivate = Invoke-E2E "Deactivate Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/deactivate" @(200) $auth "POST"
+if (($contentDeactivate.Body | ConvertFrom-Json).isActive -ne $false) { throw "Content deactivation did not persist state." }
 Invoke-E2E "Inactive Content download is hidden" "$web/api/content/documents/$($contentDocument.id)/download" @(404) $auth | Out-Null
+$contentActivate = Invoke-E2E "Activate Content document through Portal Web" "$web/api/content/documents/$($contentDocument.id)/activate" @(200) $auth "POST"
+if (($contentActivate.Body | ConvertFrom-Json).isActive -ne $true) { throw "Content activation did not persist state." }
+Invoke-E2E "Reactivated Content download succeeds" "$web/api/content/documents/$($contentDocument.id)/download" @(200) $auth | Out-Null
+Write-Host "PASS Content activation/deactivation lifecycle"
 
 $reportList = Invoke-E2E "List Reporting definitions through Portal Web" "$web/api/reporting/reports" @(200) $auth
 $reportDefinitions = $reportList.Body | ConvertFrom-Json

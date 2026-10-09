@@ -26,18 +26,31 @@ public static class ContentEndpoints
                 : Results.File(stored.Bytes, stored.Document.ContentType, stored.Document.FileName);
         }).RequireAuthorization(PortalPermissions.ContentRead);
 
-        group.MapPost("/documents", async (CreateContentDocumentRequest request, ContentService service, IPortalTenantContext tenantContext, CancellationToken cancellationToken) =>
+        group.MapPost("/documents", async (CreateContentDocumentRequest request, ContentService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken) =>
         {
             try
             {
-                var document = await service.CreateAsync(tenantContext.TenantId, request, cancellationToken);
+                var document = await service.CreateAsync(tenantContext.TenantId, request, httpContext.TraceIdentifier, cancellationToken);
                 return Results.Created($"/api/content/documents/{document.Id}", document);
             }
             catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
         }).RequireAuthorization(PortalPermissions.ContentManage);
 
-        group.MapPost("/documents/{id:guid}/deactivate", async (Guid id, ContentService service, IPortalTenantContext tenantContext, CancellationToken cancellationToken)
-            => await service.DeactivateAsync(tenantContext.TenantId, id, cancellationToken) ? Results.NoContent() : Results.NotFound())
+        group.MapPut("/documents/{id:guid}/metadata", async (Guid id, UpdateContentMetadataRequest request, ContentService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                return await service.UpdateMetadataAsync(tenantContext.TenantId, id, request, httpContext.TraceIdentifier, cancellationToken) is { } document ? Results.Ok(document) : Results.NotFound();
+            }
+            catch (ArgumentException ex) { return Results.BadRequest(new { error = ex.Message }); }
+        }).RequireAuthorization(PortalPermissions.ContentManage);
+
+        group.MapPost("/documents/{id:guid}/activate", async (Guid id, ContentService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken)
+            => await service.SetActiveAsync(tenantContext.TenantId, id, true, httpContext.TraceIdentifier, cancellationToken) is { } document ? Results.Ok(document) : Results.NotFound())
+            .RequireAuthorization(PortalPermissions.ContentManage);
+
+        group.MapPost("/documents/{id:guid}/deactivate", async (Guid id, ContentService service, IPortalTenantContext tenantContext, HttpContext httpContext, CancellationToken cancellationToken)
+            => await service.SetActiveAsync(tenantContext.TenantId, id, false, httpContext.TraceIdentifier, cancellationToken) is { } document ? Results.Ok(document) : Results.NotFound())
             .RequireAuthorization(PortalPermissions.ContentManage);
 
         return endpoints;

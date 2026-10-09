@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-09-28T20:55:36.5401269Z",
+    "CapturedUtc":  "2026-10-09T15:50:58.8414786Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -87,7 +87,7 @@
                           "api-gateway":  "sha256:ebc20aba1333c0962a740fb05ece99beef36154310ea913ff461384dc2b1a1d4",
                           "historiaspaolin-api":  "sha256:5c996d93f224c2603cd6bdaadc2333764e6b933cc4a596819c1ddac86c2f5dc7",
                           "notification-api":  "sha256:1f0f054613342761718250250da486503621e7674f9c89ad2202f579db50ccc3",
-                          "hr-api":  "sha256:88b222ceff617264f34c80fdceb15c5f129f95c2de68f4645774125e8b705bba",
+                          "hr-api":  "sha256:45256c6eeac3c0d60e557f5387c568eade1e786809bf593e1f3bbf8b0aadf54a",
                           "reporting-api":  "sha256:ff5dfd067c95097c0c874c9993ceaf08de24b646a33c77f8d2eefe97ecd84c93",
                           "menu-api":  "sha256:80a41c961cc6e503bd14ee6db5a8894ddb029c21cd7ca8bd399bfe1e66cc15e6",
                           "audit-api":  "sha256:cd567a68e24d10ec2bd7400d2c779440437fa809fdf16573b233259f488408d2",
@@ -99,11 +99,11 @@
                           "sqlserver":  "sha256:97b448857967be55e005424a660056fe6d51814435804dc07e8f79f028bab5fb",
                           "minio":  "sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e",
                           "financial-api":  "sha256:a93d5d532cfe4451175c2c0c34548f442d92aba1225221aacdf4a51aa4330b65",
-                          "content-api":  "sha256:f0e1d744509dcc047e1e9a6d329ee3fa979a1d06e80ca33ee68d742dc0ac6fd2",
+                          "content-api":  "sha256:d420c0c251e91496acf33aab68b726101071c52b576d1fd5b4ad04fb15d1821c",
                           "catalog-api":  "sha256:e9bf6865b028186855d86f001e553773f24722b676662af436fd0c0abdc2de48",
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
                           "integration-worker":  "sha256:a7a06c01c1906a9be50c95251a4ed40de70a2f611412dbff57ad3180441233ea",
-                          "portal-web":  "sha256:6aec05bf9e613e3e7b658573a0e2dd1259ee71a1a190df2e418e6cf0763f8881"
+                          "portal-web":  "sha256:a2157122e2d21ea2388f113a7c7b444a117420a028e4e49ce81a6890f84563da"
                       }
 }

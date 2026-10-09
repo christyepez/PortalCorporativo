@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -148,6 +148,14 @@ export class AppComponent {
   protected contentError?: string;
   protected contentDocuments: ContentDocument[] = [];
   protected downloadingContentId?: string;
+  protected contentFormMode: 'create' | 'edit' = 'create';
+  protected contentEditingId?: string;
+  protected contentFormModuleCode = '';
+  protected contentFormFileName = '';
+  protected contentFormContentType = 'application/octet-stream';
+  protected contentSelectedFile?: File;
+  protected contentSaving = false;
+  protected contentSuccess?: string;
   protected auditResourceFilter = '';
   protected auditActionFilter = '';
   protected auditActorFilter = '';
@@ -350,6 +358,105 @@ export class AppComponent {
       this.contentError = error instanceof Error ? error.message : 'No fue posible cargar Content API.';
     } finally {
       this.contentLoading = false;
+    }
+  }
+
+  protected beginCreateContentDocument(): void {
+    this.contentFormMode = 'create';
+    this.contentEditingId = undefined;
+    this.contentFormModuleCode = this.contentModuleFilter.trim().toLowerCase();
+    this.contentFormFileName = '';
+    this.contentFormContentType = 'application/octet-stream';
+    this.contentSelectedFile = undefined;
+    this.contentError = undefined;
+    this.contentSuccess = undefined;
+  }
+
+  protected beginEditContentDocument(document: ContentDocument): void {
+    this.contentFormMode = 'edit';
+    this.contentEditingId = document.id;
+    this.contentFormModuleCode = document.moduleCode;
+    this.contentFormFileName = document.fileName;
+    this.contentFormContentType = document.contentType;
+    this.contentSelectedFile = undefined;
+    this.contentError = undefined;
+    this.contentSuccess = undefined;
+  }
+
+  protected selectContentFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.contentSelectedFile = file;
+    if (file) {
+      this.contentFormFileName = file.name;
+      this.contentFormContentType = file.type || 'application/octet-stream';
+    }
+  }
+
+  protected async saveContentDocument(): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    const moduleCode = this.contentFormModuleCode.trim().toLowerCase();
+    const fileName = this.contentFormFileName.trim();
+    const contentType = this.contentFormContentType.trim();
+    if (!moduleCode || !fileName || !contentType) {
+      this.contentError = 'Módulo, nombre de archivo y tipo MIME son obligatorios.';
+      return;
+    }
+
+    this.contentSaving = true;
+    this.contentError = undefined;
+    this.contentSuccess = undefined;
+    try {
+      let successMessage = '';
+      if (this.contentFormMode === 'create') {
+        const file = this.contentSelectedFile;
+        if (!file) {
+          this.contentError = 'Selecciona un archivo para cargar.';
+          return;
+        }
+        if (file.size === 0 || file.size > 10 * 1024 * 1024) {
+          this.contentError = 'El archivo debe tener contenido y no superar 10 MB.';
+          return;
+        }
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        let binary = '';
+        for (let offset = 0; offset < bytes.length; offset += 32768) {
+          binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+        }
+        const request: CreateContentDocument = { moduleCode, fileName, contentType, content: btoa(binary) };
+        const created = await firstValueFrom(this.portalApi.createContentDocument(request));
+        this.contentModuleFilter = created.moduleCode;
+        successMessage = `Documento ${created.fileName} cargado. SHA-256 ${created.sha256.slice(0, 12)}…`;
+      } else if (this.contentEditingId) {
+        const request: UpdateContentMetadata = { moduleCode, fileName, contentType };
+        const updated = await firstValueFrom(this.portalApi.updateContentMetadata(this.contentEditingId, request));
+        successMessage = `Metadatos de ${updated.fileName} actualizados sin modificar el contenido.`;
+      }
+      await this.loadContentData();
+      this.beginCreateContentDocument();
+      this.contentSuccess = successMessage;
+    } catch (error: unknown) {
+      this.contentError = error instanceof Error ? error.message : 'No fue posible guardar el documento.';
+    } finally {
+      this.contentSaving = false;
+    }
+  }
+
+  protected async toggleContentDocument(document: ContentDocument): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+    this.contentSaving = true;
+    this.contentError = undefined;
+    this.contentSuccess = undefined;
+    try {
+      const updated = await firstValueFrom(this.portalApi.setContentActive(document.id, !document.isActive));
+      const successMessage = `${updated.fileName} quedó ${updated.isActive ? 'activo' : 'inactivo'}.`;
+      await this.loadContentData();
+      if (this.contentEditingId === document.id) this.beginEditContentDocument(updated);
+      this.contentSuccess = successMessage;
+    } catch (error: unknown) {
+      this.contentError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del documento.';
+    } finally {
+      this.contentSaving = false;
     }
   }
 
