@@ -156,6 +156,9 @@
           @if (securityError) {
             <div class="inline-message inline-message--error" role="alert">{{ securityError }}</div>
           }
+          @if (securitySuccess) {
+            <div class="toolbar" role="status">{{ securitySuccess }}</div>
+          }
 
           @if (hasAuthenticatedSession()) {
             <div class="admin-tabs">
@@ -167,6 +170,48 @@
             @if (securityLoading) {
               <div class="empty-state compact-state"><h3>Cargando Security API…</h3></div>
             } @else if (activeSecurityTab === 'users') {
+              <section class="module-panel">
+                <div><p class="eyebrow">Alta</p><h3>Nuevo usuario</h3><p>El tenant se resuelve en backend desde la sesión.</p></div>
+                <div class="module-panel__details">
+                  <label>Email<input type="email" [value]="securityUserEmail" (input)="securityUserEmail = $any($event.target).value" placeholder="usuario@dominio.com"></label>
+                  <label>Nombre<input type="text" [value]="securityUserName" (input)="securityUserName = $any($event.target).value" placeholder="Nombre completo"></label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityUser()">Crear usuario</button>
+                </div>
+              </section>
+              <section class="module-panel">
+                <div><p class="eyebrow">Asignación</p><h3>Rol de usuario</h3><p>Asigna un rol existente al usuario seleccionado.</p></div>
+                <div class="module-panel__details">
+                  <label>Usuario
+                    <select [value]="securityAssignUserId" (change)="securityAssignUserId = $any($event.target).value">
+                      <option value="">Selecciona usuario</option>
+                      @for (user of securityUsers; track user.id) { <option [value]="user.id">{{ user.name }} · {{ user.email }}</option> }
+                    </select>
+                  </label>
+                  <label>Rol
+                    <select [value]="securityAssignRoleId" (change)="securityAssignRoleId = $any($event.target).value">
+                      <option value="">Selecciona rol</option>
+                      @for (role of securityRoles; track role.id) { <option [value]="role.id">{{ role.name }}</option> }
+                    </select>
+                  </label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="assignSecurityRoleToUser()">Asignar rol</button>
+                </div>
+              </section>
+              <section class="module-panel">
+                <div><p class="eyebrow">Permisos efectivos</p><h3>Inspeccionar usuario</h3><p>Consulta permisos derivados de sus roles y evalúa recurso/acción.</p></div>
+                <div class="module-panel__details">
+                  <label>Usuario
+                    <select [value]="securityInspectUserId" (change)="securityInspectUserId = $any($event.target).value; loadSecurityUserPermissions()">
+                      <option value="">Selecciona usuario</option>
+                      @for (user of securityUsers; track user.id) { <option [value]="user.id">{{ user.name }}</option> }
+                    </select>
+                  </label>
+                  <span>{{ securityUserPermissionCodes.length ? securityUserPermissionCodes.join(', ') : 'Sin permisos efectivos o sin usuario seleccionado.' }}</span>
+                  <label>Recurso<input type="text" [value]="securityCheckResourceKey" (input)="securityCheckResourceKey = $any($event.target).value" placeholder="portal.catalog"></label>
+                  <label>Acción<input type="text" [value]="securityCheckAction" (input)="securityCheckAction = $any($event.target).value" placeholder="read"></label>
+                  <button type="button" class="secondary" (click)="checkSecurityPermission()">Evaluar permiso</button>
+                  @if (securityCheckAllowed !== undefined) { <span class="pill">{{ securityCheckAllowed ? 'Permitido' : 'Denegado' }}</span> }
+                </div>
+              </section>
               <div class="table-card security-table">
                 <div class="table-row table-row--header"><span>Nombre</span><span>Email</span><span>Tenant</span><span>Estado</span><span>Id</span></div>
                 @for (user of securityUsers; track user.id) {
@@ -182,6 +227,31 @@
                 }
               </div>
             } @else if (activeSecurityTab === 'roles') {
+              <section class="module-panel">
+                <div><p class="eyebrow">Alta</p><h3>Nuevo rol</h3><p>Los roles se crean dentro del tenant actual.</p></div>
+                <div class="module-panel__details">
+                  <label>Nombre<input type="text" [value]="securityRoleName" (input)="securityRoleName = $any($event.target).value" placeholder="Administradores"></label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityRole()">Crear rol</button>
+                </div>
+              </section>
+              <section class="module-panel">
+                <div><p class="eyebrow">Asignación</p><h3>Permiso de rol</h3><p>Relaciona un permiso existente con un rol.</p></div>
+                <div class="module-panel__details">
+                  <label>Rol
+                    <select [value]="securityAssignPermissionRoleId" (change)="securityAssignPermissionRoleId = $any($event.target).value">
+                      <option value="">Selecciona rol</option>
+                      @for (role of securityRoles; track role.id) { <option [value]="role.id">{{ role.name }}</option> }
+                    </select>
+                  </label>
+                  <label>Permiso
+                    <select [value]="securityAssignPermissionId" (change)="securityAssignPermissionId = $any($event.target).value">
+                      <option value="">Selecciona permiso</option>
+                      @for (permission of securityPermissions; track permission.id) { <option [value]="permission.id">{{ permission.code }}</option> }
+                    </select>
+                  </label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="assignSecurityPermissionToRole()">Asignar permiso</button>
+                </div>
+              </section>
               <div class="application-grid">
                 @for (role of securityRoles; track role.id) {
                   <article class="application-card"><span class="code">{{ role.id }}</span><h4>{{ role.name }}</h4><p>Tenant: {{ role.tenantId }}</p></article>
@@ -190,6 +260,20 @@
                 }
               </div>
             } @else if (activeSecurityTab === 'permissions') {
+              <section class="module-panel">
+                <div><p class="eyebrow">Alta</p><h3>Nuevo permiso</h3><p>El recurso debe estar registrado previamente.</p></div>
+                <div class="module-panel__details">
+                  <label>Código<input type="text" [value]="securityPermissionCode" (input)="securityPermissionCode = $any($event.target).value" placeholder="portal.catalog.read"></label>
+                  <label>Recurso
+                    <select [value]="securityPermissionResourceKey" (change)="securityPermissionResourceKey = $any($event.target).value">
+                      <option value="">Selecciona recurso</option>
+                      @for (resource of securityResources; track resource.id) { <option [value]="resource.key">{{ resource.key }} · {{ resource.name }}</option> }
+                    </select>
+                  </label>
+                  <label>Acción<input type="text" [value]="securityPermissionAction" (input)="securityPermissionAction = $any($event.target).value" placeholder="read"></label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityPermission()">Crear permiso</button>
+                </div>
+              </section>
               <div class="application-grid">
                 @for (permission of securityPermissions; track permission.id) {
                   <article class="application-card"><span class="code">{{ permission.code }}</span><h4>{{ permission.resourceKey }}</h4><p>Acción: {{ permission.action }}</p><p>Tenant: {{ permission.tenantId }}</p></article>
@@ -198,6 +282,14 @@
                 }
               </div>
             } @else {
+              <section class="module-panel">
+                <div><p class="eyebrow">Alta</p><h3>Nuevo recurso protegido</h3><p>Registra la clave antes de crear permisos asociados.</p></div>
+                <div class="module-panel__details">
+                  <label>Clave<input type="text" [value]="securityResourceKey" (input)="securityResourceKey = $any($event.target).value" placeholder="portal.catalog"></label>
+                  <label>Nombre<input type="text" [value]="securityResourceName" (input)="securityResourceName = $any($event.target).value" placeholder="Catálogos"></label>
+                  <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityResource()">Registrar recurso</button>
+                </div>
+              </section>
               <div class="application-grid">
                 @for (resource of securityResources; track resource.id) {
                   <article class="application-card"><span class="code">{{ resource.key }}</span><h4>{{ resource.name }}</h4><p>Tenant: {{ resource.tenantId }}</p></article>

@@ -2,11 +2,14 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Portal.BuildingBlocks;
 using Portal.Security.Api;
+using Portal.Security.Application;
 using Portal.Security.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPortalFoundation("Portal.Security.Api");
 builder.Services.AddSecurityInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ISecurityChangeRecorder, StructuredSecurityChangeRecorder>();
 builder.Services.AddHealthChecks().AddDbContextCheck<SecurityDbContext>("security-db");
 builder.Services.AddPortalJwtAuthentication(builder.Configuration);
 builder.Services.AddPortalPermissionAuthorization();

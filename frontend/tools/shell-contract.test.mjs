@@ -65,17 +65,30 @@ test('shell supports functional module selection and same-origin availability pr
   assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
-test('security administration uses an ephemeral in-memory session and live list endpoints', () => {
+test('security administration uses an ephemeral session and supports managed assignments', () => {
   for (const route of ['/security/users', '/security/roles', '/security/permissions', '/security/resources']) {
     assert.match(apiService, new RegExp(route.replaceAll('/', '\\/')));
   }
-  assert.match(component, /connectLocalSession\(\)/);
-  assert.match(component, /loadSecurityData\(\)/);
-  assert.match(component, /selectSecurityTab\(tab:\s*SecurityTab\)/);
+  assert.match(apiService, /post<ApiResponse<SecurityUser>>\(`\$\{environment\.apiBasePath\}\/security\/users`/);
+  assert.match(apiService, /post<ApiResponse<SecurityRole>>\(`\$\{environment\.apiBasePath\}\/security\/roles`/);
+  assert.match(apiService, /post<ApiResponse<SecurityResource>>\(`\$\{environment\.apiBasePath\}\/security\/resources`/);
+  assert.match(apiService, /post<ApiResponse<SecurityPermission>>\(`\$\{environment\.apiBasePath\}\/security\/permissions`/);
+  assert.match(apiService, /\/security\/users\/\$\{encodeURIComponent\(userId\)\}\/roles/);
+  assert.match(apiService, /\/security\/roles\/\$\{encodeURIComponent\(roleId\)\}\/permissions/);
+  assert.match(apiService, /\/security\/check-permission/);
+  assert.match(component, /async createSecurityUser\(\)/);
+  assert.match(component, /async assignSecurityRoleToUser\(\)/);
+  assert.match(component, /async assignSecurityPermissionToRole\(\)/);
+  assert.match(component, /async loadSecurityUserPermissions\(\)/);
+  assert.match(component, /async checkSecurityPermission\(\)/);
   assert.match(component, /portalApi\.setAccessToken\(token\)/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
     assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
   }
+  assert.match(template, /Crear usuario/);
+  assert.match(template, /Asignar rol/);
+  assert.match(template, /Asignar permiso/);
+  assert.match(template, /Evaluar permiso/);
   assert.match(template, /JWT local efímero/);
   assert.match(template, /El token permanece sólo en memoria/);
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
