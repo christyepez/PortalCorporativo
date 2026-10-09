@@ -36,7 +36,7 @@ Use this template when an explicit new domain/application is selected for Portal
 - [ ] Health/live/readiness endpoints are available.
 - [ ] Docker Compose service joins `portal-local-network` without exposing domain API directly to the LAN.
 - [ ] Portal Web navigation opens the consumer through the approved workspace pattern.
-- [ ] After all integration inputs are approved, add the consumer once to `frontend/config/consumer-registry.json`; do not hardcode a second application list in the shell.
+- [ ] After all integration inputs are approved, add the consumer once to `frontend/config/consumer-registry.json`; define `service`, application/health routes, Gateway path, cluster/internal address, protected smoke endpoint, health probe and minimum `smokePermission` there, and do not hardcode a second consumer list in shell/smoke/E2E.
 - [ ] No browser token persistence is introduced.
 - [ ] No secrets, private production URLs, certificates or real credentials are committed.
 
