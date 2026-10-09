@@ -305,14 +305,17 @@
           <div class="section-heading">
             <div><p class="eyebrow">Navegación dinámica</p><h2>Menús por aplicación</h2></div>
             @if (hasAuthenticatedSession()) {
-              <button type="button" class="secondary" [disabled]="menuLoading" (click)="loadMenuData()">Recargar</button>
+              <div class="session-actions">
+                <button type="button" class="secondary" [disabled]="menuLoading || menuSaving" (click)="loadMenuData()">Recargar</button>
+                <button type="button" class="primary" [disabled]="menuSaving || !menuDefinitionId" (click)="beginCreateMenuItem()">Nuevo elemento</button>
+              </div>
             }
           </div>
 
           @if (!hasAuthenticatedSession()) {
             <div class="empty-state compact-state">
               <h3>Sesión administrativa requerida</h3>
-              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar Menu API.</p>
+              <p>Conecta primero una sesión JWT efímera desde Seguridad para consultar y administrar Menu API.</p>
               <button type="button" class="primary" (click)="selectSection('security')">Ir a Seguridad</button>
             </div>
           } @else {
@@ -324,29 +327,75 @@
                        (keyup.enter)="loadMenuData()"
                        placeholder="portal">
               </label>
-              <button type="button" class="primary" [disabled]="menuLoading" (click)="loadMenuData()">Consultar</button>
-              <span class="muted">El módulo portal está registrado en la baseline actual.</span>
+              <button type="button" class="primary" [disabled]="menuLoading || menuSaving" (click)="loadMenuData()">Consultar</button>
+              @if (menuDefinitionId) { <span class="code">MenuId: {{ menuDefinitionId }}</span> }
             </div>
 
-            @if (menuError) {
-              <div class="toolbar" role="alert">{{ menuError }}</div>
-            }
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">Definición</p><h3>Crear menú de módulo</h3>
+                <p>Solo para módulos que aún no tienen definición. Requiere <span class="code">menu.manage</span>.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Nombre
+                  <input type="text" [value]="menuDefinitionName" (input)="menuDefinitionName = $any($event.target).value" placeholder="Portal principal">
+                </label>
+                <button type="button" class="secondary" [disabled]="menuSaving" (click)="createMenuDefinition()">Crear definición</button>
+              </div>
+            </section>
+
+            <section class="module-panel">
+              <div>
+                <p class="eyebrow">{{ menuItemMode === 'create' ? 'Nuevo elemento' : 'Editar elemento' }}</p>
+                <h3>{{ menuItemMode === 'create' ? 'Configurar navegación' : menuItemCode }}</h3>
+                <p>Etiqueta/ruta/permisos se actualizan por item; parent y orden se aplican mediante reorder.</p>
+              </div>
+              <div class="module-panel__details">
+                <label>Código<input type="text" [disabled]="menuItemMode === 'edit'" [value]="menuItemCode" (input)="menuItemCode = $any($event.target).value" placeholder="catalogs"></label>
+                <label>Etiqueta<input type="text" [value]="menuItemLabel" (input)="menuItemLabel = $any($event.target).value" placeholder="Catálogos"></label>
+                <label>Ruta<input type="text" [value]="menuItemRoute" (input)="menuItemRoute = $any($event.target).value" placeholder="/admin/catalogs"></label>
+                <label>Icono<input type="text" [value]="menuItemIcon" (input)="menuItemIcon = $any($event.target).value" placeholder="database"></label>
+                <label>Orden<input type="number" [value]="menuItemOrder" (input)="menuItemOrder = +$any($event.target).value"></label>
+                <label>Parent
+                  <select [value]="menuItemParentId" (change)="menuItemParentId = $any($event.target).value">
+                    <option value="">Sin parent</option>
+                    @for (candidate of menuItems; track candidate.id) {
+                      @if (candidate.id !== menuEditingItemId) { <option [value]="candidate.id">{{ candidate.label }}</option> }
+                    }
+                  </select>
+                </label>
+                <label>Resource key<input type="text" [value]="menuItemResourceKey" (input)="menuItemResourceKey = $any($event.target).value" placeholder="portal.catalog"></label>
+                <label>Permission code<input type="text" [value]="menuItemPermissionCode" (input)="menuItemPermissionCode = $any($event.target).value" placeholder="portal.catalog.read"></label>
+                <label>Metadata JSON<textarea rows="3" [value]="menuItemMetadataJson" (input)="menuItemMetadataJson = $any($event.target).value" placeholder='{"group":"admin"}'></textarea></label>
+                <div class="session-actions">
+                  <button type="button" class="primary" [disabled]="menuSaving || !menuDefinitionId" (click)="saveMenuItem()">{{ menuItemMode === 'create' ? 'Crear elemento' : 'Guardar cambios' }}</button>
+                  @if (menuItemMode === 'edit') { <button type="button" class="secondary" [disabled]="menuSaving" (click)="beginCreateMenuItem()">Cancelar edición</button> }
+                </div>
+              </div>
+            </section>
+
+            @if (menuError) { <div class="toolbar" role="alert">{{ menuError }}</div> }
+            @if (menuSuccess) { <div class="toolbar" role="status">{{ menuSuccess }}</div> }
 
             @if (menuLoading) {
               <div class="empty-state compact-state"><h3>Cargando Menu API…</h3></div>
             } @else {
               <div class="table-card">
-                <div class="table-row table-row--header"><span>Orden</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Código</span></div>
+                <div class="table-row table-row--header"><span>Orden / Parent</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Estado / Acciones</span></div>
                 @for (item of menuItems; track item.id) {
                   <div class="table-row">
-                    <span>{{ item.order }}</span>
-                    <strong>{{ item.label }}</strong>
+                    <span>{{ item.order }} · {{ item.parentId || 'raíz' }}</span>
+                    <strong>{{ item.label }}<br><span class="code">{{ item.code }}</span></strong>
                     <span>{{ item.route }}</span>
-                    <span>{{ item.permissionCode }}</span>
-                    <span class="code">{{ item.code }}</span>
+                    <span>{{ item.resourceKey }}<br><span class="code">{{ item.permissionCode }}</span></span>
+                    <span>
+                      <span class="pill">{{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
+                      <button type="button" class="link-button" [disabled]="menuSaving" (click)="beginEditMenuItem(item)">Editar</button>
+                      <button type="button" class="link-button" [disabled]="menuSaving" (click)="toggleMenuItem(item)">{{ item.isActive ? 'Desactivar' : 'Activar' }}</button>
+                    </span>
                   </div>
                 } @empty {
-                  <div class="empty-state compact-state"><h3>No hay elementos para el módulo consultado</h3></div>
+                  <div class="empty-state compact-state"><h3>No hay elementos para el módulo consultado</h3><p>Si el módulo es nuevo, crea primero su definición.</p></div>
                 }
               </div>
             }

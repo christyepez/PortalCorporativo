@@ -94,14 +94,24 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
 
-test('menu administration loads the live module contract instead of hardcoded rows', () => {
+test('menu administration supports managed definitions items reorder and activation', () => {
   assert.match(apiService, /\/menu\/modules\/\$\{encodeURIComponent\(moduleCode\)\}/);
-  assert.match(component, /menuModuleCode\s*=\s*'portal'/);
-  assert.match(component, /async loadMenuData\(\)/);
-  assert.match(template, /Código de módulo/);
+  assert.match(apiService, /post<ApiResponse<string>>\(`\$\{environment\.apiBasePath\}\/menu\//);
+  assert.match(apiService, /post<ApiResponse<MenuItem>>\(`\$\{environment\.apiBasePath\}\/menu\/items`/);
+  assert.match(apiService, /put<ApiResponse<MenuItem>>\(`\$\{environment\.apiBasePath\}\/menu\/items\/\$\{encodeURIComponent\(id\)\}`/);
+  assert.match(apiService, /\/menu\/items\/\$\{encodeURIComponent\(id\)\}\/\$\{action\}/);
+  assert.match(apiService, /\/menu\/reorder/);
+  assert.match(component, /async createMenuDefinition\(\)/);
+  assert.match(component, /async saveMenuItem\(\)/);
+  assert.match(component, /async toggleMenuItem\(item:\s*MenuItem\)/);
+  assert.match(component, /JSON\.parse\(metadataJson\)/);
+  assert.match(template, /menu\.manage/);
+  assert.match(template, /Crear definición/);
+  assert.match(template, /Crear elemento/);
+  assert.match(template, /Guardar cambios/);
+  assert.match(template, /Desactivar/);
   assert.match(template, /@for \(item of menuItems; track item\.id\)/);
   assert.doesNotMatch(template, /<strong>Inicio<\/strong>/);
-  assert.doesNotMatch(template, /<strong>Administración<\/strong>/);
 });
 
 test('configuration administration supports versioned CRUD with backend authorization', () => {

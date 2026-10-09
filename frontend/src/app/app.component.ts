@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -129,6 +129,21 @@ export class AppComponent {
   protected menuLoading = false;
   protected menuError?: string;
   protected menuItems: MenuItem[] = [];
+  protected menuSaving = false;
+  protected menuSuccess?: string;
+  protected menuDefinitionName = '';
+  protected menuDefinitionId = '';
+  protected menuItemMode: 'create' | 'edit' = 'create';
+  protected menuEditingItemId?: string;
+  protected menuItemCode = '';
+  protected menuItemLabel = '';
+  protected menuItemRoute = '';
+  protected menuItemIcon = '';
+  protected menuItemOrder = 0;
+  protected menuItemParentId = '';
+  protected menuItemResourceKey = '';
+  protected menuItemPermissionCode = '';
+  protected menuItemMetadataJson = '';
   protected configurationScope = 0;
   protected configurationModuleCode = '';
   protected configurationUserId = '';
@@ -1175,11 +1190,148 @@ export class AppComponent {
     try {
       const response = await firstValueFrom(this.portalApi.loadMenu(moduleCode));
       this.menuItems = response.data ?? [];
+      if (this.menuItems.length > 0) this.menuDefinitionId = this.menuItems[0].menuId;
     } catch (error: unknown) {
       this.menuItems = [];
+      this.menuDefinitionId = '';
       this.menuError = error instanceof Error ? error.message : 'No fue posible cargar Menu API.';
     } finally {
       this.menuLoading = false;
+    }
+  }
+
+  protected async createMenuDefinition(): Promise<void> {
+    const moduleCode = this.menuModuleCode.trim().toLowerCase();
+    const name = this.menuDefinitionName.trim();
+    if (!moduleCode || !name) {
+      this.menuError = 'Código de módulo y nombre del menú son obligatorios.';
+      return;
+    }
+    this.menuSaving = true;
+    this.menuError = undefined;
+    this.menuSuccess = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.createMenu(moduleCode, name));
+      this.menuDefinitionId = response.data;
+      this.menuSuccess = `Menú ${name} creado para ${moduleCode}.`;
+      this.beginCreateMenuItem();
+    } catch (error: unknown) {
+      this.menuError = error instanceof Error ? error.message : 'No fue posible crear la definición de menú.';
+    } finally {
+      this.menuSaving = false;
+    }
+  }
+
+  protected beginCreateMenuItem(): void {
+    this.menuItemMode = 'create';
+    this.menuEditingItemId = undefined;
+    this.menuItemCode = '';
+    this.menuItemLabel = '';
+    this.menuItemRoute = '';
+    this.menuItemIcon = '';
+    this.menuItemOrder = this.menuItems.length;
+    this.menuItemParentId = '';
+    this.menuItemResourceKey = '';
+    this.menuItemPermissionCode = '';
+    this.menuItemMetadataJson = '';
+    this.menuError = undefined;
+  }
+
+  protected beginEditMenuItem(item: MenuItem): void {
+    this.menuItemMode = 'edit';
+    this.menuEditingItemId = item.id;
+    this.menuDefinitionId = item.menuId;
+    this.menuItemCode = item.code;
+    this.menuItemLabel = item.label;
+    this.menuItemRoute = item.route;
+    this.menuItemIcon = item.icon ?? '';
+    this.menuItemOrder = item.order;
+    this.menuItemParentId = item.parentId ?? '';
+    this.menuItemResourceKey = item.resourceKey;
+    this.menuItemPermissionCode = item.permissionCode;
+    this.menuItemMetadataJson = item.metadataJson ?? '';
+    this.menuError = undefined;
+  }
+
+  protected async saveMenuItem(): Promise<void> {
+    if (!this.menuDefinitionId) {
+      this.menuError = 'Primero consulta un módulo existente o crea la definición del menú.';
+      return;
+    }
+    const code = this.menuItemCode.trim().toLowerCase();
+    const label = this.menuItemLabel.trim();
+    const route = this.menuItemRoute.trim();
+    const resourceKey = this.menuItemResourceKey.trim().toLowerCase();
+    const permissionCode = this.menuItemPermissionCode.trim().toLowerCase();
+    const metadataJson = this.menuItemMetadataJson.trim() || null;
+    if (!code || !label || !route || !resourceKey || !permissionCode) {
+      this.menuError = 'Código, etiqueta, ruta, recurso y permiso son obligatorios.';
+      return;
+    }
+    if (metadataJson) {
+      try { JSON.parse(metadataJson); } catch {
+        this.menuError = 'MetadataJson debe contener JSON válido.';
+        return;
+      }
+    }
+
+    this.menuSaving = true;
+    this.menuError = undefined;
+    this.menuSuccess = undefined;
+    try {
+      if (this.menuItemMode === 'create') {
+        const request: CreateMenuItem = {
+          menuId: this.menuDefinitionId,
+          parentId: this.menuItemParentId || null,
+          code,
+          label,
+          route,
+          icon: this.menuItemIcon.trim() || null,
+          order: Number(this.menuItemOrder) || 0,
+          resourceKey,
+          permissionCode,
+          metadataJson
+        };
+        const response = await firstValueFrom(this.portalApi.createMenuItem(request));
+        this.menuSuccess = `Elemento ${response.data.label} creado.`;
+      } else if (this.menuEditingItemId) {
+        const request: UpdateMenuItem = {
+          label,
+          route,
+          icon: this.menuItemIcon.trim() || null,
+          resourceKey,
+          permissionCode,
+          metadataJson
+        };
+        const response = await firstValueFrom(this.portalApi.updateMenuItem(this.menuEditingItemId, request));
+        await firstValueFrom(this.portalApi.reorderMenuItems([{
+          itemId: response.data.id,
+          parentId: this.menuItemParentId || null,
+          order: Number(this.menuItemOrder) || 0
+        }]));
+        this.menuSuccess = `Elemento ${response.data.label} actualizado.`;
+      }
+      await this.loadMenuData();
+      this.beginCreateMenuItem();
+    } catch (error: unknown) {
+      this.menuError = error instanceof Error ? error.message : 'No fue posible guardar el elemento de menú.';
+    } finally {
+      this.menuSaving = false;
+    }
+  }
+
+  protected async toggleMenuItem(item: MenuItem): Promise<void> {
+    this.menuSaving = true;
+    this.menuError = undefined;
+    this.menuSuccess = undefined;
+    try {
+      const response = await firstValueFrom(this.portalApi.setMenuItemActive(item.id, !item.isActive));
+      this.menuSuccess = `${response.data.label} quedó ${response.data.isActive ? 'activo' : 'inactivo'}.`;
+      await this.loadMenuData();
+    } catch (error: unknown) {
+      this.menuError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del elemento.';
+    } finally {
+      this.menuSaving = false;
     }
   }
 

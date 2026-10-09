@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-10-09T19:00:50.2566838Z",
+    "CapturedUtc":  "2026-10-09T19:34:28.2854046Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -89,7 +89,7 @@
                           "notification-api":  "sha256:1f0f054613342761718250250da486503621e7674f9c89ad2202f579db50ccc3",
                           "hr-api":  "sha256:45256c6eeac3c0d60e557f5387c568eade1e786809bf593e1f3bbf8b0aadf54a",
                           "reporting-api":  "sha256:ff5dfd067c95097c0c874c9993ceaf08de24b646a33c77f8d2eefe97ecd84c93",
-                          "menu-api":  "sha256:80a41c961cc6e503bd14ee6db5a8894ddb029c21cd7ca8bd399bfe1e66cc15e6",
+                          "menu-api":  "sha256:b64ba6ba658bbfc9f9141991615d17b7e5934716eb06f532b224c98f415264a1",
                           "audit-api":  "sha256:cd567a68e24d10ec2bd7400d2c779440437fa809fdf16573b233259f488408d2",
                           "seq":  "sha256:a9d266df8cbbfd3735e85d39f5fda7cd3d7cbbb2b653b6d39403597da16a17b1",
                           "configuration-api":  "sha256:f8adce31a91b24d03d9e744238b4c378ffc784e532ed8a83ca1362166878de1d",
@@ -104,6 +104,6 @@
                           "historiaspaolin-worker":  "sha256:b71ab27bf69d7d0277f7b449e24b00ee9fc0b213a33b7bb7cfa82ad01aafb275",
                           "historiaspaolin-migrations":  "sha256:0026bffc409de06b92c7253250d55d90986fc9d3208a1fbfc1042f495d349692",
                           "integration-worker":  "sha256:a7a06c01c1906a9be50c95251a4ed40de70a2f611412dbff57ad3180441233ea",
-                          "portal-web":  "sha256:c979a15acd77624b268077aa79da37add18330b76bae536127f45e4732ffb270"
+                          "portal-web":  "sha256:0197be8d6906ee296a46fc96ae497934937cf7a361e8d7adeed0304fe48e6894"
                       }
 }

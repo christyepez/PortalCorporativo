@@ -56,6 +56,29 @@ export interface MenuItem {
   readonly resourceKey: string;
   readonly permissionCode: string;
   readonly metadataJson?: string | null;
+  readonly isActive: boolean;
+}
+
+export interface CreateMenuItem {
+  readonly menuId: string;
+  readonly parentId?: string | null;
+  readonly code: string;
+  readonly label: string;
+  readonly route: string;
+  readonly icon?: string | null;
+  readonly order: number;
+  readonly resourceKey: string;
+  readonly permissionCode: string;
+  readonly metadataJson?: string | null;
+}
+
+export interface UpdateMenuItem {
+  readonly label: string;
+  readonly route: string;
+  readonly icon?: string | null;
+  readonly resourceKey: string;
+  readonly permissionCode: string;
+  readonly metadataJson?: string | null;
 }
 
 export interface ConfigurationItem {
@@ -320,6 +343,27 @@ export class PortalApiService {
 
   loadMenu(moduleCode: string): Observable<ApiResponse<MenuItem[]>> {
     return this.http.get<ApiResponse<MenuItem[]>>(`${environment.apiBasePath}/menu/modules/${encodeURIComponent(moduleCode)}`, { headers: this.headers() });
+  }
+
+  createMenu(moduleCode: string, name: string): Observable<ApiResponse<string>> {
+    return this.http.post<ApiResponse<string>>(`${environment.apiBasePath}/menu/`, { moduleCode, name }, { headers: this.headers() });
+  }
+
+  createMenuItem(request: CreateMenuItem): Observable<ApiResponse<MenuItem>> {
+    return this.http.post<ApiResponse<MenuItem>>(`${environment.apiBasePath}/menu/items`, request, { headers: this.headers() });
+  }
+
+  updateMenuItem(id: string, request: UpdateMenuItem): Observable<ApiResponse<MenuItem>> {
+    return this.http.put<ApiResponse<MenuItem>>(`${environment.apiBasePath}/menu/items/${encodeURIComponent(id)}`, request, { headers: this.headers() });
+  }
+
+  setMenuItemActive(id: string, active: boolean): Observable<ApiResponse<MenuItem>> {
+    const action = active ? 'activate' : 'deactivate';
+    return this.http.post<ApiResponse<MenuItem>>(`${environment.apiBasePath}/menu/items/${encodeURIComponent(id)}/${action}`, {}, { headers: this.headers() });
+  }
+
+  reorderMenuItems(items: Array<{ itemId: string; parentId?: string | null; order: number }>): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${environment.apiBasePath}/menu/reorder`, { items }, { headers: this.headers() });
   }
 
   loadConfiguration(key: string, moduleCode?: string): Observable<unknown> {
