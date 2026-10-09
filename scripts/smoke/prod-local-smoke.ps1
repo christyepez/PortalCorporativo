@@ -68,20 +68,23 @@ Invoke-Check "Catalog route protected" "$base/api/catalog/smoke" @(401)
 Invoke-Check "Content route protected" "$base/api/content/smoke" @(401)
 Invoke-Check "Integration route protected" "$base/api/integration/smoke" @(401)
 Invoke-Check "Reporting route protected" "$base/api/reporting/smoke" @(401)
-Invoke-Check "CRM ready through Gateway" "$base/api/crm/health/ready" @(200)
-Invoke-Check "Financiero ready through Gateway" "$base/api/financial/health/ready" @(200)
-Invoke-Check "HistoriasPaolin ready through Gateway" "$base/api/historiaspaolin/health/ready" @(200)
-Invoke-Check "Talento Humano ready through Gateway" "$base/api/hr/health/ready" @(200)
-Invoke-Check "CRM protected without token" "$web/api/crm/readiness" @(401)
-Invoke-Check "Financiero protected without token" "$web/api/financial/accounts" @(401)
-Invoke-Check "HistoriasPaolin protected without token" "$web/api/historiaspaolin/api/channels" @(401)
-Invoke-Check "Talento Humano protected without token" "$web/api/hr/employees" @(401)
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$registryPath = Join-Path $root 'frontend/config/consumer-registry.json'
+$consumerRegistry = Get-Content $registryPath -Raw | ConvertFrom-Json
+$consumers = @($consumerRegistry.consumers)
 
-$token = New-LocalJwt @("financial.*", "historiaspaolin.channels.view", "hr.employees.view")
+foreach ($consumer in $consumers) {
+    Invoke-Check "$($consumer.name) ready through Gateway" "$base$($consumer.probePath)" @(200)
+}
+foreach ($consumer in $consumers) {
+    Invoke-Check "$($consumer.name) protected without token" "$web$($consumer.protectedSmoke)" @(401)
+}
+
+$consumerPermissions = @($consumers | ForEach-Object { [string]$_.smokePermission } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+$token = New-LocalJwt $consumerPermissions
 $auth = @{ Authorization = "Bearer $token"; "X-Correlation-ID" = "prod-local-smoke-$([Guid]::NewGuid())" }
-Invoke-Check "CRM protected with Portal JWT" "$web/api/crm/readiness" @(200) $auth
-Invoke-Check "Financiero protected with Portal JWT" "$web/api/financial/accounts" @(200) $auth
-Invoke-Check "HistoriasPaolin protected with Portal JWT" "$web/api/historiaspaolin/api/channels" @(200) $auth
-Invoke-Check "Talento Humano protected with Portal JWT" "$web/api/hr/employees" @(200) $auth
+foreach ($consumer in $consumers) {
+    Invoke-Check "$($consumer.name) protected with Portal JWT" "$web$($consumer.protectedSmoke)" @(200) $auth
+}
 
 Write-Host "PROD_LOCAL_SMOKE_PASS"

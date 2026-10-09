@@ -85,6 +85,10 @@ function Invoke-E2E {
 }
 
 $web = $WebBaseUrl.TrimEnd('/')
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$registryPath = Join-Path $root 'frontend/config/consumer-registry.json'
+$consumerRegistry = Get-Content $registryPath -Raw | ConvertFrom-Json
+$consumers = @($consumerRegistry.consumers)
 $shell = Invoke-E2E "Shell root" "$web/"
 
 $scriptMatches = [regex]::Matches($shell.Body, '<script[^>]+src="([^"]+)"')
@@ -96,7 +100,8 @@ foreach ($match in $scriptMatches) {
     $bundle = Invoke-E2E "Angular bundle $src" $bundleUri @(200)
     $bundleText += $bundle.Body
 }
-foreach ($marker in @("Portal Corporativo","CRM","Financiero","HistoriasPaolin","Talento Humano")) {
+$shellMarkers = @("Portal Corporativo") + @($consumers | ForEach-Object { [string]$_.name })
+foreach ($marker in $shellMarkers) {
     if ($bundleText -notmatch [regex]::Escape($marker)) { throw "Compiled shell marker missing: $marker" }
 }
 Write-Host "PASS Compiled Angular shell module markers"
@@ -115,11 +120,9 @@ $readPermissions = @(
     "portal.content.manage",
     "portal.reporting.read",
     "portal.integration.read",
-    "portal.integration.manage",
-    "financial.*",
-    "historiaspaolin.channels.view",
-    "hr.employees.view"
+    "portal.integration.manage"
 )
+$readPermissions += @($consumers | ForEach-Object { [string]$_.smokePermission } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
 $readToken = New-LocalJwt $readPermissions
 $correlationId = "prod-local-e2e-$([Guid]::NewGuid())"
 $auth = @{ Authorization = "Bearer $readToken"; "X-Correlation-ID" = $correlationId }
@@ -552,10 +555,9 @@ for ($attempt = 1; $attempt -le 10; $attempt++) {
 if (-not $outboxProcessed) { throw "Local Outbox message did not reach Processed state." }
 Write-Host "PASS Local Outbox idempotency and single publish -> $($outboxFirstPayload.data.messageId)"
 
-Invoke-E2E "CRM navigation/API through Portal Web" "$web/api/crm/readiness" @(200) $auth | Out-Null
-Invoke-E2E "Financiero navigation/API through Portal Web" "$web/api/financial/accounts" @(200) $auth | Out-Null
-Invoke-E2E "HistoriasPaolin navigation/API through Portal Web" "$web/api/historiaspaolin/api/channels" @(200) $auth | Out-Null
-Invoke-E2E "Talento Humano navigation/API through Portal Web" "$web/api/hr/employees" @(200) $auth | Out-Null
+foreach ($consumer in $consumers) {
+    Invoke-E2E "$($consumer.name) navigation/API through Portal Web" "$web$($consumer.protectedSmoke)" @(200) $auth | Out-Null
+}
 
 $catalogCode = "e2e-$([Guid]::NewGuid().ToString('N').Substring(0,12))"
 $catalogCreateBody = @{
