@@ -77,6 +77,9 @@ jobs:
           MINIO_ROOT_PASSWORD: portal-local-minio
           JWT_SECRET: portal-local-ci-placeholder-secret-32chars
         run: docker compose config --quiet
+      - name: Validate core dependency restart policy
+        shell: pwsh
+        run: ./scripts/quality/test-core-dependency-restart-policy.ps1
       - name: Validate PROD-local Compose overlay
         env:
           SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
