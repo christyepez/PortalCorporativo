@@ -12,3 +12,10 @@ The future CRM pilot may exit successfully only when all criteria below are met 
 - No production provider, private URL, real secret or shared database is introduced.
 
 Sprint 20 does not claim these criteria are already satisfied. It only defines them.
+
+
+## Current automated decision
+
+The current PROD-local automated decision is **NOGO / fail-closed**. The P25 gate is considered healthy when it proves that CRM remains inside the documented safety boundary while the real Portal runtime client is disabled.
+
+A future GO requires an explicit implementation change plus updated runtime evidence for the existing exit criteria. The gate must not infer or auto-promote GO from documentation alone.

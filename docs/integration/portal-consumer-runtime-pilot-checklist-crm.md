@@ -19,3 +19,19 @@
 - Gateway routes remain disabled until the activation gate.
 - External navigation remains disabled until the activation gate.
 - Shared database boundaries remain intact.
+
+
+## Automated P25 readiness evidence
+
+Portal CI validates the governed CRM registry and the required pilot governance documents through `scripts/quality/test-crm-runtime-pilot-readiness-gate.ps1`.
+
+PROD-local E2E validates CRM through the Portal Gateway and requires the current safe state to remain fail-closed:
+
+- Portal integration status reports `connected=false` and `PortalIntegrationPlanned`.
+- Controlled implementation reports `ProductionActivationDecision=NoGo` and `CrmProductionReady=false`.
+- Portal runtime coupling/calls remain disabled.
+- Shared Portal table access and direct Portal database access remain disabled.
+- No real secrets or browser token storage are present.
+- Controlled dry-run is prepared but locked, with no activation or external call attempted.
+
+This evidence is a safety/readiness gate only. It does not authorize runtime activation.
