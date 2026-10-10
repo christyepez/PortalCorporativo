@@ -4,7 +4,7 @@ param(
     [int]$RetentionSets = 7,
     [string[]]$Database = @(
         "PortalSecurity","PortalConfiguration","PortalMenu",
-        "PortalAudit","PortalNotification","PortalIntegration",
+        "PortalAudit","PortalNotification","PortalCatalog","PortalContent","PortalIntegration",
         "FinancieroDb","AppTTHHDb","HistoriasPaolinDb"
     )
 )
