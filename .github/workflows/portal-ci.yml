@@ -57,6 +57,14 @@ jobs:
         shell: pwsh
         run: ./scripts/quality/test-consumer-expansion-gate.ps1
 
+  crm-runtime-pilot-readiness-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate CRM runtime pilot readiness governance
+        shell: pwsh
+        run: ./scripts/quality/test-crm-runtime-pilot-readiness-gate.ps1
+
   compose:
     runs-on: ubuntu-latest
     steps:
