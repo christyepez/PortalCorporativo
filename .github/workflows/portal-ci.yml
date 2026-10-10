@@ -83,6 +83,9 @@ jobs:
       - name: Validate PROD-local restart readiness contract
         shell: pwsh
         run: ./scripts/quality/test-prod-local-restart-readiness.ps1
+      - name: Validate PROD-local startup readiness contract
+        shell: pwsh
+        run: ./scripts/quality/test-prod-local-up-readiness.ps1
       - name: Validate PROD-local Compose overlay
         env:
           SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
