@@ -2,7 +2,8 @@ param(
     [string[]]$EnvFile = @(".env.portal.local"),
     [switch]$SkipSmoke,
     [switch]$ScanLogs,
-    [int]$RecentMinutes = 15
+    [int]$RecentMinutes = 15,
+    [switch]$IgnoreRestartCount
 )
 
 $ErrorActionPreference = 'Stop'
@@ -44,7 +45,7 @@ foreach ($row in $rows) {
     Write-Host ("CHECK {0} state={1} health={2} restarts={3}" -f $name,$state,$health,$restartCount)
     if ($state -ne 'running') { $failures += "$name state=$state" }
     if ($health -notin @('none','healthy')) { $failures += "$name health=$health" }
-    if ($restartCount -ne 0) { $failures += "$name restartCount=$restartCount" }
+    if (-not $IgnoreRestartCount -and $restartCount -ne 0) { $failures += "$name restartCount=$restartCount" }
 }
 
 foreach ($id in $ids) {
