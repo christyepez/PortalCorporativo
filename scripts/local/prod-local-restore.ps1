@@ -10,7 +10,7 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $allowed = @(
     'PortalSecurity','PortalConfiguration','PortalMenu',
-    'PortalAudit','PortalNotification','PortalIntegration',
+    'PortalAudit','PortalNotification','PortalCatalog','PortalContent','PortalIntegration',
     'FinancieroDb','AppTTHHDb','HistoriasPaolinDb'
 )
 if ($allowed -notcontains $Database) { throw "Database is not managed by this recovery script: $Database" }
@@ -48,6 +48,8 @@ $serviceMap = @{
     PortalMenu = @('portalcorporativo-menu-api-1')
     PortalAudit = @('portalcorporativo-audit-api-1')
     PortalNotification = @('portalcorporativo-notification-api-1','portalcorporativo-notification-worker-1')
+    PortalCatalog = @('portalcorporativo-catalog-api-1')
+    PortalContent = @('portalcorporativo-content-api-1')
     PortalIntegration = @('portalcorporativo-integration-api-1','portalcorporativo-integration-worker-1')
     FinancieroDb = @('portalcorporativo-financial-api-1')
     AppTTHHDb = @('portalcorporativo-hr-api-1')
