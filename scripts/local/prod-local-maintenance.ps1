@@ -13,7 +13,7 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $backupPath = if ([IO.Path]::IsPathRooted($BackupRoot)) { $BackupRoot } else { Join-Path $root $BackupRoot }
 $expectedDatabases = @(
     'PortalSecurity','PortalConfiguration','PortalMenu',
-    'PortalAudit','PortalNotification','PortalIntegration',
+    'PortalAudit','PortalNotification','PortalCatalog','PortalContent','PortalIntegration',
     'FinancieroDb','AppTTHHDb','HistoriasPaolinDb'
 )
 $failures = @()
