@@ -559,6 +559,41 @@ foreach ($consumer in $consumers) {
     Invoke-E2E "$($consumer.name) navigation/API through Portal Web" "$web$($consumer.protectedSmoke)" @(200) $auth | Out-Null
 }
 
+$crmConsumer = @($consumers | Where-Object { $_.code -eq "CRM" })[0]
+if ($null -eq $crmConsumer) { throw "Governed CRM consumer is missing from registry." }
+
+$crmPortalStatusResponse = Invoke-E2E "CRM pilot integration status through Gateway" "$web$($crmConsumer.gatewayPath)/foundation/portal-integration/status" @(200) $auth
+$crmPortalStatus = $crmPortalStatusResponse.Body | ConvertFrom-Json
+if ($crmPortalStatus.module -ne "CRM" -or $crmPortalStatus.connected -ne $false -or $crmPortalStatus.status -ne "PortalIntegrationPlanned") {
+    throw "CRM Portal integration status is not the expected safe NonProduction NOGO state."
+}
+
+$crmPilotResponse = Invoke-E2E "CRM pilot controlled implementation status through Gateway" "$web$($crmConsumer.gatewayPath)/foundation/sprint-10/controlled-runtime-pilot-first-slice-nonproduction-activation-controlled-implementation" @(200) $auth
+$crmPilotPayload = $crmPilotResponse.Body | ConvertFrom-Json
+$crmPilot = $crmPilotPayload.status
+$crmDryRun = $crmPilotPayload.dryRun
+if ($crmPilot.productionActivationDecision -ne "NoGo" -or
+    $crmPilot.crmProductionReady -ne $false -or
+    $crmPilot.runtimePortalCouplingEnabled -ne $false -or
+    $crmPilot.runtimePortalCallsEnabled -ne $false -or
+    $crmPilot.sharedPortalTablesAccessEnabled -ne $false -or
+    $crmPilot.portalDatabaseDirectAccessEnabled -ne $false -or
+    $crmPilot.secretsPresent -ne $false -or
+    $crmPilot.browserTokenStorageDetected -ne $false) {
+    throw "CRM pilot safety boundary is not fail-closed."
+}
+if ($crmDryRun.dryRunOnly -ne $true -or
+    $crmDryRun.controlledImplementationPrepared -ne $true -or
+    $crmDryRun.controlledImplementationExecuted -ne $false -or
+    $crmDryRun.activationAttempted -ne $false -or
+    $crmDryRun.activationExecuted -ne $false -or
+    $crmDryRun.externalCallAttempted -ne $false -or
+    $crmDryRun.portalCouplingEnabled -ne $false -or
+    $crmDryRun.status -ne "Locked") {
+    throw "CRM pilot dry-run boundary is not locked."
+}
+Write-Host "PASS CRM runtime pilot P25 safe NOGO gate"
+
 $catalogCode = "e2e-$([Guid]::NewGuid().ToString('N').Substring(0,12))"
 $catalogCreateBody = @{
     catalog = "portal-e2e"
