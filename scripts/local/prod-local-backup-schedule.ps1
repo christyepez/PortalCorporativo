@@ -32,9 +32,9 @@ if ($Action -eq 'Remove') {
 if (-not (Test-Path -LiteralPath $envPath)) { throw "Environment file not found: $envPath" }
 if ($DailyAt -notmatch '^(?:[01]\d|2[0-3]):[0-5]\d$') { throw 'DailyAt must use HH:mm.' }
 
-$backupScript = Join-Path $PSScriptRoot 'prod-local-backup.ps1'
+$scheduledRunScript = Join-Path $PSScriptRoot 'prod-local-scheduled-run.ps1'
 $powershell = Join-Path $PSHOME 'powershell.exe'
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$backupScript`" -EnvFile `"$envPath`" -RetentionSets $RetentionSets"
+$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scheduledRunScript`" -Operation Backup -EnvFile `"$envPath`" -RetentionSets $RetentionSets"
 $at = [DateTime]::Today.Add([TimeSpan]::Parse($DailyAt))
 $taskAction = New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $root
 $trigger = New-ScheduledTaskTrigger -Daily -At $at
