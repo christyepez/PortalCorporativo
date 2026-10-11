@@ -47,7 +47,7 @@ Success markers:
 
 ## Apply repository synchronization
 
-Review first; without `-Apply` the script refuses to modify repositories.
+`sync-apply` is fail-closed: without `-Apply` it refuses to modify repositories. With `-Apply`, it automatically runs prerequisite preflight before any Git operation and strict aligned validation after a real synchronization.
 
 ```powershell
 ./scripts/local/prod-local-sync-apply.ps1 -Apply
@@ -62,7 +62,7 @@ Safety rules:
 - no reset/force operation is used;
 - environment files and backup data are never copied by this script.
 
-Use `-Apply -WhatIf` to preview repository actions without changing them.
+Use `-Apply -WhatIf` to preview repository actions without changing them. The preview still runs prerequisite preflight, skips post-sync aligned validation because no repositories were changed, and returns `PORTAL_PROD_LOCAL_SYNC_APPLY_WHATIF_PASS`.
 
 Recommended target-machine sequence:
 
@@ -70,6 +70,5 @@ Recommended target-machine sequence:
 ./scripts/local/prod-local-sync-preflight.ps1 -Mode Prerequisite
 ./scripts/local/prod-local-sync-apply.ps1 -Apply -WhatIf
 ./scripts/local/prod-local-sync-apply.ps1 -Apply
-./scripts/local/prod-local-sync-preflight.ps1 -Mode Aligned
 ./scripts/local/prod-local-maintenance.ps1 -ScanLogs
 ```
