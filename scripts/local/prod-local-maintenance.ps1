@@ -63,11 +63,15 @@ if (-not $SkipDrift -and (Test-Path -LiteralPath $baseline)) {
 }
 
 if (-not $SkipRuntimeVerify) {
+    $restartBaselinePath = Join-Path ([IO.Path]::GetTempPath()) ("portal-restarts-maintenance-{0}.json" -f [guid]::NewGuid())
     try {
-        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -ScanLogs:$ScanLogs -IgnoreRestartCount
+        & (Join-Path $PSScriptRoot 'prod-local-restart-snapshot.ps1') -Output $restartBaselinePath
+        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -ScanLogs:$ScanLogs -RestartBaselineFile $restartBaselinePath
     } catch {
         $failures += 'runtimeVerify=failed'
         Write-Output $_.Exception.Message
+    } finally {
+        Remove-Item -LiteralPath $restartBaselinePath -Force -ErrorAction SilentlyContinue
     }
 }
 

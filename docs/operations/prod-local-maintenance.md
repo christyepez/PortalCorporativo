@@ -32,7 +32,7 @@ Use the lightweight operational health command to validate Git alignment, backup
 ./scripts/local/prod-local-operations-status.ps1
 ```
 
-For a deeper runtime check that also runs the PROD-local verification and recent-log/observability scan:
+For a deeper runtime check that also runs the PROD-local verification and recent-log/observability scan. Deep runtime validation snapshots current Docker restart counters first and fails only when a counter increases during that validation, so historical restart counts do not create false failures while new restart activity is still detected:
 
 ```powershell
 ./scripts/local/prod-local-operations-status.ps1 -DeepRuntime

@@ -40,8 +40,10 @@ if (-not $maintenance.Contains('[switch]$RecoveryDrill')) {
 if (-not $maintenance.Contains('prod-local-recovery-drill.ps1')) {
     throw 'Maintenance must invoke the recovery drill when requested.'
 }
-if (-not $maintenance.Contains('-IgnoreRestartCount')) {
-    throw 'Maintenance runtime verification must ignore historical restart counters while still enforcing state, health, ports and smoke.'
+foreach ($marker in @('prod-local-restart-snapshot.ps1','-RestartBaselineFile','restartBaselinePath')) {
+    if (-not $maintenance.Contains($marker)) {
+        throw "Maintenance runtime verification must enforce restart delta marker: $marker"
+    }
 }
 
 Write-Host 'PORTAL_PROD_LOCAL_RECOVERY_DRILL_GATE_PASS'
