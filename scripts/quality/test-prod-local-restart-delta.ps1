@@ -39,6 +39,9 @@ foreach ($marker in $verifyRequired) {
     if (-not $verify.Contains($marker)) { throw "Restart delta verify contract missing marker: $marker" }
     Write-Host "PASS restart delta verify marker $marker"
 }
+if ($verify.Contains('IgnoreRestartCount')) {
+    throw 'Verify must not expose an IgnoreRestartCount bypass after restart-delta hardening.'
+}
 $consumers = @{
     maintenance = $maintenance
     operations = $operations

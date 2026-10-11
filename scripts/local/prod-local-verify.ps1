@@ -3,7 +3,6 @@ param(
     [switch]$SkipSmoke,
     [switch]$ScanLogs,
     [int]$RecentMinutes = 15,
-    [switch]$IgnoreRestartCount,
     [string]$RestartBaselineFile = ''
 )
 
@@ -61,7 +60,7 @@ foreach ($row in $rows) {
         $restartDelta = $restartCount - $baselineCount
         Write-Host ("CHECK {0} restartBaseline={1} restartDelta={2}" -f $name,$baselineCount,$restartDelta)
         if ($restartCount -gt $baselineCount) { $failures += "$name restartDelta=$restartDelta baseline=$baselineCount current=$restartCount" }
-    } elseif (-not $IgnoreRestartCount -and $restartCount -ne 0) {
+    } elseif ($restartCount -ne 0) {
         $failures += "$name restartCount=$restartCount"
     }
 }
