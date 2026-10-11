@@ -19,12 +19,31 @@ The generated `config/prod-local-sync-package.json` contains only non-secret dat
 
 ## Preflight a target machine
 
+Use prerequisite mode before changing repositories:
+
 ```powershell
-./scripts/local/prod-local-sync-preflight.ps1
+./scripts/local/prod-local-sync-preflight.ps1 -Mode Prerequisite
 ```
 
-The preflight checks package schema, committed baseline SHA-256 integrity, required local files and environment names, Docker Desktop availability, external repository revisions, free disk space, Compose configuration, and exact expected service inventory without exposing secret values.
-Success marker: `PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS`.
+Prerequisite mode validates package schema, committed baseline SHA-256 integrity, required local files and environment names, Docker Desktop availability, repository cleanliness, free disk space, Compose configuration, and exact expected service inventory. Repository branch/revision differences are reported as `ALIGN_REQUIRED` instead of failing, because those differences are what the synchronization step is intended to correct.
+
+Success markers:
+
+- `PORTAL_PROD_LOCAL_SYNC_PREREQUISITE_PASS`
+- `PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS`
+
+After synchronization, use strict aligned mode:
+
+```powershell
+./scripts/local/prod-local-sync-preflight.ps1 -Mode Aligned
+```
+
+Aligned mode requires every external repository to match the exact branch and revision recorded in the package. `Aligned` remains the default for backward compatibility.
+
+Success markers:
+
+- `PORTAL_PROD_LOCAL_SYNC_ALIGNED_PASS`
+- `PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS`
 
 ## Apply repository synchronization
 
@@ -45,9 +64,12 @@ Safety rules:
 
 Use `-Apply -WhatIf` to preview repository actions without changing them.
 
-After synchronization, run:
+Recommended target-machine sequence:
 
 ```powershell
-./scripts/local/prod-local-sync-preflight.ps1
+./scripts/local/prod-local-sync-preflight.ps1 -Mode Prerequisite
+./scripts/local/prod-local-sync-apply.ps1 -Apply -WhatIf
+./scripts/local/prod-local-sync-apply.ps1 -Apply
+./scripts/local/prod-local-sync-preflight.ps1 -Mode Aligned
 ./scripts/local/prod-local-maintenance.ps1 -ScanLogs
 ```
