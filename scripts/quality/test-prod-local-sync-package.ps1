@@ -39,7 +39,7 @@ foreach ($marker in @("ValidateSet('Prerequisite','Aligned')",'repoDirty=','ALIG
 }
 
 $apply = Get-Content -LiteralPath $applyPath -Raw
-foreach ($marker in @('[switch]$Apply','status --porcelain','--ff-only','PORTAL_PROD_LOCAL_SYNC_APPLY_PASS')) {
+foreach ($marker in @('[switch]$Apply','status --porcelain','--ff-only','prod-local-sync-preflight.ps1','-Mode Prerequisite','-Mode Aligned','PORTAL_PROD_LOCAL_SYNC_APPLY_WHATIF_PASS','PORTAL_PROD_LOCAL_SYNC_APPLY_PASS')) {
     if (-not $apply.Contains($marker)) { throw "Sync apply safety contract missing marker: $marker" }
     Write-Host "PASS sync apply marker $marker"
 }
