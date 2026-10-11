@@ -6,7 +6,8 @@ param(
     [switch]$SkipRuntimeVerify,
     [switch]$SkipDrift,
     [switch]$ScanLogs,
-    [switch]$RecoveryDrill
+    [switch]$RecoveryDrill,
+    [switch]$RecoveryTempRestore
 )
 
 $ErrorActionPreference = 'Stop'
@@ -75,9 +76,12 @@ if (-not $SkipRuntimeVerify) {
     }
 }
 
-if ($RecoveryDrill -and $failures.Count -eq 0) {
+$runRecoveryDrill = $RecoveryDrill -or $RecoveryTempRestore
+if ($runRecoveryDrill -and $failures.Count -eq 0) {
     try {
-        & (Join-Path $PSScriptRoot 'prod-local-recovery-drill.ps1') -BackupSetPath $latest.FullName
+        $recoveryParams = @{ BackupSetPath = $latest.FullName }
+        if ($RecoveryTempRestore) { $recoveryParams.TempRestore = $true }
+        & (Join-Path $PSScriptRoot 'prod-local-recovery-drill.ps1') @recoveryParams
     } catch {
         $failures += 'recoveryDrill=failed'
         Write-Output $_.Exception.Message
