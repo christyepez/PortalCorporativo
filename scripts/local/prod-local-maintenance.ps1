@@ -5,7 +5,8 @@ param(
     [double]$MinFreeGB = 10,
     [switch]$SkipRuntimeVerify,
     [switch]$SkipDrift,
-    [switch]$ScanLogs
+    [switch]$ScanLogs,
+    [switch]$RecoveryDrill
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,6 +67,15 @@ if (-not $SkipRuntimeVerify) {
         & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -ScanLogs:$ScanLogs
     } catch {
         $failures += 'runtimeVerify=failed'
+        Write-Output $_.Exception.Message
+    }
+}
+
+if ($RecoveryDrill -and $failures.Count -eq 0) {
+    try {
+        & (Join-Path $PSScriptRoot 'prod-local-recovery-drill.ps1') -BackupSetPath $latest.FullName
+    } catch {
+        $failures += 'recoveryDrill=failed'
         Write-Output $_.Exception.Message
     }
 }
