@@ -24,6 +24,22 @@ Success marker: `PORTAL_PROD_LOCAL_MAINTENANCE_PASS`.
 
 Scheduled backup and maintenance executions pass through `prod-local-scheduled-run.ps1`. Each run writes its console evidence to `runtime/prod-local/operations/<operation>-yyyyMMdd-HHmmss.log`; the default retention is the newest 14 logs per operation. Runtime log files are excluded from Git by the repository `*.log` rule. The wrapper propagates failures to Task Scheduler and emits `PORTAL_PROD_LOCAL_SCHEDULED_RUN_PASS` or `PORTAL_PROD_LOCAL_SCHEDULED_RUN_FAIL`. Both tasks use `WakeToRun` and Task Scheduler retry-on-failure (3 retries, 10-minute interval). Maintenance is additionally serialized behind `PortalCorporativo PROD-local Backup`: it waits until the backup task is no longer running/queued, requires a recent successful backup result (default maximum age 4 hours), and fails closed if the dependency is missing, disabled, stale, failed, or does not become ready within the dependency timeout.
 
+## Consolidated operations status
+
+Use the lightweight operational health command to validate Git alignment, backup freshness, Task Scheduler configuration, and the latest backup/maintenance evidence in one pass:
+
+```powershell
+./scripts/local/prod-local-operations-status.ps1
+```
+
+For a deeper runtime check that also runs the PROD-local verification and recent-log/observability scan:
+
+```powershell
+./scripts/local/prod-local-operations-status.ps1 -DeepRuntime
+```
+
+Success marker: `PORTAL_PROD_LOCAL_OPERATIONS_STATUS_PASS`.
+
 ## Daily backup task
 
 Preview registration without changing Windows:
