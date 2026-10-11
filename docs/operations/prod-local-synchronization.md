@@ -11,7 +11,7 @@
 The generated `config/prod-local-sync-package.json` contains only non-secret data:
 
 - Portal target branch (`main`);
-- drift-baseline SHA-256;
+- cross-platform normalized UTF-8/LF SHA-256 of the drift baseline;
 - required local file names;
 - required environment variable names only;
 - external repository branch and exact revision;
@@ -23,7 +23,7 @@ The generated `config/prod-local-sync-package.json` contains only non-secret dat
 ./scripts/local/prod-local-sync-preflight.ps1
 ```
 
-The preflight checks Docker Desktop availability, required local env file names, external repository revisions, free disk space and Compose configuration without exposing secret values.
+The preflight checks package schema, committed baseline SHA-256 integrity, required local files and environment names, Docker Desktop availability, external repository revisions, free disk space, Compose configuration, and exact expected service inventory without exposing secret values.
 Success marker: `PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS`.
 
 ## Apply repository synchronization

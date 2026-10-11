@@ -3,7 +3,8 @@
     "SourceRuntime":  "trabajo",
     "PortalBranch":  "main",
     "BaselineFile":  "config/prod-local-baseline.json",
-    "BaselineSha256":  "C9437A3FBD0B223CD9D4E442E3D9DCC1FF78A257D3DBC38344EFDD44596F61B8",
+    "BaselineHashMode":  "normalized-utf8-lf-sha256",
+    "BaselineSha256":  "259674CBFE702CB0A8A8033EEAE4DF330BC6705C5AE02885AD92E9B48561E785",
     "RequiredLocalFiles":  [
                                ".env.portal.local"
                            ],
