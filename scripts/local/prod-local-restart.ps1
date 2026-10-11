@@ -68,8 +68,14 @@ $states | ForEach-Object { Write-Host "READY $_" }
 Write-Output 'PORTAL_PROD_LOCAL_RESTART_READY'
 
 if (-not $SkipVerify) {
-    & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -EnvFile $EnvFile -IgnoreRestartCount
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $restartBaselinePath = Join-Path ([IO.Path]::GetTempPath()) ("portal-restarts-restart-{0}.json" -f [guid]::NewGuid())
+    try {
+        & (Join-Path $PSScriptRoot 'prod-local-restart-snapshot.ps1') -EnvFile $EnvFile -Output $restartBaselinePath
+        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -EnvFile $EnvFile -RestartBaselineFile $restartBaselinePath
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    } finally {
+        Remove-Item -LiteralPath $restartBaselinePath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Write-Output 'PORTAL_PROD_LOCAL_RESTART_COMPLETE'
