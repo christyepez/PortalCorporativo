@@ -4,6 +4,7 @@ param(
     [string]$TaskName = 'PortalCorporativo PROD-local Maintenance',
     [string]$DailyAt = '02:30',
     [string]$BackupRoot = 'backups/prod-local',
+    [string]$BackupTaskName = 'PortalCorporativo PROD-local Backup',
     [switch]$RecoveryDrill
 )
 
@@ -33,13 +34,13 @@ if ($DailyAt -notmatch '^(?:[01]\d|2[0-3]):[0-5]\d$') { throw 'DailyAt must use 
 
 $scheduledRunScript = Join-Path $PSScriptRoot 'prod-local-scheduled-run.ps1'
 $powershell = Join-Path $PSHOME 'powershell.exe'
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scheduledRunScript`" -Operation Maintenance -BackupRoot `"$BackupRoot`""
+$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scheduledRunScript`" -Operation Maintenance -BackupRoot `"$BackupRoot`" -DependencyTaskName `"$BackupTaskName`""
 if ($RecoveryDrill) { $arguments += ' -RecoveryDrill' }
 
 $at = [DateTime]::Today.Add([TimeSpan]::Parse($DailyAt))
 $taskAction = New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $root
 $trigger = New-ScheduledTaskTrigger -Daily -At $at
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
 if ($PSCmdlet.ShouldProcess($TaskName, "Register daily maintenance at $DailyAt")) {
     Register-ScheduledTask -TaskName $TaskName -Action $taskAction -Trigger $trigger -Settings $settings -Description 'PortalCorporativo Docker Desktop PROD-local operational maintenance check' -Force | Out-Null
