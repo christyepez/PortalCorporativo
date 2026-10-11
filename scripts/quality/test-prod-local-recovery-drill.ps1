@@ -8,6 +8,14 @@ $maintenance = Get-Content -LiteralPath $maintenancePath -Raw
 
 $requiredDrillMarkers = @(
     'RESTORE VERIFYONLY',
+    'RESTORE FILELISTONLY',
+    '[switch]$TempRestore',
+    'PortalRecovery_',
+    'RESTORE DATABASE [$tempDb]',
+    'MOVE N',
+    'DROP DATABASE [$tempDb]',
+    'RECOVERY_TEMP_RESTORE_PASS',
+    'PORTAL_PROD_LOCAL_TEMP_RESTORE_DRILL_PASS',
     'DBCC CHECKDB',
     'PORTAL_PROD_LOCAL_RECOVERY_DRILL_PASS'
 )
@@ -17,7 +25,6 @@ foreach ($marker in $requiredDrillMarkers) {
 }
 
 $forbidden = @(
-    'RESTORE DATABASE',
     'WITH REPLACE',
     'SINGLE_USER'
 )
@@ -36,6 +43,12 @@ if (-not $drill.Contains($goodManifestAssignment)) {
 
 if (-not $maintenance.Contains('[switch]$RecoveryDrill')) {
     throw 'Maintenance must expose RecoveryDrill as an explicit opt-in switch.'
+}
+if (-not $maintenance.Contains('[switch]$RecoveryTempRestore')) {
+    throw 'Maintenance must expose RecoveryTempRestore as an explicit opt-in switch.'
+}
+if (-not $maintenance.Contains('$recoveryParams.TempRestore = $true')) {
+    throw 'Maintenance must pass TempRestore only when RecoveryTempRestore is requested.'
 }
 if (-not $maintenance.Contains('prod-local-recovery-drill.ps1')) {
     throw 'Maintenance must invoke the recovery drill when requested.'

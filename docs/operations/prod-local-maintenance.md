@@ -18,7 +18,8 @@ The report validates:
 - container state and health;
 - recent fatal/critical log patterns when `-ScanLogs` is supplied;
 - authenticated Portal smoke;
-- optional non-destructive recovery drill when `-RecoveryDrill` is supplied.
+- optional non-destructive recovery drill when `-RecoveryDrill` is supplied;
+- optional full temporary restore validation when `-RecoveryTempRestore` is supplied. This restores each backup into an isolated `PortalRecovery_*` database, runs `DBCC CHECKDB`, and drops the temporary database without modifying the source database.
 
 Success marker: `PORTAL_PROD_LOCAL_MAINTENANCE_PASS`.
 
