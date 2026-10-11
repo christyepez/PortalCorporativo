@@ -33,7 +33,7 @@ if ($baselineHash -ne [string]$package.BaselineSha256) {
 Write-Host "PASS sync package baseline hash mode=$($package.BaselineHashMode)"
 
 $preflight = Get-Content -LiteralPath $preflightPath -Raw
-foreach ($marker in @('baselineHashMismatch=true','composeServicesMismatch=true','RequiredLocalFiles','PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS')) {
+foreach ($marker in @("ValidateSet('Prerequisite','Aligned')",'repoDirty=','ALIGN_REQUIRED','PORTAL_PROD_LOCAL_SYNC_PREREQUISITE_PASS','PORTAL_PROD_LOCAL_SYNC_ALIGNED_PASS','baselineHashMismatch=true','composeServicesMismatch=true','RequiredLocalFiles','PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS')) {
     if (-not $preflight.Contains($marker)) { throw "Sync preflight contract missing marker: $marker" }
     Write-Host "PASS sync preflight marker $marker"
 }
