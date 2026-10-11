@@ -1,7 +1,8 @@
 param(
     [string]$Package = 'config/prod-local-sync-package.json',
     [string[]]$EnvFile = @('.env.portal.local'),
-    [double]$MinFreeGB = 10
+    [double]$MinFreeGB = 10,
+    [ValidateSet('Prerequisite','Aligned')][string]$Mode = 'Aligned'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -77,11 +78,19 @@ foreach ($name in $packageData.RequiredEnvironmentNames) {
 foreach ($repo in $packageData.Repositories) {
     $repoPath = Join-Path $root ([string]$repo.RelativePath)
     if (-not (Test-Path -LiteralPath $repoPath)) { $failures += "repoMissing=$($repo.Name)"; continue }
+    $dirty = @(& git -C $repoPath status --porcelain)
+    if ($dirty.Count -gt 0) { $failures += "repoDirty=$($repo.Name)" }
     $branch = (& git -C $repoPath branch --show-current).Trim()
     $revision = (& git -C $repoPath rev-parse HEAD).Trim()
     Write-Output "CHECK repo=$($repo.Name) branch=$branch revision=$revision"
-    if ($branch -ne [string]$repo.Branch) { $failures += "repoBranch=$($repo.Name)" }
-    if ($revision -ne [string]$repo.Revision) { $failures += "repoRevision=$($repo.Name)" }
+    $branchMismatch = $branch -ne [string]$repo.Branch
+    $revisionMismatch = $revision -ne [string]$repo.Revision
+    if ($Mode -eq 'Aligned') {
+        if ($branchMismatch) { $failures += "repoBranch=$($repo.Name)" }
+        if ($revisionMismatch) { $failures += "repoRevision=$($repo.Name)" }
+    } elseif ($branchMismatch -or $revisionMismatch) {
+        Write-Output "ALIGN_REQUIRED repo=$($repo.Name) expectedBranch=$($repo.Branch) expectedRevision=$($repo.Revision)"
+    }
 }
 
 $driveRoot = [IO.Path]::GetPathRoot($root)
@@ -109,4 +118,9 @@ if ($failures.Count -gt 0) {
     throw "PROD-local sync preflight failed with $(@($failures | Select-Object -Unique).Count) issue(s)."
 }
 
+if ($Mode -eq 'Prerequisite') {
+    Write-Output 'PORTAL_PROD_LOCAL_SYNC_PREREQUISITE_PASS'
+} else {
+    Write-Output 'PORTAL_PROD_LOCAL_SYNC_ALIGNED_PASS'
+}
 Write-Output 'PORTAL_PROD_LOCAL_SYNC_PREFLIGHT_PASS'
