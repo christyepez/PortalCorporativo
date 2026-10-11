@@ -31,9 +31,9 @@ if ($Action -eq 'Remove') {
 
 if ($DailyAt -notmatch '^(?:[01]\d|2[0-3]):[0-5]\d$') { throw 'DailyAt must use HH:mm.' }
 
-$maintenanceScript = Join-Path $PSScriptRoot 'prod-local-maintenance.ps1'
+$scheduledRunScript = Join-Path $PSScriptRoot 'prod-local-scheduled-run.ps1'
 $powershell = Join-Path $PSHOME 'powershell.exe'
-$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$maintenanceScript`" -BackupRoot `"$BackupRoot`" -ScanLogs"
+$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scheduledRunScript`" -Operation Maintenance -BackupRoot `"$BackupRoot`""
 if ($RecoveryDrill) { $arguments += ' -RecoveryDrill' }
 
 $at = [DateTime]::Today.Add([TimeSpan]::Parse($DailyAt))

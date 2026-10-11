@@ -2,21 +2,61 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $maintenancePath = Join-Path $root 'scripts/local/prod-local-maintenance-schedule.ps1'
 $backupPath = Join-Path $root 'scripts/local/prod-local-backup-schedule.ps1'
+$scheduledRunPath = Join-Path $root 'scripts/local/prod-local-scheduled-run.ps1'
+
 $maintenance = Get-Content -LiteralPath $maintenancePath -Raw
 $backup = Get-Content -LiteralPath $backupPath -Raw
+$scheduledRun = Get-Content -LiteralPath $scheduledRunPath -Raw
 
-$maintenanceRequired = @(
-    "ValidateSet('Show','Install','Remove')",
-    'SupportsShouldProcess=$true',
-    'prod-local-maintenance.ps1',
-    '-ScanLogs',
-    'New-ScheduledTaskTrigger -Daily',
-    'Register-ScheduledTask'
+$contracts = @(
+    [pscustomobject]@{
+        Name = 'maintenance'
+        Text = $maintenance
+        Required = @(
+            "ValidateSet('Show','Install','Remove')",
+            'SupportsShouldProcess=$true',
+            'prod-local-scheduled-run.ps1',
+            '-Operation Maintenance',
+            'New-ScheduledTaskTrigger -Daily',
+            'Register-ScheduledTask'
+        )
+    },
+    [pscustomobject]@{
+        Name = 'backup'
+        Text = $backup
+        Required = @(
+            "ValidateSet('Show','Install','Remove')",
+            'SupportsShouldProcess=$true',
+            'prod-local-scheduled-run.ps1',
+            '-Operation Backup',
+            'New-ScheduledTaskTrigger -Daily',
+            'Register-ScheduledTask'
+        )
+    },
+    [pscustomobject]@{
+        Name = 'scheduled-run'
+        Text = $scheduledRun
+        Required = @(
+            "ValidateSet('Backup','Maintenance')",
+            'runtime/prod-local/operations',
+            'LogRetention',
+            'Tee-Object',
+            'prod-local-backup.ps1',
+            'prod-local-maintenance.ps1',
+            'ScanLogs',
+            'PORTAL_PROD_LOCAL_SCHEDULED_RUN_PASS',
+            'PORTAL_PROD_LOCAL_SCHEDULED_RUN_FAIL'
+        )
+    }
 )
 
-foreach ($marker in $maintenanceRequired) {
-    if (-not $maintenance.Contains($marker)) { throw "Maintenance schedule contract missing marker: $marker" }
-    Write-Host "PASS maintenance schedule marker $marker"
+foreach ($contract in $contracts) {
+    foreach ($marker in $contract.Required) {
+        if (-not $contract.Text.Contains($marker)) {
+            throw "$($contract.Name) schedule contract missing marker: $marker"
+        }
+        Write-Host "PASS $($contract.Name) marker $marker"
+    }
 }
 
 foreach ($name in @('backup','maintenance')) {
@@ -27,11 +67,10 @@ foreach ($name in @('backup','maintenance')) {
     }
 }
 
-if ($maintenance -match '(?i)(password|secret|token)\s*=') {
-    throw 'Maintenance schedule must not embed secret values.'
-}
-if ($backup -match '(?i)(password|secret|token)\s*=') {
-    throw 'Backup schedule must not embed secret values.'
+foreach ($candidate in @($maintenance,$backup,$scheduledRun)) {
+    if ($candidate -match '(?i)(password|secret|token)\s*=') {
+        throw 'Scheduled operational scripts must not embed secret values.'
+    }
 }
 
 Write-Host 'PORTAL_PROD_LOCAL_MAINTENANCE_SCHEDULE_GATE_PASS'
