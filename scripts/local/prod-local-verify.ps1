@@ -3,7 +3,8 @@ param(
     [switch]$SkipSmoke,
     [switch]$ScanLogs,
     [int]$RecentMinutes = 15,
-    [switch]$IgnoreRestartCount
+    [switch]$IgnoreRestartCount,
+    [string]$RestartBaselineFile = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +29,16 @@ $composeArgs = @('compose','-p','portalcorporativo') + $envArgs + @(
     '-f',(Join-Path $root 'docker-compose.prod-local.yml')
 )
 
+$restartBaseline = @{}
+if (-not [string]::IsNullOrWhiteSpace($RestartBaselineFile)) {
+    $restartBaselinePath = if ([IO.Path]::IsPathRooted($RestartBaselineFile)) { $RestartBaselineFile } else { Join-Path $root $RestartBaselineFile }
+    if (-not (Test-Path -LiteralPath $restartBaselinePath)) { throw "Restart baseline not found: $restartBaselinePath" }
+    $restartBaselineData = Get-Content -LiteralPath $restartBaselinePath -Raw | ConvertFrom-Json
+    foreach ($property in $restartBaselineData.PSObject.Properties) {
+        $restartBaseline[$property.Name] = [int]$property.Value
+    }
+}
+
 $ids = @(& docker @composeArgs ps -q)
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($ids.Count -eq 0) { throw 'No portalcorporativo containers are running.' }
@@ -45,7 +56,14 @@ foreach ($row in $rows) {
     Write-Host ("CHECK {0} state={1} health={2} restarts={3}" -f $name,$state,$health,$restartCount)
     if ($state -ne 'running') { $failures += "$name state=$state" }
     if ($health -notin @('none','healthy')) { $failures += "$name health=$health" }
-    if (-not $IgnoreRestartCount -and $restartCount -ne 0) { $failures += "$name restartCount=$restartCount" }
+    if ($restartBaseline.Count -gt 0) {
+        $baselineCount = if ($restartBaseline.ContainsKey($name)) { [int]$restartBaseline[$name] } else { 0 }
+        $restartDelta = $restartCount - $baselineCount
+        Write-Host ("CHECK {0} restartBaseline={1} restartDelta={2}" -f $name,$baselineCount,$restartDelta)
+        if ($restartCount -gt $baselineCount) { $failures += "$name restartDelta=$restartDelta baseline=$baselineCount current=$restartCount" }
+    } elseif (-not $IgnoreRestartCount -and $restartCount -ne 0) {
+        $failures += "$name restartCount=$restartCount"
+    }
 }
 
 foreach ($id in $ids) {

@@ -89,6 +89,9 @@ jobs:
       - name: Validate PROD-local recovery drill contract
         shell: pwsh
         run: ./scripts/quality/test-prod-local-recovery-drill.ps1
+      - name: Validate PROD-local restart delta contract
+        shell: pwsh
+        run: ./scripts/quality/test-prod-local-restart-delta.ps1
       - name: Validate PROD-local maintenance schedule contract
         shell: pwsh
         run: ./scripts/quality/test-prod-local-maintenance-schedule.ps1

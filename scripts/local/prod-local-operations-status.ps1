@@ -101,8 +101,17 @@ Test-Evidence -Kind backup
 Test-Evidence -Kind maintenance
 
 if ($DeepRuntime) {
-    & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -IgnoreRestartCount -ScanLogs
-    if ($LASTEXITCODE -ne 0) { $failures += 'deepRuntimeVerify=failed' }
+    $restartBaselinePath = Join-Path ([IO.Path]::GetTempPath()) ("portal-restarts-operations-{0}.json" -f [guid]::NewGuid())
+    try {
+        & (Join-Path $PSScriptRoot 'prod-local-restart-snapshot.ps1') -Output $restartBaselinePath
+        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -RestartBaselineFile $restartBaselinePath -ScanLogs
+        if ($LASTEXITCODE -ne 0) { $failures += 'deepRuntimeVerify=failed' }
+    } catch {
+        $failures += 'deepRuntimeVerify=failed'
+        Write-Output $_.Exception.Message
+    } finally {
+        Remove-Item -LiteralPath $restartBaselinePath -Force -ErrorAction SilentlyContinue
+    }
 }
 
 if ($failures.Count -gt 0) {
