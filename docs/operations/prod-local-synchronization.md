@@ -11,7 +11,7 @@
 The generated `config/prod-local-sync-package.json` contains only non-secret data:
 
 - Portal target branch (`main`);
-- drift-baseline SHA-256;
+- cross-platform normalized UTF-8/LF SHA-256 of the drift baseline;
 - required local file names;
 - required environment variable names only;
 - external repository branch and exact revision;

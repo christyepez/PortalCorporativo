@@ -5,10 +5,25 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+function Get-NormalizedTextSha256 {
+    param([Parameter(Mandatory=$true)][string]$Path)
+    $text = Get-Content -LiteralPath $Path -Raw
+    $normalized = $text.Replace([string][char]0xFEFF,'').Replace("`r`n","`n").Replace("`r","`n")
+    $utf8 = [System.Text.UTF8Encoding]::new($false)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = $utf8.GetBytes($normalized)
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 $baselinePath = if ([IO.Path]::IsPathRooted($Baseline)) { $Baseline } else { Join-Path $root $Baseline }
 if (-not (Test-Path -LiteralPath $baselinePath)) { throw "Baseline not found: $baselinePath" }
 $baselineData = Get-Content -LiteralPath $baselinePath -Raw | ConvertFrom-Json
-$baselineHash = (Get-FileHash -LiteralPath $baselinePath -Algorithm SHA256).Hash
+$baselineHash = Get-NormalizedTextSha256 -Path $baselinePath
 
 $repos = @($baselineData.Repositories | Where-Object { [string]$_.RevisionPolicy -eq 'exact' } | ForEach-Object {
     [pscustomobject]@{
@@ -24,6 +39,7 @@ $package = [ordered]@{
     SourceRuntime = 'trabajo'
     PortalBranch = 'main'
     BaselineFile = 'config/prod-local-baseline.json'
+    BaselineHashMode = 'normalized-utf8-lf-sha256'
     BaselineSha256 = $baselineHash
     RequiredLocalFiles = @('.env.portal.local')
     RequiredEnvironmentNames = @($baselineData.RequiredEnvironmentNames)

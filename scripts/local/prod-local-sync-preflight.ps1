@@ -6,12 +6,28 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+
+function Get-NormalizedTextSha256 {
+    param([Parameter(Mandatory=$true)][string]$Path)
+    $text = Get-Content -LiteralPath $Path -Raw
+    $normalized = $text.Replace([string][char]0xFEFF,'').Replace("`r`n","`n").Replace("`r","`n")
+    $utf8 = [System.Text.UTF8Encoding]::new($false)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = $utf8.GetBytes($normalized)
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','')
+    } finally {
+        $sha.Dispose()
+    }
+}
+
 $packagePath = if ([IO.Path]::IsPathRooted($Package)) { $Package } else { Join-Path $root $Package }
 if (-not (Test-Path -LiteralPath $packagePath)) { throw "Sync package not found: $packagePath" }
 $packageData = Get-Content -LiteralPath $packagePath -Raw | ConvertFrom-Json
 $failures = @()
 
 if ([int]$packageData.SchemaVersion -ne 1) { $failures += "schemaVersion=$($packageData.SchemaVersion)" }
+if ([string]$packageData.BaselineHashMode -ne 'normalized-utf8-lf-sha256') { $failures += "baselineHashMode=$($packageData.BaselineHashMode)" }
 
 $baselineFile = [string]$packageData.BaselineFile
 if ([string]::IsNullOrWhiteSpace($baselineFile)) {
@@ -21,8 +37,8 @@ if ([string]::IsNullOrWhiteSpace($baselineFile)) {
     if (-not (Test-Path -LiteralPath $baselinePath)) {
         $failures += "baselineMissing=$baselineFile"
     } else {
-        $baselineHash = (Get-FileHash -LiteralPath $baselinePath -Algorithm SHA256).Hash
-        Write-Output "CHECK baselineSha256=$baselineHash"
+        $baselineHash = Get-NormalizedTextSha256 -Path $baselinePath
+        Write-Output "CHECK baselineSha256=$baselineHash hashMode=$($packageData.BaselineHashMode)"
         if ($baselineHash -ne [string]$packageData.BaselineSha256) { $failures += 'baselineHashMismatch=true' }
     }
 }
