@@ -69,7 +69,7 @@ foreach ($contract in $contracts) {
 
 foreach ($name in @('backup','maintenance')) {
     $text = if ($name -eq 'backup') { $backup } else { $maintenance }
-    foreach ($marker in @('-AllowStartIfOnBatteries','-DontStopIfGoingOnBatteries','-WakeToRun')) {
+    foreach ($marker in @('-AllowStartIfOnBatteries','-DontStopIfGoingOnBatteries','-WakeToRun','-RestartCount','-RestartInterval')) {
         if (-not $text.Contains($marker)) { throw "$name schedule must include $marker" }
         Write-Host "PASS $name battery marker $marker"
     }
