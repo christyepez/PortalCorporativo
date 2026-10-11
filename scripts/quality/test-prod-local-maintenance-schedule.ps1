@@ -17,6 +17,8 @@ $contracts = @(
             'SupportsShouldProcess=$true',
             'prod-local-scheduled-run.ps1',
             '-Operation Maintenance',
+            'BackupTaskName',
+            '-DependencyTaskName',
             'New-ScheduledTaskTrigger -Daily',
             'Register-ScheduledTask'
         )
@@ -40,7 +42,13 @@ $contracts = @(
             "ValidateSet('Backup','Maintenance')",
             'runtime/prod-local/operations',
             'LogRetention',
-            'Tee-Object',
+            'Write-Evidence',
+            'Write-EvidenceObject',
+            'PORTAL_PROD_LOCAL_SCHEDULED_RUN_START',
+            'DependencyTaskName',
+            'DependencyMaxAgeHours',
+            'DependencyWaitSeconds',
+            'PORTAL_PROD_LOCAL_SCHEDULED_DEPENDENCY_PASS',
             'prod-local-backup.ps1',
             'prod-local-maintenance.ps1',
             'ScanLogs',
@@ -61,7 +69,7 @@ foreach ($contract in $contracts) {
 
 foreach ($name in @('backup','maintenance')) {
     $text = if ($name -eq 'backup') { $backup } else { $maintenance }
-    foreach ($marker in @('-AllowStartIfOnBatteries','-DontStopIfGoingOnBatteries')) {
+    foreach ($marker in @('-AllowStartIfOnBatteries','-DontStopIfGoingOnBatteries','-WakeToRun')) {
         if (-not $text.Contains($marker)) { throw "$name schedule must include $marker" }
         Write-Host "PASS $name battery marker $marker"
     }
