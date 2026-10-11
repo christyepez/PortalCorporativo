@@ -7,8 +7,10 @@ $required = @(
     'ReadyTimeoutSeconds',
     'PollSeconds',
     'PORTAL_PROD_LOCAL_UP_READY',
+    'prod-local-restart-snapshot.ps1',
     'prod-local-verify.ps1',
-    'IgnoreRestartCount',
+    '-RestartBaselineFile',
+    'Remove-Item -LiteralPath $restartBaselinePath',
     'PORTAL_PROD_LOCAL_UP_COMPLETE'
 )
 foreach ($marker in $required) {
@@ -24,6 +26,9 @@ if ($up -notmatch "\$health -notin @\('none','healthy'\)") {
 }
 if ($up.IndexOf('prod-local-verify.ps1') -gt $up.IndexOf("PORTAL_PROD_LOCAL_UP_COMPLETE")) {
     throw 'Runtime verification must happen before startup completion marker.'
+}
+if ($up.Contains('IgnoreRestartCount')) {
+    throw 'Startup verification must use restart delta baseline instead of IgnoreRestartCount.'
 }
 
 Write-Host 'PORTAL_PROD_LOCAL_UP_READINESS_GATE_PASS'

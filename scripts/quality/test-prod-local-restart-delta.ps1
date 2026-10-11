@@ -4,11 +4,15 @@ $snapshotPath = Join-Path $root 'scripts/local/prod-local-restart-snapshot.ps1'
 $verifyPath = Join-Path $root 'scripts/local/prod-local-verify.ps1'
 $maintenancePath = Join-Path $root 'scripts/local/prod-local-maintenance.ps1'
 $operationsPath = Join-Path $root 'scripts/local/prod-local-operations-status.ps1'
+$upPath = Join-Path $root 'scripts/local/prod-local-up.ps1'
+$restartPath = Join-Path $root 'scripts/local/prod-local-restart.ps1'
 
 $snapshot = Get-Content -LiteralPath $snapshotPath -Raw
 $verify = Get-Content -LiteralPath $verifyPath -Raw
 $maintenance = Get-Content -LiteralPath $maintenancePath -Raw
 $operations = Get-Content -LiteralPath $operationsPath -Raw
+$up = Get-Content -LiteralPath $upPath -Raw
+$restart = Get-Content -LiteralPath $restartPath -Raw
 
 $snapshotRequired = @(
     'RestartCount',
@@ -35,15 +39,19 @@ foreach ($marker in $verifyRequired) {
     if (-not $verify.Contains($marker)) { throw "Restart delta verify contract missing marker: $marker" }
     Write-Host "PASS restart delta verify marker $marker"
 }
-foreach ($name in @('maintenance','operations')) {
-    $text = if ($name -eq 'maintenance') { $maintenance } else { $operations }
+$consumers = @{
+    maintenance = $maintenance
+    operations = $operations
+    up = $up
+    restart = $restart
+}
+foreach ($name in @('maintenance','operations','up','restart')) {
+    $text = [string]$consumers[$name]
     foreach ($marker in $consumerRequired) {
         if (-not $text.Contains($marker)) { throw "$name restart delta contract missing marker: $marker" }
         Write-Host "PASS $name restart delta marker $marker"
     }
+    if ($text.Contains('-IgnoreRestartCount')) { throw "$name must not ignore restart counters after restart-delta hardening." }
 }
-
-if ($maintenance.Contains('-IgnoreRestartCount')) { throw 'Maintenance must not ignore restart counters after restart-delta hardening.' }
-if ($operations.Contains('-IgnoreRestartCount')) { throw 'Operations status must not ignore restart counters after restart-delta hardening.' }
 
 Write-Host 'PORTAL_PROD_LOCAL_RESTART_DELTA_GATE_PASS'
