@@ -38,7 +38,7 @@ $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scheduledRunScript`" -
 $at = [DateTime]::Today.Add([TimeSpan]::Parse($DailyAt))
 $taskAction = New-ScheduledTaskAction -Execute $powershell -Argument $arguments -WorkingDirectory $root
 $trigger = New-ScheduledTaskTrigger -Daily -At $at
-$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -WakeToRun -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 10) -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 
 if ($PSCmdlet.ShouldProcess($TaskName, "Register daily backup at $DailyAt")) {
     Register-ScheduledTask -TaskName $TaskName -Action $taskAction -Trigger $trigger -Settings $settings -Description 'PortalCorporativo Docker Desktop PROD-local SQL backup' -Force | Out-Null
