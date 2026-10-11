@@ -1,7 +1,7 @@
 ﻿{
     "SchemaVersion":  1,
     "Project":  "portalcorporativo",
-    "CapturedUtc":  "2026-10-09T23:38:32.5742541Z",
+    "CapturedUtc":  "2026-10-11T17:54:41.2272861Z",
     "Repositories":  [
                          {
                              "Name":  "PortalCorporativo",
@@ -42,7 +42,7 @@
     "ComposeFiles":  [
                          {
                              "File":  "docker-compose.yml",
-                             "Sha256":  "62208427C7A2217EFA23CC474F586F815654A9E2648231C6A032EDE16321FB67"
+                             "Sha256":  "69CCA65F1DD3A1F74DCF79642900CED8B9901723F8343E234492E687B51CE03D"
                          },
                          {
                              "File":  "docker-compose.prod-local.yml",

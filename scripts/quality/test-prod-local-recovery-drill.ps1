@@ -25,11 +25,23 @@ foreach ($marker in $forbidden) {
     if ($drill.Contains($marker)) { throw "Recovery drill must remain non-destructive; forbidden marker found: $marker" }
 }
 
+$badManifestAssignment = '$items = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)'
+if ($drill.Contains($badManifestAssignment)) {
+    throw 'Recovery drill must not wrap ConvertFrom-Json in @(...); that creates a nested array in Windows PowerShell.'
+}
+$goodManifestAssignment = '$items = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json'
+if (-not $drill.Contains($goodManifestAssignment)) {
+    throw 'Recovery drill must enumerate manifest entries directly from ConvertFrom-Json.'
+}
+
 if (-not $maintenance.Contains('[switch]$RecoveryDrill')) {
     throw 'Maintenance must expose RecoveryDrill as an explicit opt-in switch.'
 }
 if (-not $maintenance.Contains('prod-local-recovery-drill.ps1')) {
     throw 'Maintenance must invoke the recovery drill when requested.'
+}
+if (-not $maintenance.Contains('-IgnoreRestartCount')) {
+    throw 'Maintenance runtime verification must ignore historical restart counters while still enforcing state, health, ports and smoke.'
 }
 
 Write-Host 'PORTAL_PROD_LOCAL_RECOVERY_DRILL_GATE_PASS'

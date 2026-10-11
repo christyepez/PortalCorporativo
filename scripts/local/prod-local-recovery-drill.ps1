@@ -23,7 +23,7 @@ foreach ($file in $EnvFile) {
 $password = $vars['SQLSERVER_SA_PASSWORD']
 if ([string]::IsNullOrWhiteSpace($password)) { throw 'SQLSERVER_SA_PASSWORD is required.' }
 
-$items = @(Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json)
+$items = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 if ($Database.Count -gt 0) {
     $items = @($items | Where-Object { $Database -contains [string]$_.Database })
 }

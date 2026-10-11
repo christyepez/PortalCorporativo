@@ -64,7 +64,7 @@ if (-not $SkipDrift -and (Test-Path -LiteralPath $baseline)) {
 
 if (-not $SkipRuntimeVerify) {
     try {
-        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -ScanLogs:$ScanLogs
+        & (Join-Path $PSScriptRoot 'prod-local-verify.ps1') -ScanLogs:$ScanLogs -IgnoreRestartCount
     } catch {
         $failures += 'runtimeVerify=failed'
         Write-Output $_.Exception.Message
