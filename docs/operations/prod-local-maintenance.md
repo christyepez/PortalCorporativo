@@ -72,6 +72,6 @@ Inspect or remove:
 ./scripts/local/prod-local-maintenance-schedule.ps1 -Action Remove
 ```
 
-Scheduled task commands contain only local paths and operational switches. Secret values are never embedded.
+Scheduled task commands contain only local paths and operational switches. Secret values are never embedded. Backup and maintenance tasks are configured to start and continue while the laptop is on battery power, so operational checks are not silently queued when AC power is unavailable.
 
 `MarketingIndo` remains a deferred synchronization target and is ignored when offline.
