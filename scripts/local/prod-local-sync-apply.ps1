@@ -12,6 +12,9 @@ $packageData = Get-Content -LiteralPath $packagePath -Raw | ConvertFrom-Json
 
 if (-not $Apply) { throw 'Synchronization changes repositories. Re-run with -Apply after reviewing the package and preflight.' }
 
+& (Join-Path $PSScriptRoot 'prod-local-sync-preflight.ps1') -Package $Package -Mode Prerequisite
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $targets = @(
     [pscustomobject]@{ Name='PortalCorporativo'; Path=$root; Branch=[string]$packageData.PortalBranch; Revision='' }
 )
@@ -45,5 +48,13 @@ foreach ($target in $targets) {
     $current = (& git -C $target.Path rev-parse HEAD).Trim()
     Write-Output "SYNC repo=$($target.Name) branch=$($target.Branch) revision=$current"
 }
+
+if ($WhatIfPreference) {
+    Write-Output 'PORTAL_PROD_LOCAL_SYNC_APPLY_WHATIF_PASS'
+    exit 0
+}
+
+& (Join-Path $PSScriptRoot 'prod-local-sync-preflight.ps1') -Package $Package -Mode Aligned
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Output 'PORTAL_PROD_LOCAL_SYNC_APPLY_PASS'
