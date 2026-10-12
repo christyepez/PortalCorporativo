@@ -34,8 +34,9 @@ interface ApplicationCard {
   readonly name: string;
   readonly code: string;
   readonly description: string;
-  readonly port?: number;
-  readonly path?: string;
+  readonly gatewayPath: string;
+  readonly webPath?: string;
+  readonly uiMode: 'embedded' | 'api-only';
   readonly status: string;
 }
 @Component({
@@ -73,7 +74,9 @@ export class AppComponent {
     name: consumer.name,
     code: consumer.code,
     description: consumer.description,
-    path: consumer.gatewayPath,
+    gatewayPath: consumer.gatewayPath,
+    webPath: consumer.webPath ?? undefined,
+    uiMode: consumer.uiMode as 'embedded' | 'api-only',
     status: consumer.status
   }));
 
@@ -104,7 +107,6 @@ export class AppComponent {
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
-  protected sessionTokenInput = '';
   protected securityLoading = false;
   protected securityError?: string;
   protected activeSecurityTab: SecurityTab = 'users';
@@ -264,20 +266,30 @@ export class AppComponent {
   }
 
   protected async connectLocalSession(): Promise<void> {
-    const token = this.sessionTokenInput.trim();
-    if (!token) {
-      this.securityError = 'Ingresa un JWT local válido para iniciar una sesión efímera.';
-      return;
+    if (this.securityLoading) return;
+    this.securityLoading = true;
+    this.securityError = undefined;
+    this.securitySuccess = undefined;
+    try {
+      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
+      this.portalApi.setAccessToken(session.accessToken);
+      this.securitySuccess = `${session.displayName} conectado · ${session.role} · tenant ${session.tenantId}`;
+      await this.loadSecurityData();
+    } catch {
+      this.portalApi.clearAccessToken();
+      this.securityError = 'No fue posible iniciar la sesión SuperAdmin local.';
+    } finally {
+      this.securityLoading = false;
     }
-
-    this.portalApi.setAccessToken(token);
-    this.sessionTokenInput = '';
-    await this.loadSecurityData();
   }
 
-  protected clearLocalSession(): void {
+  protected async clearLocalSession(): Promise<void> {
     this.portalApi.clearAccessToken();
-    this.sessionTokenInput = '';
+    try {
+      await firstValueFrom(this.portalApi.clearLocalSuperAdminSession());
+    } catch {
+      // Local logout is best-effort; in-memory credentials are already cleared.
+    }
     this.securityUsers = [];
     this.securityRoles = [];
     this.securityPermissions = [];
@@ -1373,9 +1385,9 @@ export class AppComponent {
   }
 
   protected openApplication(application: ApplicationCard): void {
-    if (!application.port) return;
+    if (!application.webPath) return;
 
-    const target = `${window.location.protocol}//${window.location.hostname}:${application.port}/`;
+    const target = new URL(application.webPath, window.location.origin).toString();
     this.workspaceApplication = application;
     this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
     this.activeSection = 'applications';
