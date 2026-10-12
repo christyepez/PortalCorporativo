@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import consumerRegistry from '../../config/consumer-registry.json';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateHrEmployee, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateHrEmployee, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateHrEmployee, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -180,6 +180,7 @@ export class AppComponent implements OnInit {
   protected hrPosition = '';
   protected hrDepartment = '';
   protected hrSaving = false;
+  protected hrEditingId?: string;
   protected hrSuccess?: string;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
@@ -1603,7 +1604,7 @@ export class AppComponent implements OnInit {
   protected async createHrEmployee(): Promise<void> {
     if (!this.isHrWorkspace() || this.hrSaving) return;
 
-    const request: CreateHrEmployee = {
+    const createRequest: CreateHrEmployee = {
       employeeCode: this.hrEmployeeCode.trim(),
       fullName: this.hrFullName.trim(),
       email: this.hrEmail.trim().toLowerCase(),
@@ -1611,7 +1612,7 @@ export class AppComponent implements OnInit {
       department: this.hrDepartment.trim()
     };
 
-    if (!request.employeeCode || !request.fullName || !request.email || !request.position || !request.department) {
+    if ((!this.hrEditingId && !createRequest.employeeCode) || !createRequest.fullName || !createRequest.email || !createRequest.position || !createRequest.department) {
       this.workspaceDataError = 'Completa código, nombre, email, cargo y departamento.';
       return;
     }
@@ -1620,19 +1621,69 @@ export class AppComponent implements OnInit {
     this.hrSuccess = undefined;
     this.workspaceDataError = undefined;
     try {
-      const created = await firstValueFrom(this.portalApi.createHrEmployee(request));
-      this.hrEmployeeCode = '';
-      this.hrFullName = '';
-      this.hrEmail = '';
-      this.hrPosition = '';
-      this.hrDepartment = '';
-      this.hrSuccess = `Empleado ${created.fullName} creado correctamente.`;
+      if (this.hrEditingId) {
+        const request: UpdateHrEmployee = {
+          fullName: createRequest.fullName,
+          email: createRequest.email,
+          position: createRequest.position,
+          department: createRequest.department
+        };
+        const updated = await firstValueFrom(this.portalApi.updateHrEmployee(this.hrEditingId, request));
+        this.hrSuccess = `Empleado ${updated.fullName} actualizado correctamente.`;
+      } else {
+        const created = await firstValueFrom(this.portalApi.createHrEmployee(createRequest));
+        this.hrSuccess = `Empleado ${created.fullName} creado correctamente.`;
+      }
+      this.resetHrEmployeeForm();
       await this.refreshWorkspaceData();
     } catch (error: unknown) {
-      this.workspaceDataError = error instanceof Error ? error.message : 'No fue posible crear el empleado.';
+      this.workspaceDataError = error instanceof Error ? error.message : 'No fue posible guardar el empleado.';
     } finally {
       this.hrSaving = false;
     }
+  }
+
+  protected beginEditHrEmployee(row: Record<string, unknown>): void {
+    this.hrEditingId = String(row['id'] ?? '');
+    this.hrEmployeeCode = String(row['employeeCode'] ?? '');
+    this.hrFullName = String(row['fullName'] ?? '');
+    this.hrEmail = String(row['email'] ?? '');
+    this.hrPosition = String(row['position'] ?? '');
+    this.hrDepartment = String(row['department'] ?? '');
+    this.hrSuccess = undefined;
+    this.workspaceDataError = undefined;
+  }
+
+  protected cancelHrEmployeeEdit(): void {
+    this.resetHrEmployeeForm();
+  }
+
+  protected async toggleHrEmployeeActive(row: Record<string, unknown>): Promise<void> {
+    if (this.hrSaving) return;
+    const id = String(row['id'] ?? '');
+    if (!id) return;
+    const active = row['isActive'] !== true;
+    this.hrSaving = true;
+    this.hrSuccess = undefined;
+    this.workspaceDataError = undefined;
+    try {
+      const updated = await firstValueFrom(this.portalApi.setHrEmployeeActive(id, active));
+      this.hrSuccess = `${updated.fullName}: ${updated.isActive ? 'activo' : 'inactivo'}.`;
+      await this.refreshWorkspaceData();
+    } catch (error: unknown) {
+      this.workspaceDataError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del empleado.';
+    } finally {
+      this.hrSaving = false;
+    }
+  }
+
+  private resetHrEmployeeForm(): void {
+    this.hrEditingId = undefined;
+    this.hrEmployeeCode = '';
+    this.hrFullName = '';
+    this.hrEmail = '';
+    this.hrPosition = '';
+    this.hrDepartment = '';
   }
 
   protected formatWorkspaceCell(value: unknown): string {
