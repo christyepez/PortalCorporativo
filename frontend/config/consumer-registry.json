@@ -21,24 +21,114 @@
       "webPort": null,
       "webPath": "/apps/crm/",
       "menuItems": [
-        { "label": "Inicio", "route": "", "permission": "crm.*", "order": 10 },
-        { "label": "Leads", "route": "foundation/leads/qualification", "permission": "crm.*", "order": 20 },
-        { "label": "Cuentas", "route": "foundation/accounts", "permission": "crm.*", "order": 30 },
-        { "label": "Contactos", "route": "foundation/contacts", "permission": "crm.*", "order": 40 },
-        { "label": "Actividades", "route": "foundation/activities", "permission": "crm.*", "order": 50 },
-        { "label": "Oportunidades", "route": "foundation/opportunities", "permission": "crm.*", "order": 60 },
-        { "label": "Campañas", "route": "foundation/campaigns", "permission": "crm.*", "order": 70 },
-        { "label": "Segmentos", "route": "foundation/segments", "permission": "crm.*", "order": 80 },
-        { "label": "Casos", "route": "foundation/cases", "permission": "crm.*", "order": 90 },
-        { "label": "Interacciones", "route": "foundation/interactions", "permission": "crm.*", "order": 100 },
-        { "label": "Notas", "route": "foundation/notes", "permission": "crm.*", "order": 110 },
-        { "label": "Pipelines", "route": "foundation/pipelines", "permission": "crm.*", "order": 120 },
-        { "label": "Documentos", "route": "foundation/documents", "permission": "crm.*", "order": 130 },
-        { "label": "Etiquetas", "route": "foundation/tags", "permission": "crm.*", "order": 140 },
-        { "label": "Asignaciones", "route": "foundation/assignments", "permission": "crm.*", "order": 150 },
-        { "label": "Customer 360", "route": "foundation/customer360", "permission": "crm.*", "order": 160 },
-        { "label": "Insights", "route": "foundation/insights", "permission": "crm.*", "order": 170 },
-        { "label": "Readiness", "route": "readiness", "permission": "crm.*", "order": 180 }
+        {
+          "label": "Inicio",
+          "route": "",
+          "permission": "crm.*",
+          "order": 10
+        },
+        {
+          "label": "Leads",
+          "route": "foundation/leads",
+          "permission": "crm.*",
+          "order": 20
+        },
+        {
+          "label": "Cuentas",
+          "route": "foundation/accounts",
+          "permission": "crm.*",
+          "order": 30
+        },
+        {
+          "label": "Contactos",
+          "route": "foundation/contacts",
+          "permission": "crm.*",
+          "order": 40
+        },
+        {
+          "label": "Actividades",
+          "route": "foundation/activities",
+          "permission": "crm.*",
+          "order": 50
+        },
+        {
+          "label": "Oportunidades",
+          "route": "foundation/opportunities",
+          "permission": "crm.*",
+          "order": 60
+        },
+        {
+          "label": "Campañas",
+          "route": "foundation/campaigns",
+          "permission": "crm.*",
+          "order": 70
+        },
+        {
+          "label": "Segmentos",
+          "route": "foundation/segments",
+          "permission": "crm.*",
+          "order": 80
+        },
+        {
+          "label": "Casos",
+          "route": "foundation/cases",
+          "permission": "crm.*",
+          "order": 90
+        },
+        {
+          "label": "Interacciones",
+          "route": "foundation/interactions",
+          "permission": "crm.*",
+          "order": 100
+        },
+        {
+          "label": "Notas",
+          "route": "foundation/notes",
+          "permission": "crm.*",
+          "order": 110
+        },
+        {
+          "label": "Pipelines",
+          "route": "foundation/pipelines",
+          "permission": "crm.*",
+          "order": 120
+        },
+        {
+          "label": "Documentos",
+          "route": "foundation/documents",
+          "permission": "crm.*",
+          "order": 130
+        },
+        {
+          "label": "Etiquetas",
+          "route": "foundation/tags",
+          "permission": "crm.*",
+          "order": 140
+        },
+        {
+          "label": "Asignaciones",
+          "route": "foundation/assignments",
+          "permission": "crm.*",
+          "order": 150
+        },
+        {
+          "label": "Customer 360",
+          "route": "foundation/customer360",
+          "permission": "crm.*",
+          "order": 160
+        },
+        {
+          "label": "Insights",
+          "route": "foundation/insights",
+          "permission": "crm.*",
+          "order": 170
+        },
+        {
+          "label": "Readiness",
+          "route": "readiness",
+          "permission": "crm.*",
+          "order": 180
+        }
       ]
     },
     {
@@ -61,13 +151,72 @@
       "webPort": null,
       "webPath": "/apps/financial/",
       "menuItems": [
-        { "label": "Dashboard", "route": "dashboard", "permission": "financial.electronicdocuments.read", "order": 10 },
-        { "label": "SRI readiness", "route": "sri-readiness", "permission": "financial.electronicdocuments.manage", "order": 20 },
-        { "label": "ATS readiness", "route": "ats-readiness", "permission": "financial.electronicdocuments.read", "order": 30 },
-        { "label": "Aprobaciones", "route": "external-approvals", "permission": "financial.electronicdocuments.manage", "order": 40 },
-        { "label": "Catálogos tributarios", "route": "tax-catalogs", "permission": "financial.electronicdocuments.read", "order": 50 },
-        { "label": "Compras", "route": "purchases", "permission": "financial.electronicdocuments.read", "order": 60 },
-        { "label": "Anulados", "route": "voided-documents", "permission": "financial.electronicdocuments.read", "order": 70 }
+        {
+          "label": "Dashboard",
+          "route": "dashboard",
+          "permission": "financial.electronicdocuments.read",
+          "order": 10
+        },
+        {
+          "label": "SRI readiness",
+          "route": "sri-readiness",
+          "permission": "financial.electronicdocuments.manage",
+          "order": 20
+        },
+        {
+          "label": "ATS readiness",
+          "route": "ats-readiness",
+          "permission": "financial.electronicdocuments.read",
+          "order": 30
+        },
+        {
+          "label": "Aprobaciones",
+          "route": "external-approvals",
+          "permission": "financial.electronicdocuments.manage",
+          "order": 40
+        },
+        {
+          "label": "Catálogos tributarios",
+          "route": "tax-catalogs",
+          "permission": "financial.electronicdocuments.read",
+          "order": 50
+        },
+        {
+          "label": "Compras",
+          "route": "purchases",
+          "permission": "financial.electronicdocuments.read",
+          "order": 60
+        },
+        {
+          "label": "Anulados",
+          "route": "voided-documents",
+          "permission": "financial.electronicdocuments.read",
+          "order": 70
+        },
+        {
+          "label": "Plan de cuentas",
+          "route": "accounting/accounts",
+          "permission": "financial.chartofaccounts.read",
+          "order": 80
+        },
+        {
+          "label": "Asientos contables",
+          "route": "accounting/journal-entries",
+          "permission": "financial.journalentries.read",
+          "order": 90
+        },
+        {
+          "label": "Años fiscales",
+          "route": "accounting/fiscal-years",
+          "permission": "financial.fiscalyears.read",
+          "order": 100
+        },
+        {
+          "label": "Períodos fiscales",
+          "route": "accounting/fiscal-periods",
+          "permission": "financial.fiscalperiods.read",
+          "order": 110
+        }
       ]
     },
     {
@@ -90,9 +239,24 @@
       "webPort": null,
       "webPath": null,
       "menuItems": [
-        { "label": "Resumen", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 10 },
-        { "label": "Empleados", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 20 },
-        { "label": "Nuevo empleado", "dataPath": "/api/hr/employees", "permission": "hr.employees.manage", "order": 30 }
+        {
+          "label": "Resumen",
+          "dataPath": "/api/hr/employees",
+          "permission": "hr.employees.view",
+          "order": 10
+        },
+        {
+          "label": "Empleados",
+          "dataPath": "/api/hr/employees",
+          "permission": "hr.employees.view",
+          "order": 20
+        },
+        {
+          "label": "Nuevo empleado",
+          "dataPath": "/api/hr/employees",
+          "permission": "hr.employees.manage",
+          "order": 30
+        }
       ]
     },
     {
@@ -115,8 +279,18 @@
       "webPort": null,
       "webPath": null,
       "menuItems": [
-        { "label": "Canales", "dataPath": "/api/historiaspaolin/api/channels", "permission": "historiaspaolin.channels.view", "order": 10 },
-        { "label": "Episodios", "dataPath": "/api/historiaspaolin/api/historiaspaolin/episodes", "permission": "historiaspaolin.episodes.view", "order": 20 }
+        {
+          "label": "Canales",
+          "dataPath": "/api/historiaspaolin/api/channels",
+          "permission": "historiaspaolin.channels.view",
+          "order": 10
+        },
+        {
+          "label": "Episodios",
+          "dataPath": "/api/historiaspaolin/api/historiaspaolin/episodes",
+          "permission": "historiaspaolin.episodes.view",
+          "order": 20
+        }
       ]
     }
   ]
