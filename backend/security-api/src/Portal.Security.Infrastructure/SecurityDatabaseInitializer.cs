@@ -18,11 +18,12 @@ internal sealed class SecurityDatabaseInitializer(IServiceProvider services) : I
 
     private static async Task BootstrapGovernedSecurityAsync(SecurityDbContext dbContext, CancellationToken cancellationToken)
     {
-        var existingResourceKeys = await dbContext.Resources
+        var existingResourceKeys = (await dbContext.Resources
             .AsNoTracking()
             .Where(resource => resource.TenantId == TenantIds.Default)
             .Select(resource => resource.Key)
-            .ToHashSetAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var definition in SecuritySeedCatalog.Resources)
         {
@@ -32,11 +33,12 @@ internal sealed class SecurityDatabaseInitializer(IServiceProvider services) : I
             }
         }
 
-        var existingPermissionCodes = await dbContext.Permissions
+        var existingPermissionCodes = (await dbContext.Permissions
             .AsNoTracking()
             .Where(permission => permission.TenantId == TenantIds.Default)
             .Select(permission => permission.Code)
-            .ToHashSetAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var definition in SecuritySeedCatalog.Permissions)
         {
