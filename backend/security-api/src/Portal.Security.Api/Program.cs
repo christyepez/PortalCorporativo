@@ -19,6 +19,7 @@ app.UsePortalFoundation();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health", new HealthCheckOptions());
+app.MapLocalAdminSessionEndpoints();
 app.MapSecurityEndpoints();
 app.MapSecurityRevocationEndpoints();
 app.Run();
