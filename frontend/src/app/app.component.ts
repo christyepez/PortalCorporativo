@@ -165,6 +165,7 @@ export class AppComponent implements OnInit {
   ];
 
   protected activeSection: AdminSection = 'dashboard';
+  protected sidebarCollapsed = false;
   protected workspaceApplication?: ApplicationCard;
   protected workspaceMenuItem?: ApplicationMenuItem;
   protected workspaceUrl?: SafeResourceUrl;
@@ -327,6 +328,10 @@ export class AppComponent implements OnInit {
   protected selectSection(section: AdminSection): void {
     this.activeSection = section;
     void this.activateSection(section);
+  }
+
+  protected toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
   private async activateSection(section: AdminSection): Promise<void> {
@@ -1489,6 +1494,7 @@ export class AppComponent implements OnInit {
     }
 
     this.workspaceApplication = application;
+    this.sidebarCollapsed = true;
     this.workspaceMenuItem = this.visibleApplicationMenu(application)[0] ?? application.menuItems[0];
     this.workspaceUrl = undefined;
     this.workspaceProbeState = 'checking';

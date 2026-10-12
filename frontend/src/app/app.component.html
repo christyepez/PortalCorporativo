@@ -18,8 +18,15 @@
     </div>
   </header>
 
-  <div class="layout">
-    <aside class="sidebar" aria-label="Portal shell modules">
+  <div class="layout" [class.layout--collapsed]="sidebarCollapsed">
+    <aside class="sidebar" [class.sidebar--collapsed]="sidebarCollapsed" aria-label="Portal shell modules">
+      <button type="button"
+              class="sidebar-toggle"
+              (click)="toggleSidebar()"
+              [attr.aria-label]="sidebarCollapsed ? 'Expandir menú lateral' : 'Colapsar menú lateral'"
+              [title]="sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'">
+        {{ sidebarCollapsed ? '›' : '‹' }}
+      </button>
       <div class="sidebar__title">Administración</div>
       <nav class="sidebar__nav">
         @for (item of navigation; track item.id) {

@@ -276,6 +276,10 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /activeSection\s*=\s*'applications'/);
   assert.match(template, /Aplicación integrada/);
   assert.match(template, /workspace-app-menu/);
+  assert.match(template, /layout--collapsed/);
+  assert.match(template, /sidebar-toggle/);
+  assert.match(component, /sidebarCollapsed\s*=\s*true/);
+  assert.match(component, /toggleSidebar\(\)/);
   assert.match(template, /Vista funcional integrada al Portal/);
   assert.match(template, /SuperAdmin autorizado/);
   assert.match(component, /'Vista integrada Portal'/);
