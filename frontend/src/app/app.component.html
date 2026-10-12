@@ -209,20 +209,23 @@
                       <article><strong>{{ workspaceDataRows.length - hrActiveEmployees() }}</strong><span>Inactivos</span></article>
                     </div>
 
-                    @if (workspaceMenuItem?.label === 'Nuevo empleado') {
+                    @if (workspaceMenuItem?.label === 'Nuevo empleado' || hrEditingId) {
                       <section class="module-panel">
                         <div>
                           <p class="eyebrow">Talento Humano</p>
-                          <h3>Nuevo empleado</h3>
-                          <p>El alta usa el permiso <span class="code">hr.employees.manage</span> y se registra por el API gobernado.</p>
+                          <h3>{{ hrEditingId ? 'Editar empleado' : 'Nuevo empleado' }}</h3>
+                          <p>La gestión usa <span class="code">hr.employees.manage</span> y se registra por el API gobernado.</p>
                         </div>
                         <div class="module-panel__details">
-                          <label>Código<input type="text" [value]="hrEmployeeCode" (input)="hrEmployeeCode = $any($event.target).value" placeholder="EMP-001"></label>
+                          <label>Código<input type="text" [disabled]="!!hrEditingId" [value]="hrEmployeeCode" (input)="hrEmployeeCode = $any($event.target).value" placeholder="EMP-001"></label>
                           <label>Nombre completo<input type="text" [value]="hrFullName" (input)="hrFullName = $any($event.target).value" placeholder="Nombre Apellido"></label>
                           <label>Email<input type="email" [value]="hrEmail" (input)="hrEmail = $any($event.target).value" placeholder="colaborador@empresa.com"></label>
                           <label>Cargo<input type="text" [value]="hrPosition" (input)="hrPosition = $any($event.target).value" placeholder="Analista"></label>
                           <label>Departamento<input type="text" [value]="hrDepartment" (input)="hrDepartment = $any($event.target).value" placeholder="Tecnología"></label>
-                          <button type="button" class="primary" [disabled]="hrSaving" (click)="createHrEmployee()">{{ hrSaving ? 'Guardando…' : 'Crear empleado' }}</button>
+                          <div class="row-actions">
+                            <button type="button" class="primary" [disabled]="hrSaving" (click)="createHrEmployee()">{{ hrSaving ? 'Guardando…' : (hrEditingId ? 'Guardar cambios' : 'Crear empleado') }}</button>
+                            @if (hrEditingId) { <button type="button" class="secondary" [disabled]="hrSaving" (click)="cancelHrEmployeeEdit()">Cancelar</button> }
+                          </div>
                           @if (hrSuccess) { <div class="inline-message" role="status">{{ hrSuccess }}</div> }
                         </div>
                       </section>
@@ -238,7 +241,7 @@
                       </div>
                       <div class="admin-grid-wrap">
                         <table class="admin-grid" aria-label="Empleados de Talento Humano">
-                          <thead><tr><th>Código</th><th>Nombre</th><th>Email</th><th>Cargo</th><th>Departamento</th><th>Estado</th></tr></thead>
+                          <thead><tr><th>Código</th><th>Nombre</th><th>Email</th><th>Cargo</th><th>Departamento</th><th>Estado</th><th>Acciones</th></tr></thead>
                           <tbody>
                             @for (row of workspaceDataRows; track row['id']) {
                               <tr>
@@ -248,9 +251,15 @@
                                 <td>{{ row['position'] }}</td>
                                 <td>{{ row['department'] }}</td>
                                 <td><span class="pill">{{ row['isActive'] ? 'Activo' : 'Inactivo' }}</span></td>
+                                <td>
+                                  <div class="row-actions">
+                                    <button type="button" class="secondary compact" [disabled]="hrSaving" (click)="beginEditHrEmployee(row)">Editar</button>
+                                    <button type="button" class="secondary compact" [disabled]="hrSaving" (click)="toggleHrEmployeeActive(row)">{{ row['isActive'] ? 'Desactivar' : 'Activar' }}</button>
+                                  </div>
+                                </td>
                               </tr>
                             } @empty {
-                              <tr><td colspan="6">No hay empleados registrados.</td></tr>
+                              <tr><td colspan="7">No hay empleados registrados.</td></tr>
                             }
                           </tbody>
                         </table>
@@ -356,7 +365,7 @@
             <div class="toolbar session-toolbar">
               <div>
                 <strong>SuperAdmin local</strong>
-                <span class="muted">Portal inicia automáticamente una sesión efímera desde Security DB. No necesitas usuario, clave ni copiar/pegar tokens.</span>
+                <span class="muted">El acceso al Portal requiere credenciales válidas y la sesión se emite desde Security DB mediante cookie HttpOnly.</span>
               </div>
               <button type="button" class="primary" [disabled]="securityLoading" (click)="connectLocalSession()">
                 {{ securityLoading ? 'Conectando…' : 'Entrar como SuperAdmin local' }}
