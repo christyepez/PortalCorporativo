@@ -14,13 +14,13 @@ public static class LocalAdminSessionEndpoints
     public const string CookieName = "portal_local_session";
     private const string LocalAdminEmail = "superadmin@portal.local";
 
-    private static readonly string[] ConsumerPermissions =
+    private static readonly (string ResourceKey, string ResourceName, string PermissionCode, string Action)[] ConsumerSecurity =
     [
-        "crm.access",
-        "financial.*",
-        "hr.employees.view",
-        "hr.employees.manage",
-        "historiaspaolin.channels.view"
+        ("crm", "CRM", PortalPermissions.CrmAccess, "access"),
+        ("financial", "Financiero", PortalPermissions.FinancialAll, "all"),
+        ("hr.employees", "Talento Humano", PortalPermissions.HrEmployeesView, "view"),
+        ("hr.employees", "Talento Humano", PortalPermissions.HrEmployeesManage, "manage"),
+        ("historiaspaolin.channels", "HistoriasPaolin", PortalPermissions.HistoriasPaolinChannelsView, "view")
     ];
 
     public static IEndpointRouteBuilder MapLocalAdminSessionEndpoints(this IEndpointRouteBuilder endpoints)
@@ -53,7 +53,6 @@ public static class LocalAdminSessionEndpoints
                 new(ClaimTypes.Role, "SuperAdmin")
             };
             claims.AddRange(PortalPermissions.All.Select(permission => new Claim(PortalPermissions.ClaimType, permission)));
-            claims.AddRange(ConsumerPermissions.Select(permission => new Claim(PortalPermissions.ClaimType, permission)));
 
             var credentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
@@ -135,9 +134,43 @@ public static class LocalAdminSessionEndpoints
         if (!assigned)
         {
             db.UserRoles.Add(UserRole.Create(TenantIds.Default, user.Id, role.Id));
-            await db.SaveChangesAsync(ct);
         }
 
+        foreach (var definition in ConsumerSecurity)
+        {
+            var resource = await db.Resources.SingleOrDefaultAsync(
+                x => x.TenantId == TenantIds.Default && x.Key == definition.ResourceKey,
+                ct);
+            if (resource is null)
+            {
+                resource = Resource.Create(TenantIds.Default, definition.ResourceKey, definition.ResourceName);
+                db.Resources.Add(resource);
+            }
+
+            var permission = await db.Permissions.SingleOrDefaultAsync(
+                x => x.TenantId == TenantIds.Default && x.Code == definition.PermissionCode,
+                ct);
+            if (permission is null)
+            {
+                permission = Permission.Create(
+                    TenantIds.Default,
+                    definition.PermissionCode,
+                    definition.ResourceKey,
+                    definition.Action);
+                db.Permissions.Add(permission);
+                await db.SaveChangesAsync(ct);
+            }
+
+            var rolePermissionExists = await db.RolePermissions.AnyAsync(
+                x => x.TenantId == TenantIds.Default && x.RoleId == role.Id && x.PermissionId == permission.Id,
+                ct);
+            if (!rolePermissionExists)
+            {
+                db.RolePermissions.Add(RolePermission.Create(TenantIds.Default, role.Id, permission.Id));
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
         return user;
     }
 }
