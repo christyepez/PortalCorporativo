@@ -59,7 +59,7 @@
                 <div><h4>{{ app.name }}</h4><p>{{ app.description }}</p></div>
                 <div class="application-card__footer">
                   <span class="pill">{{ app.status }}</span>
-                  @if (app.port) {
+                  @if (app.webPath) {
                     <button type="button" class="link-button" (click)="openApplication(app)">Abrir</button>
                   } @else {
                     <span class="muted">Gateway</span>
