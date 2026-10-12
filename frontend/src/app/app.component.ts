@@ -1386,6 +1386,11 @@ export class AppComponent {
 
   protected openApplication(application: ApplicationCard): void {
     if (!application.webPath) return;
+    if (!this.portalApi.hasAuthenticatedSession()) {
+      this.securityError = 'Inicia la sesión SuperAdmin local para abrir aplicaciones integradas.';
+      this.activeSection = 'security';
+      return;
+    }
 
     const target = new URL(application.webPath, window.location.origin).toString();
     this.workspaceApplication = application;
