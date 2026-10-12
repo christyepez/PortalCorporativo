@@ -10,7 +10,7 @@ const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.u
 const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-registry.json', import.meta.url), 'utf8'));
 
 test('integrated consumers are sourced from the governed registry', () => {
-  assert.equal(consumerRegistry.version, 1);
+  assert.equal(consumerRegistry.version, 2);
   assert.deepEqual(consumerRegistry.consumers.map((consumer) => consumer.code).sort(), ['CRM', 'FINANCIAL', 'HISTORIAS', 'HR']);
   assert.match(component, /consumerRegistry\.consumers\.map/);
   assert.doesNotMatch(template, /Registrar aplicación/);
