@@ -50,6 +50,13 @@ export interface CreateHrEmployee {
   readonly department: string;
 }
 
+export interface UpdateHrEmployee {
+  readonly fullName: string;
+  readonly email: string;
+  readonly position: string;
+  readonly department: string;
+}
+
 export interface UserPermissionsResponse {
   readonly userId: string;
   readonly permissions: string[];
@@ -339,6 +346,15 @@ export class PortalApiService {
 
   createHrEmployee(request: CreateHrEmployee): Observable<HrEmployee> {
     return this.http.post<HrEmployee>(`${environment.apiBasePath}/hr/employees`, request, { headers: this.headers() });
+  }
+
+  updateHrEmployee(id: string, request: UpdateHrEmployee): Observable<HrEmployee> {
+    return this.http.put<HrEmployee>(`${environment.apiBasePath}/hr/employees/${encodeURIComponent(id)}`, request, { headers: this.headers() });
+  }
+
+  setHrEmployeeActive(id: string, active: boolean): Observable<HrEmployee> {
+    const action = active ? 'activate' : 'deactivate';
+    return this.http.post<HrEmployee>(`${environment.apiBasePath}/hr/employees/${encodeURIComponent(id)}/${action}`, {}, { headers: this.headers() });
   }
 
   loadUsers(): Observable<SecurityUser[]> {
