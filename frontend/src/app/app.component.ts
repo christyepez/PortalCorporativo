@@ -72,9 +72,7 @@ export class AppComponent implements OnInit {
   private async initializeLocalPortal(): Promise<void> {
     this.sessionInitializing = true;
     try {
-      await this.connectLocalSession();
       await this.refreshModuleHealth();
-      await this.openDeepLinkedApplication();
     } finally {
       this.sessionInitializing = false;
     }
@@ -182,6 +180,10 @@ export class AppComponent implements OnInit {
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
   protected sessionInitializing = false;
+  protected loginEmail = 'superadmin@portal.local';
+  protected loginPassword = '';
+  protected loginError?: string;
+  protected loginSubmitting = false;
   protected localAdminSession?: LocalAdminSession;
   protected securityApplication?: ApplicationCard;
   protected securityLoading = false;
@@ -362,24 +364,36 @@ export class AppComponent implements OnInit {
   }
 
   protected async connectLocalSession(): Promise<void> {
-    if (this.portalApi.hasAuthenticatedSession() || this.securityLoading) return;
+    if (this.portalApi.hasAuthenticatedSession() || this.loginSubmitting) return;
 
+    const email = this.loginEmail.trim().toLowerCase();
+    const password = this.loginPassword;
+    if (!email || !password) {
+      this.loginError = 'Ingresa usuario y contraseña.';
+      return;
+    }
+
+    this.loginSubmitting = true;
     this.securityLoading = true;
+    this.loginError = undefined;
     this.securityError = undefined;
     this.securitySuccess = undefined;
     try {
-      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
+      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession(email, password));
       this.portalApi.setAccessToken(session.accessToken);
       this.localAdminSession = session;
+      this.loginPassword = '';
       if (this.workspaceApplication) this.publishPortalShellContext(this.workspaceApplication);
       this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
-    } catch (error: unknown) {
+      await this.refreshModuleHealth();
+      await this.openDeepLinkedApplication();
+    } catch {
       this.portalApi.clearAccessToken();
-      this.securityError = error instanceof Error
-        ? error.message
-        : 'No fue posible iniciar la sesión SuperAdmin local.';
+      this.localAdminSession = undefined;
+      this.loginError = 'Usuario o contraseña incorrectos.';
     } finally {
       this.securityLoading = false;
+      this.loginSubmitting = false;
     }
   }
 
@@ -401,6 +415,11 @@ export class AppComponent implements OnInit {
     this.securityCheckAllowed = undefined;
     this.securityError = undefined;
     this.securitySuccess = undefined;
+    this.loginError = undefined;
+    this.loginPassword = '';
+    this.activeSection = 'dashboard';
+    this.sidebarCollapsed = false;
+    this.closeWorkspace();
   }
 
   protected selectSecurityTab(tab: SecurityTab): void {

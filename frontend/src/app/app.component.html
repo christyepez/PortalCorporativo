@@ -1,3 +1,45 @@
+@if (!hasAuthenticatedSession()) {
+  <main class="login-shell">
+    <section class="login-card" aria-label="Ingreso al Portal Corporativo">
+      <div class="login-brand">
+        <div class="brand__mark brand__mark--large">PC</div>
+        <div>
+          <p class="eyebrow">Acceso seguro</p>
+          <h1>Portal Corporativo</h1>
+          <p>Ingresa con tus credenciales para administrar aplicaciones, seguridad, menús y parámetros.</p>
+        </div>
+      </div>
+
+      <form class="login-form" (submit)="$event.preventDefault(); connectLocalSession()">
+        <label>Usuario
+          <input type="email"
+                 autocomplete="username"
+                 [value]="loginEmail"
+                 (input)="loginEmail = $any($event.target).value"
+                 placeholder="usuario@dominio.com">
+        </label>
+        <label>Contraseña
+          <input type="password"
+                 autocomplete="current-password"
+                 [value]="loginPassword"
+                 (input)="loginPassword = $any($event.target).value"
+                 placeholder="••••••••">
+        </label>
+        @if (loginError) {
+          <div class="login-error" role="alert">{{ loginError }}</div>
+        }
+        <button type="submit" class="primary login-submit" [disabled]="loginSubmitting">
+          {{ loginSubmitting ? 'Ingresando…' : 'Ingresar' }}
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span>PROD local</span>
+        <span>Security API · Cookie HttpOnly</span>
+      </div>
+    </section>
+  </main>
+} @else {
 <main class="portal">
   <header class="topbar">
     <div class="brand">
@@ -331,19 +373,23 @@
                   @if (securityCheckAllowed !== undefined) { <span class="pill">{{ securityCheckAllowed ? 'Permitido' : 'Denegado' }}</span> }
                 </div>
               </section>
-              <div class="table-card security-table">
-                <div class="table-row table-row--header"><span>Nombre</span><span>Email</span><span>Tenant</span><span>Estado</span><span>Id</span></div>
-                @for (user of securityUsers; track user.id) {
-                  <div class="table-row">
-                    <strong>{{ user.name }}</strong>
-                    <span>{{ user.email }}</span>
-                    <span>{{ user.tenantId }}</span>
-                    <span class="pill">{{ user.isActive ? 'Activo' : 'Inactivo' }}</span>
-                    <span class="code">{{ user.id }}</span>
-                  </div>
-                } @empty {
-                  <div class="empty-state compact-state"><h3>No hay usuarios para el tenant actual</h3></div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Usuarios de seguridad">
+                  <thead><tr><th>Nombre</th><th>Email</th><th>Tenant</th><th>Estado</th><th>Id</th></tr></thead>
+                  <tbody>
+                    @for (user of securityUsers; track user.id) {
+                      <tr>
+                        <td><strong>{{ user.name }}</strong></td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.tenantId }}</td>
+                        <td><span class="pill">{{ user.isActive ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td class="code">{{ user.id }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5">No hay usuarios para el tenant actual.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             } @else if (activeSecurityTab === 'roles') {
               <section class="module-panel">
@@ -371,12 +417,17 @@
                   <button type="button" class="primary" [disabled]="securitySaving" (click)="assignSecurityPermissionToRole()">Asignar permiso</button>
                 </div>
               </section>
-              <div class="application-grid">
-                @for (role of securityRoles; track role.id) {
-                  <article class="application-card"><span class="code">{{ role.id }}</span><h4>{{ role.name }}</h4><p>Tenant: {{ role.tenantId }}</p></article>
-                } @empty {
-                  <div class="empty-state compact-state"><h3>No hay roles para el tenant actual</h3></div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Roles de seguridad">
+                  <thead><tr><th>Rol</th><th>Tenant</th><th>Id</th></tr></thead>
+                  <tbody>
+                    @for (role of securityRoles; track role.id) {
+                      <tr><td><strong>{{ role.name }}</strong></td><td>{{ role.tenantId }}</td><td class="code">{{ role.id }}</td></tr>
+                    } @empty {
+                      <tr><td colspan="3">No hay roles para el tenant actual.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             } @else if (activeSecurityTab === 'permissions') {
               <section class="module-panel">
@@ -393,12 +444,17 @@
                   <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityPermission()">Crear permiso</button>
                 </div>
               </section>
-              <div class="application-grid">
-                @for (permission of securityPermissions; track permission.id) {
-                  <article class="application-card"><span class="code">{{ permission.code }}</span><h4>{{ permission.resourceKey }}</h4><p>Acción: {{ permission.action }}</p><p>Tenant: {{ permission.tenantId }}</p></article>
-                } @empty {
-                  <div class="empty-state compact-state"><h3>No hay permisos para el tenant actual</h3></div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Permisos de seguridad">
+                  <thead><tr><th>Código</th><th>Recurso</th><th>Acción</th><th>Tenant</th><th>Id</th></tr></thead>
+                  <tbody>
+                    @for (permission of securityPermissions; track permission.id) {
+                      <tr><td class="code">{{ permission.code }}</td><td>{{ permission.resourceKey }}</td><td>{{ permission.action }}</td><td>{{ permission.tenantId }}</td><td class="code">{{ permission.id }}</td></tr>
+                    } @empty {
+                      <tr><td colspan="5">No hay permisos para el tenant actual.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             } @else {
               <section class="module-panel">
@@ -409,12 +465,17 @@
                   <button type="button" class="primary" [disabled]="securitySaving" (click)="createSecurityResource()">Registrar recurso</button>
                 </div>
               </section>
-              <div class="application-grid">
-                @for (resource of securityResources; track resource.id) {
-                  <article class="application-card"><span class="code">{{ resource.key }}</span><h4>{{ resource.name }}</h4><p>Tenant: {{ resource.tenantId }}</p></article>
-                } @empty {
-                  <div class="empty-state compact-state"><h3>No hay recursos para el tenant actual</h3></div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Recursos protegidos">
+                  <thead><tr><th>Clave</th><th>Nombre</th><th>Tenant</th><th>Id</th></tr></thead>
+                  <tbody>
+                    @for (resource of securityResources; track resource.id) {
+                      <tr><td class="code">{{ resource.key }}</td><td><strong>{{ resource.name }}</strong></td><td>{{ resource.tenantId }}</td><td class="code">{{ resource.id }}</td></tr>
+                    } @empty {
+                      <tr><td colspan="4">No hay recursos para el tenant actual.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
           }
@@ -499,23 +560,28 @@
             @if (menuLoading) {
               <div class="empty-state compact-state"><h3>Cargando Menu API…</h3></div>
             } @else {
-              <div class="table-card">
-                <div class="table-row table-row--header"><span>Orden / Parent</span><span>Elemento</span><span>Ruta</span><span>Permiso</span><span>Estado / Acciones</span></div>
-                @for (item of menuItems; track item.id) {
-                  <div class="table-row">
-                    <span>{{ item.order }} · {{ item.parentId || 'raíz' }}</span>
-                    <strong>{{ item.label }}<br><span class="code">{{ item.code }}</span></strong>
-                    <span>{{ item.route }}</span>
-                    <span>{{ item.resourceKey }}<br><span class="code">{{ item.permissionCode }}</span></span>
-                    <span>
-                      <span class="pill">{{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
-                      <button type="button" class="link-button" [disabled]="menuSaving" (click)="beginEditMenuItem(item)">Editar</button>
-                      <button type="button" class="link-button" [disabled]="menuSaving" (click)="toggleMenuItem(item)">{{ item.isActive ? 'Desactivar' : 'Activar' }}</button>
-                    </span>
-                  </div>
-                } @empty {
-                  <div class="empty-state compact-state"><h3>No hay elementos para el módulo consultado</h3><p>Si el módulo es nuevo, crea primero su definición.</p></div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Elementos del menú">
+                  <thead><tr><th>Orden</th><th>Parent</th><th>Elemento</th><th>Ruta</th><th>Permiso</th><th>Estado</th><th>Acciones</th></tr></thead>
+                  <tbody>
+                    @for (item of menuItems; track item.id) {
+                      <tr>
+                        <td>{{ item.order }}</td>
+                        <td class="code">{{ item.parentId || 'raíz' }}</td>
+                        <td><strong>{{ item.label }}</strong><br><span class="code">{{ item.code }}</span></td>
+                        <td>{{ item.route }}</td>
+                        <td>{{ item.resourceKey }}<br><span class="code">{{ item.permissionCode }}</span></td>
+                        <td><span class="pill">{{ item.isActive ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td class="actions">
+                          <button type="button" class="link-button" [disabled]="menuSaving" (click)="beginEditMenuItem(item)">Editar</button>
+                          <button type="button" class="link-button" [disabled]="menuSaving" (click)="toggleMenuItem(item)">{{ item.isActive ? 'Desactivar' : 'Activar' }}</button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="7">No hay elementos para el módulo consultado. Si el módulo es nuevo, crea primero su definición.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
           }
@@ -652,28 +718,31 @@
             @if (configurationLoading) {
               <div class="empty-state compact-state"><h3>Cargando Configuration API…</h3></div>
             } @else {
-              <div class="table-card">
-                <div class="table-row table-row--header"><span>Clave</span><span>Ámbito</span><span>Módulo / Usuario</span><span>Categoría</span><span>Versión / Estado / Acciones</span></div>
-                @for (item of configurationItems; track item.id) {
-                  <div class="table-row">
-                    <strong>{{ item.key }}</strong>
-                    <span>{{ configurationScopeLabel(item.scope) }}</span>
-                    <span>{{ item.moduleCode || '—' }}{{ item.userId ? ' · ' + item.userId : '' }}</span>
-                    <span>{{ configurationCategoryLabel(item.category) }}</span>
-                    <span>
-                      <span class="pill">v{{ item.version }} · {{ item.isActive ? 'Activo' : 'Inactivo' }}</span>
-                      <button type="button" class="link-button" [disabled]="configurationSaving" (click)="beginEditConfigurationItem(item)">Editar</button>
-                      <button type="button" class="link-button" [disabled]="configurationSaving" (click)="toggleConfigurationItem(item)">
-                        {{ item.isActive ? 'Desactivar' : 'Activar' }}
-                      </button>
-                    </span>
-                  </div>
-                } @empty {
-                  <div class="empty-state compact-state">
-                    <h3>No hay parámetros para el ámbito consultado</h3>
-                    <p>Configuration API devolvió una colección vacía para los filtros actuales.</p>
-                  </div>
-                }
+              <div class="admin-grid-wrap">
+                <table class="admin-grid" aria-label="Parámetros del sistema">
+                  <thead><tr><th>Clave</th><th>Ámbito</th><th>Módulo</th><th>Usuario</th><th>Categoría</th><th>Versión</th><th>Estado</th><th>Acciones</th></tr></thead>
+                  <tbody>
+                    @for (item of configurationItems; track item.id) {
+                      <tr>
+                        <td><strong>{{ item.key }}</strong></td>
+                        <td>{{ configurationScopeLabel(item.scope) }}</td>
+                        <td>{{ item.moduleCode || '—' }}</td>
+                        <td class="code">{{ item.userId || '—' }}</td>
+                        <td>{{ configurationCategoryLabel(item.category) }}</td>
+                        <td>v{{ item.version }}</td>
+                        <td><span class="pill">{{ item.isActive ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td class="actions">
+                          <button type="button" class="link-button" [disabled]="configurationSaving" (click)="beginEditConfigurationItem(item)">Editar</button>
+                          <button type="button" class="link-button" [disabled]="configurationSaving" (click)="toggleConfigurationItem(item)">
+                            {{ item.isActive ? 'Desactivar' : 'Activar' }}
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="8">No hay parámetros para el ámbito consultado.</td></tr>
+                    }
+                  </tbody>
+                </table>
               </div>
             }
           }
@@ -1407,3 +1476,4 @@
 
   <footer class="footer">Portal · CRM · Financiero · Talento Humano · HistoriasPaolin · PROD local · API base {{ apiBasePath }}</footer>
 </main>
+}

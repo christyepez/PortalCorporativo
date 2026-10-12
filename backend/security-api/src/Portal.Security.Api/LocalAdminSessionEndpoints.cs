@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -12,11 +13,11 @@ namespace Portal.Security.Api;
 public static class LocalAdminSessionEndpoints
 {
     public const string CookieName = "portal_local_session";
-    private const string LocalAdminEmail = "superadmin@portal.local";
 
     public static IEndpointRouteBuilder MapLocalAdminSessionEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/security/local-session", async (
+            LocalAdminLoginRequest request,
             IConfiguration configuration,
             SecurityDbContext dbContext,
             HttpContext context,
@@ -25,6 +26,22 @@ public static class LocalAdminSessionEndpoints
             if (!configuration.GetValue<bool>("PortalLocalAdmin:Enabled"))
             {
                 return Results.NotFound();
+            }
+
+            var configuredEmail = configuration["PortalLocalAdmin:Email"]?.Trim().ToLowerInvariant();
+            var configuredPassword = configuration["PortalLocalAdmin:Password"];
+            if (string.IsNullOrWhiteSpace(configuredEmail) || string.IsNullOrWhiteSpace(configuredPassword))
+            {
+                return Results.Problem(
+                    "Local administrator credentials are not configured.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
+            if (!CredentialEquals(request.Email?.Trim().ToLowerInvariant(), configuredEmail) ||
+                !CredentialEquals(request.Password, configuredPassword))
+            {
+                context.Response.Headers.CacheControl = "no-store";
+                return Results.Unauthorized();
             }
 
             var secret = configuration["Jwt:Secret"];
@@ -37,7 +54,7 @@ public static class LocalAdminSessionEndpoints
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
-            var localAdmin = await EnsureLocalSuperAdminAsync(dbContext, cancellationToken);
+            var localAdmin = await EnsureLocalSuperAdminAsync(dbContext, configuredEmail, cancellationToken);
             var superAdminRoleId = await dbContext.Roles
                 .AsNoTracking()
                 .Where(role =>
@@ -139,16 +156,16 @@ public static class LocalAdminSessionEndpoints
         return endpoints;
     }
 
-    private static async Task<User> EnsureLocalSuperAdminAsync(SecurityDbContext dbContext, CancellationToken cancellationToken)
+    private static async Task<User> EnsureLocalSuperAdminAsync(SecurityDbContext dbContext, string localAdminEmail, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.SingleOrDefaultAsync(
             user => user.TenantId == TenantIds.Default &&
-                    user.NormalizedEmail == LocalAdminEmail.ToUpperInvariant(),
+                    user.NormalizedEmail == localAdminEmail.ToUpperInvariant(),
             cancellationToken);
 
         if (user is null)
         {
-            user = User.Create(TenantIds.Default, LocalAdminEmail, "Local SuperAdmin");
+            user = User.Create(TenantIds.Default, localAdminEmail, "Local SuperAdmin");
             dbContext.Users.Add(user);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -172,4 +189,15 @@ public static class LocalAdminSessionEndpoints
 
         return user;
     }
+
+    private static bool CredentialEquals(string? provided, string expected)
+    {
+        if (string.IsNullOrEmpty(provided)) return false;
+        var providedBytes = Encoding.UTF8.GetBytes(provided);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        return providedBytes.Length == expectedBytes.Length &&
+               CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes);
+    }
 }
+
+public sealed record LocalAdminLoginRequest(string? Email, string? Password);

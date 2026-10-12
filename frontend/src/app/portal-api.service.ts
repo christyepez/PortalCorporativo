@@ -303,8 +303,8 @@ export class PortalApiService {
     return this.accessToken !== null;
   }
 
-  createLocalSuperAdminSession(): Observable<LocalAdminSession> {
-    return this.http.post<LocalAdminSession>(`${environment.apiBasePath}/security/local-session`, {});
+  createLocalSuperAdminSession(email: string, password: string): Observable<LocalAdminSession> {
+    return this.http.post<LocalAdminSession>(`${environment.apiBasePath}/security/local-session`, { email, password });
   }
 
   clearLocalSuperAdminSession(): Observable<void> {

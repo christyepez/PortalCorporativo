@@ -7,3 +7,41 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: radial-gradient(circle at top left,#e8f0ff 0,#f5f7fb 42%,#eef2f7 100%);
+}
+.login-card {
+  width: min(460px,100%);
+  display: grid;
+  gap: 1.35rem;
+  padding: 2rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(31,45,61,.14);
+}
+.login-brand { display: flex; gap: 1rem; align-items: flex-start; }
+.login-brand h1 { margin: .15rem 0 .45rem; font-size: 1.8rem; }
+.login-brand p { margin: 0; color: #64748b; line-height: 1.55; }
+.brand__mark--large { width: 58px; height: 58px; flex: 0 0 58px; font-size: 1rem; }
+.login-form { display: grid; gap: 1rem; }
+.login-form label { display: grid; gap: .4rem; color: #334155; font-size: .8rem; font-weight: 800; }
+.login-form input { width: 100%; border: 1px solid #cfd9e7; border-radius: 10px; padding: .78rem .85rem; background: #fff; color: #172033; font: inherit; }
+.login-form input:focus { outline: 2px solid #b9ccff; border-color: #5d84ff; }
+.login-submit { width: 100%; min-height: 44px; }
+.login-error { padding: .7rem .8rem; border-radius: 9px; background: #fff0f0; color: #b42318; font-size: .82rem; font-weight: 700; }
+.login-footer { display: flex; justify-content: space-between; gap: .8rem; padding-top: .9rem; border-top: 1px solid #edf1f6; color: #7a8799; font-size: .72rem; }
+
+.admin-grid-wrap { width: 100%; overflow: auto; border: 1px solid #dde6f2; border-radius: 12px; background: #fff; }
+.admin-grid { width: 100%; min-width: 760px; border-collapse: collapse; font-size: .82rem; }
+.admin-grid th, .admin-grid td { padding: .72rem .8rem; border-bottom: 1px solid #edf1f6; text-align: left; vertical-align: middle; }
+.admin-grid th { position: sticky; top: 0; z-index: 1; background: #f3f6fa; color: #52627a; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; }
+.admin-grid tbody tr:hover { background: #f8faff; }
+.admin-grid tbody tr:last-child td { border-bottom: 0; }
+.admin-grid .actions { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; }
+.admin-grid .code { overflow-wrap: anywhere; }
