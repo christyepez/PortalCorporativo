@@ -9,6 +9,7 @@ FROM node:20-alpine AS crm-build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=crm_source . .
+RUN printf 'packages:\n  - "."\nallowBuilds:\n  esbuild: true\n' > pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build -- --base-href /apps/crm/
 
@@ -16,6 +17,7 @@ FROM node:20-alpine AS financial-build
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=financial_source . .
+RUN printf 'packages:\n  - "."\nallowBuilds:\n  esbuild: true\n' > pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
 RUN pnpm run build -- --configuration production --base-href /apps/financial/
 
