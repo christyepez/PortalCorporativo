@@ -63,6 +63,14 @@ if (-not $localCompose.Contains('PortalLocalAdmin__Enabled: "true"')) {
     throw 'PROD-local overlay must explicitly enable local SuperAdmin.'
 }
 
+$corePortalPermissions = @('portal.catalog.manage','portal.catalog.read','portal.content.manage','portal.content.read','portal.reporting.read','portal.integration.manage','portal.integration.read')
+foreach ($permission in $corePortalPermissions) {
+    if (-not $seedCatalog.Contains('"' + $permission + '"')) {
+        throw "Security seed catalog missing core Portal permission: $permission"
+    }
+    Write-Host "PASS governed core Portal permission $permission"
+}
+
 $consumerPermissions = @('crm.*','financial.*','hr.employees.view','hr.employees.manage','historiaspaolin.channels.view')
 foreach ($permission in $consumerPermissions) {
     if (-not $seedCatalog.Contains('"' + $permission + '"')) {
