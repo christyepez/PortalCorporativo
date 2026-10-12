@@ -31,12 +31,12 @@ $apiClient = Get-Content $apiClientPath -Raw
 $registry = Get-Content $registryPath -Raw | ConvertFrom-Json
 $consumers = @($registry.consumers)
 
-Assert-True ($registry.version -eq 1) 'Consumer registry schema version is supported'
+Assert-True ($registry.version -eq 2) 'Consumer registry schema version is supported'
 Assert-True ($consumers.Count -eq 4) 'Consumer registry contains exactly four approved consumers'
 $approvedCodes = @('CRM','FINANCIAL','HR','HISTORIAS')
 Assert-SameSet $consumers.code $approvedCodes 'Consumer registry contains exactly the approved consumer codes'
 
-$requiredFields = @('name','code','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath')
+$requiredFields = @('name','code','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath','smokePermission','uiMode')
 foreach ($field in $requiredFields) {
     Assert-True (@($consumers | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.$field) }).Count -eq 0) "Consumer registry field '$field' is populated"
 }
@@ -45,7 +45,7 @@ foreach ($field in @('code','service','route','healthRoute','gatewayPath','clust
     Assert-True (@($consumers.$field | Sort-Object -Unique).Count -eq $consumers.Count) "Consumer registry field '$field' is unique"
 }
 
-$coreRoutes = @('security','configuration','menu','audit','notification','catalog','content','integration','reporting')
+$coreRoutes = @('security-local-session','security-local-session-actions','security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $coreClusters = @('security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $expectedConsumerRoutes = @($consumers | ForEach-Object { $_.route; $_.healthRoute })
 $actualConsumerRoutes = @($gateway.ReverseProxy.Routes.PSObject.Properties.Name | Where-Object { $_ -notin $coreRoutes })
@@ -55,6 +55,59 @@ Assert-SameSet $actualConsumerClusters $consumers.cluster 'Gateway contains no u
 
 foreach ($consumer in $consumers) {
     Assert-True ($consumer.gatewayPath.StartsWith('/api/')) "$($consumer.name) Gateway path is under /api"
+    Assert-True ($consumer.uiMode -in @('embedded','api-only')) "$($consumer.name) UI mode is governed"
+    if ($consumer.uiMode -eq 'embedded') {
+        Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) embedded UI has a web path"
+        Assert-True ([string]$consumer.webPath -match '^/apps/[a-z0-9-]+/
+    Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
+    Assert-True ($consumer.probePath.StartsWith("$($consumer.gatewayPath)/health/")) "$($consumer.name) health probe stays inside its health boundary"
+
+    $route = $gateway.ReverseProxy.Routes.($consumer.route)
+    $health = $gateway.ReverseProxy.Routes.($consumer.healthRoute)
+    $cluster = $gateway.ReverseProxy.Clusters.($consumer.cluster)
+
+    Assert-True ($null -ne $route) "$($consumer.name) application route exists"
+    Assert-True ($route.ClusterId -eq $consumer.cluster) "$($consumer.name) application route targets the governed cluster"
+    Assert-True ($route.AuthorizationPolicy -eq $consumer.smokePermission) "$($consumer.name) application route requires its governed Security permission"
+    Assert-True ($route.Match.Path -eq "$($consumer.gatewayPath)/{**catch-all}") "$($consumer.name) application route uses exact governed Gateway prefix"
+
+    Assert-True ($null -ne $health) "$($consumer.name) health route exists"
+    Assert-True ($health.ClusterId -eq $consumer.cluster) "$($consumer.name) health route targets the governed cluster"
+    Assert-True ([string]::IsNullOrWhiteSpace([string]$health.AuthorizationPolicy)) "$($consumer.name) health route remains anonymous"
+    Assert-True ($health.Match.Path -eq "$($consumer.gatewayPath)/health/{**catch-all}") "$($consumer.name) health route uses exact governed health prefix"
+    $removePrefix = @($health.Transforms | Where-Object { $_.PathRemovePrefix } | Select-Object -First 1).PathRemovePrefix
+    Assert-True ($removePrefix -eq $consumer.gatewayPath) "$($consumer.name) health transform removes only the governed Gateway prefix"
+
+    Assert-True ($null -ne $cluster) "$($consumer.name) Gateway cluster exists"
+    Assert-True ($cluster.Destinations.primary.Address -eq $consumer.internalAddress) "$($consumer.name) cluster targets internal service DNS only"
+
+    $servicePattern = "(?ms)^  $([regex]::Escape($consumer.service)):\s*.*?(?=^  [a-zA-Z0-9_-]+:|^networks:|\z)"
+    $serviceMatch = [regex]::Match($compose, $servicePattern)
+    Assert-True $serviceMatch.Success "$($consumer.name) Compose service exists"
+    Assert-True ($serviceMatch.Value -match '(?m)^    expose:\s*\r?\n      - "8080"') "$($consumer.name) exposes only internal container port"
+    Assert-True (-not ($serviceMatch.Value -match '(?m)^    ports:')) "$($consumer.name) has no host-published ports"
+}
+
+Assert-True ($shell.Contains('consumerRegistry.consumers')) 'Portal Shell applications and consumer health probes use the shared registry'
+Assert-True ($shell.Contains('consumer.webPath')) 'Portal Shell derives embedded application paths from the governed registry'
+$embeddedPaths = @($consumers | Where-Object { $_.uiMode -eq 'embedded' } | ForEach-Object { [string]$_.webPath })
+Assert-True ($embeddedPaths.Count -eq 2) 'Exactly CRM and Financiero are currently web-embedded consumers'
+Assert-True (@($embeddedPaths | Sort-Object -Unique).Count -eq $embeddedPaths.Count) 'Embedded web paths are unique'
+Assert-True ($smoke.Contains('consumer-registry.json')) 'Authenticated smoke loads the governed consumer registry'
+Assert-True ($smoke.Contains('$consumer.probePath')) 'Authenticated smoke derives consumer health probes from the registry'
+Assert-True ($smoke.Contains('$consumer.protectedSmoke')) 'Authenticated smoke derives protected endpoints from the registry'
+Assert-True ($smoke.Contains('$_.smokePermission')) 'Authenticated smoke derives consumer permissions from the registry'
+Assert-True ($e2e.Contains('consumer-registry.json')) 'PROD-local E2E loads the governed consumer registry'
+Assert-True ($e2e.Contains('$consumer.protectedSmoke')) 'PROD-local E2E derives consumer navigation checks from the registry'
+Assert-True ($e2e.Contains('$_.smokePermission')) 'PROD-local E2E derives consumer permissions from the registry'
+Assert-True ($smoke.Contains('"X-Correlation-ID"')) 'Authenticated smoke propagates X-Correlation-ID'
+Assert-True (-not ($apiClient -match 'localStorage|sessionStorage')) 'Browser access tokens are not persisted'
+Assert-True (Test-Path (Join-Path $root 'docs/coordination/consumer-onboarding-template.md')) 'Consumer onboarding template exists'
+Write-Host 'PORTAL_CONSUMER_EXPANSION_GATE_PASS'
+) "$($consumer.name) embedded UI stays under the Portal /apps boundary"
+    } else {
+        Assert-True ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) API-only integration does not advertise a fake web UI"
+    }
     Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
     Assert-True ($consumer.probePath.StartsWith("$($consumer.gatewayPath)/health/")) "$($consumer.name) health probe stays inside its health boundary"
 
