@@ -14,7 +14,9 @@ PortalCorporativo remains a local Docker Desktop deployment. The canonical branc
 
 ## Local administration authentication
 
-The current PROD-local administration baseline does not use a seeded username/password login. Administrative modules use an ephemeral local JWT session entered from Security. The token remains in browser memory only and is cleared on refresh or explicit local-session logout.
+The current PROD-local administration baseline does not use a seeded username/password login and does not require the operator to paste a JWT. The Portal requests a short-lived SuperAdmin session from the Security API through the Gateway only when the PROD-local overlay explicitly enables `PortalLocalAdmin`. The JWT permissions are read from the current `SuperAdmin` role assignments in Security DB, remain in browser memory only, and are cleared on refresh or explicit local-session logout.
+
+CRM, Financiero, Talento Humano and HistoriasPaolin are governed as Portal applications. Each application declares its module code, required permission, Gateway boundary and health/protected surface. Applications that do not publish a separate local web UI render a native workspace inside the Portal with links to Security, Menu, Parameters and Operations plus protected data through the Gateway; real web UIs may be embedded when explicitly registered.
 
 Do not store local JWTs or secret values in source control or documentation.
 
