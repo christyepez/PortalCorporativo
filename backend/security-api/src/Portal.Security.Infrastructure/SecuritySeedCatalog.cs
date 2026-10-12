@@ -18,7 +18,11 @@ internal static class SecuritySeedCatalog
         new(Guid.Parse("20000000-0000-0000-0000-000000000006"), "crm", "CRM"),
         new(Guid.Parse("20000000-0000-0000-0000-000000000007"), "financial", "Financiero"),
         new(Guid.Parse("20000000-0000-0000-0000-000000000008"), "hr.employees", "Talento Humano - Empleados"),
-        new(Guid.Parse("20000000-0000-0000-0000-000000000009"), "historiaspaolin.channels", "HistoriasPaolin - Canales")
+        new(Guid.Parse("20000000-0000-0000-0000-000000000009"), "historiaspaolin.channels", "HistoriasPaolin - Canales"),
+        new(Guid.Parse("20000000-0000-0000-0000-000000000010"), "portal.catalog", "Portal Catalog"),
+        new(Guid.Parse("20000000-0000-0000-0000-000000000011"), "portal.content", "Portal Content"),
+        new(Guid.Parse("20000000-0000-0000-0000-000000000012"), "portal.reporting", "Portal Reporting"),
+        new(Guid.Parse("20000000-0000-0000-0000-000000000013"), "portal.integration", "Portal Integration")
     ];
 
     internal static readonly PermissionDefinition[] Permissions =
@@ -37,6 +41,13 @@ internal static class SecuritySeedCatalog
         new(Guid.Parse("30000000-0000-0000-0000-000000000012"), "financial.*", "financial", "*", false),
         new(Guid.Parse("30000000-0000-0000-0000-000000000013"), "hr.employees.view", "hr.employees", "view", false),
         new(Guid.Parse("30000000-0000-0000-0000-000000000014"), "hr.employees.manage", "hr.employees", "manage", false),
-        new(Guid.Parse("30000000-0000-0000-0000-000000000015"), "historiaspaolin.channels.view", "historiaspaolin.channels", "view", false)
+        new(Guid.Parse("30000000-0000-0000-0000-000000000015"), "historiaspaolin.channels.view", "historiaspaolin.channels", "view", false),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000016"), "portal.catalog.manage", "portal.catalog", "manage", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000017"), "portal.catalog.read", "portal.catalog", "read", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000018"), "portal.content.manage", "portal.content", "manage", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000019"), "portal.content.read", "portal.content", "read", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000020"), "portal.reporting.read", "portal.reporting", "read", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000021"), "portal.integration.manage", "portal.integration", "manage", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000022"), "portal.integration.read", "portal.integration", "read", true)
     ];
 }
