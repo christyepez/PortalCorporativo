@@ -275,6 +275,15 @@ interface ApiResponse<T> {
   readonly correlationId?: string;
 }
 
+export interface LocalAdminSession {
+  readonly accessToken: string;
+  readonly expiresAtUtc: string;
+  readonly user: string;
+  readonly displayName: string;
+  readonly role: string;
+  readonly tenantId: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PortalApiService {
   private accessToken: string | null = null;
@@ -291,6 +300,14 @@ export class PortalApiService {
 
   hasAuthenticatedSession(): boolean {
     return this.accessToken !== null;
+  }
+
+  createLocalSuperAdminSession(): Observable<LocalAdminSession> {
+    return this.http.post<LocalAdminSession>(`${environment.apiBasePath}/security/local-session`, {});
+  }
+
+  clearLocalSuperAdminSession(): Observable<void> {
+    return this.http.post<void>(`${environment.apiBasePath}/security/local-session/logout`, {});
   }
 
   loadUsers(): Observable<SecurityUser[]> {
