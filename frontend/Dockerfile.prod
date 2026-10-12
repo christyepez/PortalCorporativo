@@ -1,12 +1,28 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine AS portal-build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
 
+FROM node:20-alpine AS crm-build
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+COPY --from=crm_source . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build -- --base-href /apps/crm/
+
+FROM node:20-alpine AS financial-build
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+COPY --from=financial_source . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm run build -- --configuration production --base-href /apps/financial/
+
 FROM nginx:1.27-alpine
 COPY nginx.prod.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist/portal-corporativo-shell/browser /usr/share/nginx/html
+COPY --from=portal-build /app/dist/portal-corporativo-shell/browser /usr/share/nginx/html
+COPY --from=crm-build /app/dist/crm-web/browser /usr/share/nginx/html/apps/crm
+COPY --from=financial-build /app/dist/financiero-web/browser /usr/share/nginx/html/apps/financial
 EXPOSE 80
 HEALTHCHECK --interval=10s --timeout=3s --retries=10 --start-period=10s CMD wget -qO- http://127.0.0.1/health || exit 1
