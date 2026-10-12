@@ -31,21 +31,21 @@ $apiClient = Get-Content $apiClientPath -Raw
 $registry = Get-Content $registryPath -Raw | ConvertFrom-Json
 $consumers = @($registry.consumers)
 
-Assert-True ($registry.version -eq 1) 'Consumer registry schema version is supported'
+Assert-True ($registry.version -eq 2) 'Consumer registry schema version is supported'
 Assert-True ($consumers.Count -eq 4) 'Consumer registry contains exactly four approved consumers'
 $approvedCodes = @('CRM','FINANCIAL','HR','HISTORIAS')
 Assert-SameSet $consumers.code $approvedCodes 'Consumer registry contains exactly the approved consumer codes'
 
-$requiredFields = @('name','code','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath')
+$requiredFields = @('name','code','moduleCode','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath','accessPermission','uiMode')
 foreach ($field in $requiredFields) {
     Assert-True (@($consumers | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.$field) }).Count -eq 0) "Consumer registry field '$field' is populated"
 }
 
-foreach ($field in @('code','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath')) {
+foreach ($field in @('code','moduleCode','service','route','healthRoute','gatewayPath','cluster','internalAddress','protectedSmoke','probePath','accessPermission')) {
     Assert-True (@($consumers.$field | Sort-Object -Unique).Count -eq $consumers.Count) "Consumer registry field '$field' is unique"
 }
 
-$coreRoutes = @('security','configuration','menu','audit','notification','catalog','content','integration','reporting')
+$coreRoutes = @('security-local-session','security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $coreClusters = @('security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $expectedConsumerRoutes = @($consumers | ForEach-Object { $_.route; $_.healthRoute })
 $actualConsumerRoutes = @($gateway.ReverseProxy.Routes.PSObject.Properties.Name | Where-Object { $_ -notin $coreRoutes })
@@ -55,6 +55,9 @@ Assert-SameSet $actualConsumerClusters $consumers.cluster 'Gateway contains no u
 
 foreach ($consumer in $consumers) {
     Assert-True ($consumer.gatewayPath.StartsWith('/api/')) "$($consumer.name) Gateway path is under /api"
+    Assert-True ($consumer.uiMode -in @('native','iframe')) "$($consumer.name) UI mode is governed"
+    Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.moduleCode)) "$($consumer.name) module code is governed"
+    Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.accessPermission)) "$($consumer.name) access permission is governed"
     Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
     Assert-True ($consumer.probePath.StartsWith("$($consumer.gatewayPath)/health/")) "$($consumer.name) health probe stays inside its health boundary"
 

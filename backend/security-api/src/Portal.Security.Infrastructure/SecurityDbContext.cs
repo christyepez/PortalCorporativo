@@ -88,41 +88,40 @@ public sealed class SecurityDbContext(DbContextOptions<SecurityDbContext> option
 
     private static void Seed(ModelBuilder modelBuilder)
     {
-        var superAdmin = Guid.Parse("10000000-0000-0000-0000-000000000001");
-        var portalAdmin = Guid.Parse("10000000-0000-0000-0000-000000000002");
-        var definitions = new[]
-        {
-            (Id: Guid.Parse("20000000-0000-0000-0000-000000000001"), Key: "portal.security", Name: "Portal Security"),
-            (Id: Guid.Parse("20000000-0000-0000-0000-000000000002"), Key: "portal.menu", Name: "Portal Menu"),
-            (Id: Guid.Parse("20000000-0000-0000-0000-000000000003"), Key: "portal.configuration", Name: "Portal Configuration"),
-            (Id: Guid.Parse("20000000-0000-0000-0000-000000000004"), Key: "portal.audit", Name: "Portal Audit"),
-            (Id: Guid.Parse("20000000-0000-0000-0000-000000000005"), Key: "portal.notification", Name: "Portal Notification")
-        };
-        var permissions = new[]
-        {
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000001"), TenantIds.Default, "portal.security.manage", "portal.security", "manage"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000002"), TenantIds.Default, "portal.menu.manage", "portal.menu", "manage"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000003"), TenantIds.Default, "portal.configuration.manage", "portal.configuration", "manage"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000004"), TenantIds.Default, "portal.audit.read", "portal.audit", "read"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000005"), TenantIds.Default, "portal.notification.manage", "portal.notification", "manage"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000006"), TenantIds.Default, "portal.notification.send", "portal.notification", "send"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000007"), TenantIds.Default, "portal.notification.read", "portal.notification", "read"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000008"), TenantIds.Default, "portal.configuration.read", "portal.configuration", "read"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000009"), TenantIds.Default, "portal.menu.read", "portal.menu", "read"),
-            Permission.Seed(Guid.Parse("30000000-0000-0000-0000-000000000010"), TenantIds.Default, "portal.audit.write", "portal.audit", "write")
-        };
+        var permissions = SecuritySeedCatalog.Permissions
+            .Select(definition => Permission.Seed(
+                definition.Id,
+                TenantIds.Default,
+                definition.Code,
+                definition.ResourceKey,
+                definition.Action))
+            .ToArray();
 
         modelBuilder.Entity<Tenant>().HasData(new Tenant(TenantIds.Default, "Default Tenant"));
         modelBuilder.Entity<Role>().HasData(
-            Role.Seed(superAdmin, TenantIds.Default, "SuperAdmin"),
-            Role.Seed(portalAdmin, TenantIds.Default, "PortalAdmin"));
-        modelBuilder.Entity<Resource>().HasData(definitions.Select(x => Resource.Seed(x.Id, TenantIds.Default, x.Key, x.Name)));
+            Role.Seed(SecuritySeedCatalog.SuperAdminRoleId, TenantIds.Default, "SuperAdmin"),
+            Role.Seed(SecuritySeedCatalog.PortalAdminRoleId, TenantIds.Default, "PortalAdmin"));
+        modelBuilder.Entity<Resource>().HasData(
+            SecuritySeedCatalog.Resources.Select(definition =>
+                Resource.Seed(definition.Id, TenantIds.Default, definition.Key, definition.Name)));
         modelBuilder.Entity<Permission>().HasData(permissions);
-        modelBuilder.Entity<RolePermission>().HasData(
-            permissions.SelectMany(permission => new[]
+
+        var assignments = SecuritySeedCatalog.Permissions
+            .SelectMany(definition =>
             {
-                RolePermission.Seed(TenantIds.Default, superAdmin, permission.Id),
-                RolePermission.Seed(TenantIds.Default, portalAdmin, permission.Id)
-            }));
+                var rolePermissions = new List<RolePermission>
+                {
+                    RolePermission.Seed(TenantIds.Default, SecuritySeedCatalog.SuperAdminRoleId, definition.Id)
+                };
+                if (definition.GrantToPortalAdmin)
+                {
+                    rolePermissions.Add(RolePermission.Seed(TenantIds.Default, SecuritySeedCatalog.PortalAdminRoleId, definition.Id));
+                }
+
+                return rolePermissions;
+            })
+            .ToArray();
+
+        modelBuilder.Entity<RolePermission>().HasData(assignments);
     }
 }
