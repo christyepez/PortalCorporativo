@@ -9,6 +9,11 @@
     </div>
     <div class="topbar__meta">
       <span class="tenant">Tenant: {{ currentTenant }}</span>
+      @if (localAdminSession) {
+        <span class="status">{{ localAdminSession.displayName }} · {{ localAdminSession.role }}</span>
+      } @else {
+        <span class="status">{{ sessionInitializing ? 'Conectando SuperAdmin…' : 'SuperAdmin local no conectado' }}</span>
+      }
       <span class="status">{{ readiness }}</span>
     </div>
   </header>
@@ -59,6 +64,8 @@
                 <div><h4>{{ app.name }}</h4><p>{{ app.description }}</p></div>
                 <div class="application-card__footer">
                   <span class="pill">{{ app.status }}</span>
+                  <span class="pill">{{ applicationIntegrationLabel(app) }}</span>
+                  <span class="pill">{{ applicationAuthorized(app) ? 'SuperAdmin autorizado' : 'Permiso requerido' }}</span>
                   <button type="button" class="link-button" (click)="openApplication(app)">Abrir en Portal</button>
                 </div>
               </article>
@@ -113,7 +120,7 @@
                 </div>
 
                 <div class="workspace-native__actions">
-                  <button type="button" class="secondary" (click)="manageApplicationSecurity()">Permisos y roles</button>
+                  <button type="button" class="secondary" (click)="manageApplicationSecurity(workspaceApplication)">Permisos y roles</button>
                   <button type="button" class="secondary" (click)="manageApplicationMenu(workspaceApplication)">Menú</button>
                   <button type="button" class="secondary" (click)="manageApplicationConfiguration(workspaceApplication)">Parámetros</button>
                   <button type="button" class="secondary" (click)="selectSection('operations')">Operaciones</button>
@@ -168,6 +175,9 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Seguridad centralizada</p><h2>Usuarios, roles y permisos</h2></div>
+            @if (securityApplication) {
+              <span class="pill">Contexto: {{ securityApplication.name }} · {{ securityApplication.accessPermission }}</span>
+            }
             @if (hasAuthenticatedSession()) {
               <div class="session-actions">
                 <button type="button" class="secondary" [disabled]="securityLoading" (click)="loadSecurityData()">Recargar</button>
@@ -180,7 +190,7 @@
             <div class="toolbar session-toolbar">
               <div>
                 <strong>SuperAdmin local</strong>
-                <span class="muted">Portal crea automáticamente una sesión efímera desde Security DB. No necesitas copiar ni pegar tokens.</span>
+                <span class="muted">Portal inicia automáticamente una sesión efímera desde Security DB. No necesitas usuario, clave ni copiar/pegar tokens.</span>
               </div>
               <button type="button" class="primary" [disabled]="securityLoading" (click)="connectLocalSession()">
                 {{ securityLoading ? 'Conectando…' : 'Entrar como SuperAdmin local' }}
