@@ -20,6 +20,17 @@ public static class PortalAuthenticationExtensions
         {
             options.Events = new JwtBearerEvents
             {
+                OnMessageReceived = context =>
+                {
+                    if (!context.Request.Headers.ContainsKey("Authorization") &&
+                        context.Request.Cookies.TryGetValue("portal_local_session", out var cookieToken) &&
+                        !string.IsNullOrWhiteSpace(cookieToken))
+                    {
+                        context.Token = cookieToken;
+                    }
+
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = async context =>
                 {
                     try
