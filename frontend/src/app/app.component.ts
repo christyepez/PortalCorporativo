@@ -333,10 +333,15 @@ export class AppComponent implements OnInit {
     }
   }
 
-  protected clearLocalSession(): void {
+  protected async clearLocalSession(): Promise<void> {
     this.portalApi.clearAccessToken();
     this.localAdminSession = undefined;
     this.securityApplication = undefined;
+    try {
+      await firstValueFrom(this.portalApi.clearLocalSuperAdminSession());
+    } catch {
+      // The in-memory credential is already cleared; cookie cleanup is best-effort.
+    }
     this.securityUsers = [];
     this.securityRoles = [];
     this.securityPermissions = [];
