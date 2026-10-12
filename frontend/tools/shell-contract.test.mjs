@@ -260,7 +260,7 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(template, /Integración gobernada por Portal/);
   assert.match(template, /Permisos y roles/);
   assert.match(template, /SuperAdmin autorizado/);
-  assert.match(template, /Módulo Portal \/ API/);
+  assert.match(component, /'Módulo Portal \/ API'/);
   assert.match(template, /Actualizar datos protegidos/);
   assert.match(template, /<iframe/);
   assert.match(template, /\[src\]="workspaceUrl"/);
