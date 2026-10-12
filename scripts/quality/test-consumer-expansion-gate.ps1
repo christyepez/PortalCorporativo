@@ -58,7 +58,10 @@ foreach ($consumer in $consumers) {
     Assert-True ($consumer.uiMode -in @('embedded','api-only')) "$($consumer.name) UI mode is governed"
     if ($consumer.uiMode -eq 'embedded') {
         Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) embedded UI has a web path"
-        Assert-True ([string]$consumer.webPath -match '^/apps/[a-z0-9-]+/
+        Assert-True (([string]$consumer.webPath).StartsWith('/apps/') -and ([string]$consumer.webPath).EndsWith('/')) "$($consumer.name) embedded UI stays under the Portal /apps boundary"
+    } else {
+        Assert-True ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) API-only integration does not advertise a fake web UI"
+    }
     Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
     Assert-True ($consumer.probePath.StartsWith("$($consumer.gatewayPath)/health/")) "$($consumer.name) health probe stays inside its health boundary"
 
