@@ -50,7 +50,7 @@ if (-not $gateway.Contains('"security-local-session-logout"') -or -not $gateway.
 if (-not $authentication.Contains('portal_local_session') -or -not $authentication.Contains('OnMessageReceived')) {
     throw 'Portal JWT authentication must accept the local HttpOnly session cookie.'
 }
-foreach ($marker in @('portal_local_session','Headers.Authorization','Bearer {localSessionToken}','UseAuthentication()','MapReverseProxy()')) {
+foreach ($marker in @('AddPortalPermissionAuthorization()','portal_local_session','Headers.Authorization','Bearer {localSessionToken}','UseAuthentication()','MapReverseProxy()')) {
     if (-not $gatewayProgram.Contains($marker)) { throw "Gateway downstream forwarding missing marker: $marker" }
 }
 if ($gatewayProgram.IndexOf('portal_local_session') -gt $gatewayProgram.IndexOf('UseAuthentication()')) {
