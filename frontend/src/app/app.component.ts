@@ -33,9 +33,14 @@ interface NavigationItem {
 interface ApplicationCard {
   readonly name: string;
   readonly code: string;
+  readonly moduleCode: string;
   readonly description: string;
   readonly port?: number;
-  readonly path?: string;
+  readonly path: string;
+  readonly probePath: string;
+  readonly dataPath: string;
+  readonly accessPermission: string;
+  readonly uiMode: 'native' | 'iframe';
   readonly status: string;
 }
 @Component({
@@ -72,8 +77,14 @@ export class AppComponent {
   protected readonly applications: ApplicationCard[] = consumerRegistry.consumers.map((consumer) => ({
     name: consumer.name,
     code: consumer.code,
+    moduleCode: consumer.moduleCode,
     description: consumer.description,
+    port: consumer.webPort ?? undefined,
     path: consumer.gatewayPath,
+    probePath: consumer.probePath,
+    dataPath: consumer.protectedSmoke,
+    accessPermission: consumer.accessPermission,
+    uiMode: consumer.uiMode as 'native' | 'iframe',
     status: consumer.status
   }));
 
@@ -99,12 +110,16 @@ export class AppComponent {
   protected activeSection: AdminSection = 'dashboard';
   protected workspaceApplication?: ApplicationCard;
   protected workspaceUrl?: SafeResourceUrl;
+  protected workspaceProbeState: ModuleProbeState = 'idle';
+  protected workspaceProbeStatus?: number;
+  protected workspaceDataText = '';
+  protected workspaceDataLoading = false;
+  protected workspaceDataError?: string;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
-  protected sessionTokenInput = '';
   protected securityLoading = false;
   protected securityError?: string;
   protected activeSecurityTab: SecurityTab = 'users';
@@ -248,15 +263,30 @@ export class AppComponent {
 
   protected selectSection(section: AdminSection): void {
     this.activeSection = section;
-    if (section === 'operations') void this.refreshModuleHealth();
-    if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
-    if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
-    if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
-    if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
-    if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
-    if (section === 'audit' && this.portalApi.hasAuthenticatedSession()) void this.loadAuditData(1);
-    if (section === 'reporting' && this.portalApi.hasAuthenticatedSession()) void this.loadReportingData();
-    if (section === 'notifications' && this.portalApi.hasAuthenticatedSession()) void this.loadNotificationData();
+    void this.activateSection(section);
+  }
+
+  private async activateSection(section: AdminSection): Promise<void> {
+    if (section === 'operations') {
+      await this.refreshModuleHealth();
+      return;
+    }
+
+    if (section === 'dashboard' || section === 'applications') return;
+
+    if (!this.portalApi.hasAuthenticatedSession()) {
+      await this.connectLocalSession();
+      if (!this.portalApi.hasAuthenticatedSession()) return;
+    }
+
+    if (section === 'security') await this.loadSecurityData();
+    if (section === 'menus') await this.loadMenuData();
+    if (section === 'configuration') await this.loadConfigurationData();
+    if (section === 'catalogs') await this.loadCatalogData();
+    if (section === 'content') await this.loadContentData();
+    if (section === 'audit') await this.loadAuditData(1);
+    if (section === 'reporting') await this.loadReportingData();
+    if (section === 'notifications') await this.loadNotificationData();
   }
 
   protected hasAuthenticatedSession(): boolean {
@@ -264,20 +294,27 @@ export class AppComponent {
   }
 
   protected async connectLocalSession(): Promise<void> {
-    const token = this.sessionTokenInput.trim();
-    if (!token) {
-      this.securityError = 'Ingresa un JWT local válido para iniciar una sesión efímera.';
-      return;
-    }
+    if (this.portalApi.hasAuthenticatedSession() || this.securityLoading) return;
 
-    this.portalApi.setAccessToken(token);
-    this.sessionTokenInput = '';
-    await this.loadSecurityData();
+    this.securityLoading = true;
+    this.securityError = undefined;
+    this.securitySuccess = undefined;
+    try {
+      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
+      this.portalApi.setAccessToken(session.accessToken);
+      this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
+    } catch (error: unknown) {
+      this.portalApi.clearAccessToken();
+      this.securityError = error instanceof Error
+        ? error.message
+        : 'No fue posible iniciar la sesión SuperAdmin local.';
+    } finally {
+      this.securityLoading = false;
+    }
   }
 
   protected clearLocalSession(): void {
     this.portalApi.clearAccessToken();
-    this.sessionTokenInput = '';
     this.securityUsers = [];
     this.securityRoles = [];
     this.securityPermissions = [];
@@ -1372,18 +1409,78 @@ export class AppComponent {
     return this.modules.filter((module) => this.probeResult(module).state === state).length;
   }
 
-  protected openApplication(application: ApplicationCard): void {
-    if (!application.port) return;
+  protected async openApplication(application: ApplicationCard): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) {
+      await this.connectLocalSession();
+      if (!this.portalApi.hasAuthenticatedSession()) return;
+    }
 
-    const target = `${window.location.protocol}//${window.location.hostname}:${application.port}/`;
     this.workspaceApplication = application;
-    this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+    this.workspaceUrl = undefined;
+    this.workspaceProbeState = 'checking';
+    this.workspaceProbeStatus = undefined;
+    this.workspaceDataText = '';
+    this.workspaceDataError = undefined;
     this.activeSection = 'applications';
+
+    if (application.uiMode === 'iframe' && application.port) {
+      const target = `${window.location.protocol}//${window.location.hostname}:${application.port}/`;
+      this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+    }
+
+    const module = this.modules.find(candidate => candidate.gatewayPath === application.path);
+    if (module) {
+      const result = await this.probeModule(module);
+      this.workspaceProbeState = result.state;
+      this.workspaceProbeStatus = result.status;
+    } else {
+      this.workspaceProbeState = 'unavailable';
+    }
+
+    await this.refreshWorkspaceData();
+  }
+
+  protected async refreshWorkspaceData(): Promise<void> {
+    const application = this.workspaceApplication;
+    if (!application || !this.portalApi.hasAuthenticatedSession() || this.workspaceDataLoading) return;
+
+    this.workspaceDataLoading = true;
+    this.workspaceDataError = undefined;
+    try {
+      const data = await firstValueFrom(this.portalApi.loadApplicationSurface(application.dataPath));
+      this.workspaceDataText = JSON.stringify(data, null, 2) ?? String(data);
+    } catch (error: unknown) {
+      this.workspaceDataText = '';
+      this.workspaceDataError = error instanceof Error
+        ? error.message
+        : `No fue posible cargar ${application.dataPath}.`;
+    } finally {
+      this.workspaceDataLoading = false;
+    }
+  }
+
+  protected manageApplicationSecurity(): void {
+    this.selectSection('security');
+  }
+
+  protected manageApplicationMenu(application: ApplicationCard): void {
+    this.menuModuleCode = application.moduleCode;
+    this.selectSection('menus');
+  }
+
+  protected manageApplicationConfiguration(application: ApplicationCard): void {
+    this.configurationScope = 2;
+    this.configurationModuleCode = application.moduleCode;
+    this.selectSection('configuration');
   }
 
   protected closeWorkspace(): void {
     this.workspaceApplication = undefined;
     this.workspaceUrl = undefined;
+    this.workspaceProbeState = 'idle';
+    this.workspaceProbeStatus = undefined;
+    this.workspaceDataText = '';
+    this.workspaceDataError = undefined;
   }
 
   protected async selectModule(module: ShellModule): Promise<void> {
