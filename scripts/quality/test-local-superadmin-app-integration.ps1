@@ -19,6 +19,11 @@ $registry = Get-Content -LiteralPath (Join-Path $root 'frontend/config/consumer-
 
 $requiredEndpointMarkers = @(
     'PortalLocalAdmin:Enabled',
+    'PortalLocalAdmin:Email',
+    'PortalLocalAdmin:Password',
+    'LocalAdminLoginRequest',
+    'CredentialEquals',
+    'Results.Unauthorized()',
     'RolePermissions',
     'Permissions.AsNoTracking()',
     'SUPERADMIN',
@@ -62,6 +67,9 @@ if ($baseCompose.Contains('PortalLocalAdmin__Enabled')) {
 if (-not $localCompose.Contains('PortalLocalAdmin__Enabled: "true"')) {
     throw 'PROD-local overlay must explicitly enable local SuperAdmin.'
 }
+foreach ($marker in @('PortalLocalAdmin__Email:','PortalLocalAdmin__Password:')) {
+    if (-not $localCompose.Contains($marker)) { throw "PROD-local login configuration missing marker: $marker" }
+}
 
 $corePortalPermissions = @('portal.catalog.manage','portal.catalog.read','portal.content.manage','portal.content.read','portal.reporting.read','portal.integration.manage','portal.integration.read')
 foreach ($permission in $corePortalPermissions) {
@@ -103,7 +111,7 @@ foreach ($consumer in $registry.consumers) {
 }
 
 foreach ($marker in @(
-    'createLocalSuperAdminSession()',
+    'createLocalSuperAdminSession(email: string, password: string)',
     'loadApplicationSurface(path: string)',
     'workspaceProbeState',
     'refreshWorkspaceData()',
@@ -128,6 +136,9 @@ foreach ($marker in @(
 
 if ($template -match 'Pega un token local|JWT local efímero') {
     throw 'Portal must not ask the PROD-local operator to paste a JWT manually.'
+}
+foreach ($marker in @('Acceso seguro','type="password"','autocomplete="username"','autocomplete="current-password"','class="admin-grid"')) {
+    if (-not $template.Contains($marker)) { throw "Portal login/grid UI missing marker: $marker" }
 }
 if ($component.Contains('sessionTokenInput')) {
     throw 'Portal component must not retain the obsolete manual JWT input.'

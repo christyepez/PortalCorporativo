@@ -30,9 +30,15 @@
         { "label": "Campañas", "route": "foundation/campaigns", "permission": "crm.*", "order": 70 },
         { "label": "Segmentos", "route": "foundation/segments", "permission": "crm.*", "order": 80 },
         { "label": "Casos", "route": "foundation/cases", "permission": "crm.*", "order": 90 },
-        { "label": "Customer 360", "route": "foundation/customer360", "permission": "crm.*", "order": 100 },
-        { "label": "Insights", "route": "foundation/insights", "permission": "crm.*", "order": 110 },
-        { "label": "Readiness", "route": "readiness", "permission": "crm.*", "order": 120 }
+        { "label": "Interacciones", "route": "foundation/interactions", "permission": "crm.*", "order": 100 },
+        { "label": "Notas", "route": "foundation/notes", "permission": "crm.*", "order": 110 },
+        { "label": "Pipelines", "route": "foundation/pipelines", "permission": "crm.*", "order": 120 },
+        { "label": "Documentos", "route": "foundation/documents", "permission": "crm.*", "order": 130 },
+        { "label": "Etiquetas", "route": "foundation/tags", "permission": "crm.*", "order": 140 },
+        { "label": "Asignaciones", "route": "foundation/assignments", "permission": "crm.*", "order": 150 },
+        { "label": "Customer 360", "route": "foundation/customer360", "permission": "crm.*", "order": 160 },
+        { "label": "Insights", "route": "foundation/insights", "permission": "crm.*", "order": 170 },
+        { "label": "Readiness", "route": "readiness", "permission": "crm.*", "order": 180 }
       ]
     },
     {
@@ -84,8 +90,9 @@
       "webPort": null,
       "webPath": null,
       "menuItems": [
-        { "label": "Resumen", "dataPath": "/api/hr/health/ready", "permission": "hr.employees.view", "order": 10 },
-        { "label": "Empleados", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 20 }
+        { "label": "Resumen", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 10 },
+        { "label": "Empleados", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 20 },
+        { "label": "Nuevo empleado", "dataPath": "/api/hr/employees", "permission": "hr.employees.manage", "order": 30 }
       ]
     },
     {

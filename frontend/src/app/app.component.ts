@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import consumerRegistry from '../../config/consumer-registry.json';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateHrEmployee, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -72,9 +72,7 @@ export class AppComponent implements OnInit {
   private async initializeLocalPortal(): Promise<void> {
     this.sessionInitializing = true;
     try {
-      await this.connectLocalSession();
       await this.refreshModuleHealth();
-      await this.openDeepLinkedApplication();
     } finally {
       this.sessionInitializing = false;
     }
@@ -176,12 +174,23 @@ export class AppComponent implements OnInit {
   protected workspaceDataColumns: string[] = [];
   protected workspaceDataLoading = false;
   protected workspaceDataError?: string;
+  protected hrEmployeeCode = '';
+  protected hrFullName = '';
+  protected hrEmail = '';
+  protected hrPosition = '';
+  protected hrDepartment = '';
+  protected hrSaving = false;
+  protected hrSuccess?: string;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
   protected sessionInitializing = false;
+  protected loginEmail = 'superadmin@portal.local';
+  protected loginPassword = '';
+  protected loginError?: string;
+  protected loginSubmitting = false;
   protected localAdminSession?: LocalAdminSession;
   protected securityApplication?: ApplicationCard;
   protected securityLoading = false;
@@ -362,24 +371,36 @@ export class AppComponent implements OnInit {
   }
 
   protected async connectLocalSession(): Promise<void> {
-    if (this.portalApi.hasAuthenticatedSession() || this.securityLoading) return;
+    if (this.portalApi.hasAuthenticatedSession() || this.loginSubmitting) return;
 
+    const email = this.loginEmail.trim().toLowerCase();
+    const password = this.loginPassword;
+    if (!email || !password) {
+      this.loginError = 'Ingresa usuario y contraseña.';
+      return;
+    }
+
+    this.loginSubmitting = true;
     this.securityLoading = true;
+    this.loginError = undefined;
     this.securityError = undefined;
     this.securitySuccess = undefined;
     try {
-      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
+      const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession(email, password));
       this.portalApi.setAccessToken(session.accessToken);
       this.localAdminSession = session;
+      this.loginPassword = '';
       if (this.workspaceApplication) this.publishPortalShellContext(this.workspaceApplication);
       this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
-    } catch (error: unknown) {
+      await this.refreshModuleHealth();
+      await this.openDeepLinkedApplication();
+    } catch {
       this.portalApi.clearAccessToken();
-      this.securityError = error instanceof Error
-        ? error.message
-        : 'No fue posible iniciar la sesión SuperAdmin local.';
+      this.localAdminSession = undefined;
+      this.loginError = 'Usuario o contraseña incorrectos.';
     } finally {
       this.securityLoading = false;
+      this.loginSubmitting = false;
     }
   }
 
@@ -401,6 +422,11 @@ export class AppComponent implements OnInit {
     this.securityCheckAllowed = undefined;
     this.securityError = undefined;
     this.securitySuccess = undefined;
+    this.loginError = undefined;
+    this.loginPassword = '';
+    this.activeSection = 'dashboard';
+    this.sidebarCollapsed = false;
+    this.closeWorkspace();
   }
 
   protected selectSecurityTab(tab: SecurityTab): void {
@@ -1555,6 +1581,57 @@ export class AppComponent implements OnInit {
         : `No fue posible cargar ${dataPath}.`;
     } finally {
       this.workspaceDataLoading = false;
+    }
+  }
+
+  protected isHrWorkspace(): boolean {
+    return this.workspaceApplication?.code === 'HR';
+  }
+
+  protected hrActiveEmployees(): number {
+    return this.workspaceDataRows.filter(row => row['isActive'] === true).length;
+  }
+
+  protected hrDepartmentCount(): number {
+    return new Set(
+      this.workspaceDataRows
+        .map(row => String(row['department'] ?? '').trim())
+        .filter(Boolean)
+    ).size;
+  }
+
+  protected async createHrEmployee(): Promise<void> {
+    if (!this.isHrWorkspace() || this.hrSaving) return;
+
+    const request: CreateHrEmployee = {
+      employeeCode: this.hrEmployeeCode.trim(),
+      fullName: this.hrFullName.trim(),
+      email: this.hrEmail.trim().toLowerCase(),
+      position: this.hrPosition.trim(),
+      department: this.hrDepartment.trim()
+    };
+
+    if (!request.employeeCode || !request.fullName || !request.email || !request.position || !request.department) {
+      this.workspaceDataError = 'Completa código, nombre, email, cargo y departamento.';
+      return;
+    }
+
+    this.hrSaving = true;
+    this.hrSuccess = undefined;
+    this.workspaceDataError = undefined;
+    try {
+      const created = await firstValueFrom(this.portalApi.createHrEmployee(request));
+      this.hrEmployeeCode = '';
+      this.hrFullName = '';
+      this.hrEmail = '';
+      this.hrPosition = '';
+      this.hrDepartment = '';
+      this.hrSuccess = `Empleado ${created.fullName} creado correctamente.`;
+      await this.refreshWorkspaceData();
+    } catch (error: unknown) {
+      this.workspaceDataError = error instanceof Error ? error.message : 'No fue posible crear el empleado.';
+    } finally {
+      this.hrSaving = false;
     }
   }
 

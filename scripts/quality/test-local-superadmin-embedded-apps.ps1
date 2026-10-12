@@ -20,7 +20,10 @@ $registry = Get-Content (Join-Path $root 'frontend/config/consumer-registry.json
 
 foreach ($marker in @(
     'PortalLocalAdmin:Enabled',
-    'superadmin@portal.local',
+    'PortalLocalAdmin:Email',
+    'PortalLocalAdmin:Password',
+    'LocalAdminLoginRequest',
+    'CredentialEquals',
     'HttpOnly = true',
     'SameSite = SameSiteMode.Strict',
     'EnsureLocalSuperAdminAsync',
@@ -40,7 +43,9 @@ Assert-Contains $gateway '"AuthorizationPolicy": "financial.*"' 'Financiero rout
 Assert-Contains $gateway '"AuthorizationPolicy": "hr.employees.view"' 'HR route is governed by HR permission'
 Assert-Contains $gateway '"AuthorizationPolicy": "historiaspaolin.channels.view"' 'Historias route is governed by Historias permission'
 
-Assert-Contains $compose 'PortalLocalAdmin__Enabled: "true"' 'PROD-local explicitly enables the local SuperAdmin bootstrap'
+Assert-Contains $compose 'PortalLocalAdmin__Enabled: "true"' 'PROD-local explicitly enables the local SuperAdmin login'
+Assert-Contains $compose 'PortalLocalAdmin__Email:' 'PROD-local configures local admin email'
+Assert-Contains $compose 'PortalLocalAdmin__Password:' 'PROD-local configures local admin password'
 Assert-Contains $compose 'additional_contexts:' 'Portal web build declares external source contexts'
 Assert-Contains $compose 'crm_source:' 'Portal web build includes CRM source'
 Assert-Contains $compose 'financial_source:' 'Portal web build includes Financiero source'
@@ -67,12 +72,14 @@ foreach ($consumer in $embedded) {
 }
 if (@($registry.consumers | Where-Object { $_.uiMode -eq 'native' -and $_.webPath }).Count -ne 0) { throw 'Native API consumers must not advertise webPath.' }
 
-Assert-Contains $api 'createLocalSuperAdminSession()' 'Portal API client requests local SuperAdmin session'
+Assert-Contains $api 'createLocalSuperAdminSession(email: string, password: string)' 'Portal API client requests credentialed local SuperAdmin session'
 Assert-Contains $api 'clearLocalSuperAdminSession()' 'Portal API client revokes local SuperAdmin session'
 Assert-Contains $component 'updateWorkspaceUrl(application: ApplicationCard, item?: ApplicationMenuItem)' 'Embedded app URLs are governed by application menu routes'
 Assert-Contains $component 'publishPortalShellContext(application: ApplicationCard)' 'Portal publishes shared shell context to embedded apps'
 Assert-Contains $template 'workspace-app-menu' 'Portal renders an application-owned submenu in the embedded workspace'
-Assert-Contains $template 'Entrar como SuperAdmin local' 'Security UI exposes local SuperAdmin bootstrap'
+Assert-Contains $template 'Acceso seguro' 'Portal exposes a credentialed login screen'
+Assert-Contains $template 'type="password"' 'Portal login collects password securely'
+Assert-Contains $template 'class="admin-grid"' 'Portal administrative records render in grids'
 if ($template -match 'Pega un token local|JWT local efímero') { throw 'Manual JWT input must not return to the Security UI.' }
 if ($api -match 'localStorage|sessionStorage') { throw 'Browser credentials must not be persisted.' }
 

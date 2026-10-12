@@ -13,6 +13,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       PortalLocalAdmin__Enabled: "true"
+      PortalLocalAdmin__Email: ${PORTAL_LOCAL_ADMIN_EMAIL:-superadmin@portal.local}
+      PortalLocalAdmin__Password: ${PORTAL_LOCAL_ADMIN_PASSWORD:-PortalAdmin1234!}
 
   configuration-api:
     environment:

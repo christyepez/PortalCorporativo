@@ -103,13 +103,17 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(component, /async assignSecurityPermissionToRole\(\)/);
   assert.match(component, /async loadSecurityUserPermissions\(\)/);
   assert.match(component, /async checkSecurityPermission\(\)/);
-  assert.match(apiService, /createLocalSuperAdminSession\(\)/);
+  assert.match(apiService, /createLocalSuperAdminSession\(email:\s*string,\s*password:\s*string\)/);
   assert.match(apiService, /\/security\/local-session/);
+  assert.match(apiService, /\{ email, password \}/);
   assert.match(apiService, /clearLocalSuperAdminSession\(\)/);
   assert.match(apiService, /\/security\/local-session\/logout/);
   assert.match(component, /implements OnInit/);
   assert.match(component, /ngOnInit\(\)/);
   assert.match(component, /initializeLocalPortal\(\)/);
+  assert.match(component, /loginEmail\s*=\s*'superadmin@portal\.local'/);
+  assert.match(component, /loginPassword\s*=\s*''/);
+  assert.match(component, /createLocalSuperAdminSession\(email, password\)/);
   assert.match(component, /portalApi\.setAccessToken\(session\.accessToken\)/);
   assert.match(component, /localAdminSession\s*=\s*session/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
@@ -119,8 +123,17 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /Asignar rol/);
   assert.match(template, /Asignar permiso/);
   assert.match(template, /Evaluar permiso/);
-  assert.match(template, /SuperAdmin local/);
-  assert.match(template, /No necesitas usuario, clave ni copiar\/pegar tokens/);
+  assert.match(template, /Acceso seguro/);
+  assert.match(template, /type="password"/);
+  assert.match(template, /autocomplete="username"/);
+  assert.match(template, /autocomplete="current-password"/);
+  assert.match(template, /loginSubmitting/);
+  assert.match(template, /class="admin-grid"/);
+  assert.match(template, /aria-label="Usuarios de seguridad"/);
+  assert.match(template, /aria-label="Roles de seguridad"/);
+  assert.match(template, /aria-label="Permisos de seguridad"/);
+  assert.match(template, /aria-label="Recursos protegidos"/);
+  assert.doesNotMatch(component, /initializeLocalPortal[\s\S]{0,220}connectLocalSession\(\)/);
   assert.match(template, /localAdminSession\.displayName/);
   assert.match(template, /localAdminSession\.role/);
   assert.doesNotMatch(template, /Pega un token local|JWT local efímero/);
