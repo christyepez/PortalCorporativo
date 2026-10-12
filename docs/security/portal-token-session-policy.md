@@ -12,7 +12,7 @@
 
 Backend services validate JWT bearer tokens using issuer, audience, signing key and lifetime checks. The current symmetric key setup is local/NonProduction foundation only and requires a secret source before production.
 
-The Angular shell is implemented and keeps access tokens in memory only. For PROD-local administration, an already-issued local JWT may be supplied to an ephemeral browser session to call protected Portal APIs; the token is cleared on reload or explicit logout and is never written to localStorage/sessionStorage. Real login remains subject to the approved OIDC production gate.
+The Angular shell is implemented and keeps access tokens in memory only. For PROD-local administration, the Portal may request a short-lived SuperAdmin JWT from the Security API through the exact `/api/security/local-session` Gateway route when, and only when, the PROD-local overlay enables `PortalLocalAdmin`. The endpoint reads the current SuperAdmin permission assignments from Security DB, returns `404` when disabled, sends `no-store`/`no-cache`, and the browser never persists the token to localStorage/sessionStorage. The operator does not paste a token manually. Real login remains subject to the approved OIDC production gate.
 
 ## Future Session Baseline
 

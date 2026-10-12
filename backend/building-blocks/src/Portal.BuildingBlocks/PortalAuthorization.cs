@@ -23,7 +23,7 @@ public static class PortalPermissions
     public const string ReportingRead = "portal.reporting.read";
     public const string IntegrationManage = "portal.integration.manage";
     public const string IntegrationRead = "portal.integration.read";
-    public const string CrmAccess = "crm.access";
+    public const string CrmAll = "crm.*";
     public const string FinancialAll = "financial.*";
     public const string HrEmployeesView = "hr.employees.view";
     public const string HrEmployeesManage = "hr.employees.manage";
@@ -34,7 +34,7 @@ public static class PortalPermissions
         SecurityManage, ConfigurationManage, ConfigurationRead, MenuManage, MenuRead,
         AuditRead, AuditWrite, NotificationManage, NotificationSend, NotificationRead,
         CatalogManage, CatalogRead, ContentManage, ContentRead, ReportingRead,
-        IntegrationManage, IntegrationRead, CrmAccess, FinancialAll,
+        IntegrationManage, IntegrationRead, CrmAll, FinancialAll,
         HrEmployeesView, HrEmployeesManage, HistoriasPaolinChannelsView
     ];
 }

@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import consumerRegistry from '../../config/consumer-registry.json';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -33,11 +33,15 @@ interface NavigationItem {
 interface ApplicationCard {
   readonly name: string;
   readonly code: string;
+  readonly moduleCode: string;
   readonly description: string;
-  readonly gatewayPath: string;
+  readonly port?: number;
   readonly webPath?: string;
+  readonly path: string;
+  readonly probePath: string;
+  readonly dataPath: string;
   readonly accessPermission: string;
-  readonly uiMode: 'embedded' | 'api-only';
+  readonly uiMode: 'native' | 'iframe';
   readonly status: string;
 }
 @Component({
@@ -46,11 +50,25 @@ interface ApplicationCard {
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
     private readonly sanitizer: DomSanitizer,
     private readonly portalApi: PortalApiService
   ) {}
+
+  ngOnInit(): void {
+    void this.initializeLocalPortal();
+  }
+
+  private async initializeLocalPortal(): Promise<void> {
+    this.sessionInitializing = true;
+    try {
+      await this.connectLocalSession();
+      await this.refreshModuleHealth();
+    } finally {
+      this.sessionInitializing = false;
+    }
+  }
 
   protected readonly title = 'Portal Corporativo';
   protected readonly readiness = environment.shellReadiness;
@@ -74,11 +92,15 @@ export class AppComponent {
   protected readonly applications: ApplicationCard[] = consumerRegistry.consumers.map((consumer) => ({
     name: consumer.name,
     code: consumer.code,
+    moduleCode: consumer.moduleCode,
     description: consumer.description,
-    gatewayPath: consumer.gatewayPath,
+    port: consumer.webPort ?? undefined,
     webPath: consumer.webPath ?? undefined,
-    accessPermission: consumer.smokePermission,
-    uiMode: consumer.uiMode as 'embedded' | 'api-only',
+    path: consumer.gatewayPath,
+    probePath: consumer.probePath,
+    dataPath: consumer.protectedSmoke,
+    accessPermission: consumer.accessPermission,
+    uiMode: consumer.uiMode as 'native' | 'iframe',
     status: consumer.status
   }));
 
@@ -104,11 +126,19 @@ export class AppComponent {
   protected activeSection: AdminSection = 'dashboard';
   protected workspaceApplication?: ApplicationCard;
   protected workspaceUrl?: SafeResourceUrl;
+  protected workspaceProbeState: ModuleProbeState = 'idle';
+  protected workspaceProbeStatus?: number;
+  protected workspaceDataText = '';
+  protected workspaceDataLoading = false;
+  protected workspaceDataError?: string;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
+  protected sessionInitializing = false;
+  protected localAdminSession?: LocalAdminSession;
+  protected securityApplication?: ApplicationCard;
   protected securityLoading = false;
   protected securityError?: string;
   protected activeSecurityTab: SecurityTab = 'users';
@@ -252,39 +282,52 @@ export class AppComponent {
 
   protected selectSection(section: AdminSection): void {
     this.activeSection = section;
-    if (section === 'operations') void this.refreshModuleHealth();
-    if (section === 'security' && this.portalApi.hasAuthenticatedSession()) void this.loadSecurityData();
-    if (section === 'menus' && this.portalApi.hasAuthenticatedSession()) void this.loadMenuData();
-    if (section === 'configuration' && this.portalApi.hasAuthenticatedSession()) void this.loadConfigurationData();
-    if (section === 'catalogs' && this.portalApi.hasAuthenticatedSession()) void this.loadCatalogData();
-    if (section === 'content' && this.portalApi.hasAuthenticatedSession()) void this.loadContentData();
-    if (section === 'audit' && this.portalApi.hasAuthenticatedSession()) void this.loadAuditData(1);
-    if (section === 'reporting' && this.portalApi.hasAuthenticatedSession()) void this.loadReportingData();
-    if (section === 'notifications' && this.portalApi.hasAuthenticatedSession()) void this.loadNotificationData();
+    void this.activateSection(section);
+  }
+
+  private async activateSection(section: AdminSection): Promise<void> {
+    if (section === 'operations') {
+      await this.refreshModuleHealth();
+      return;
+    }
+
+    if (section === 'dashboard' || section === 'applications') return;
+
+    if (!this.portalApi.hasAuthenticatedSession()) {
+      await this.connectLocalSession();
+      if (!this.portalApi.hasAuthenticatedSession()) return;
+    }
+
+    if (section === 'security') await this.loadSecurityData();
+    if (section === 'menus') await this.loadMenuData();
+    if (section === 'configuration') await this.loadConfigurationData();
+    if (section === 'catalogs') await this.loadCatalogData();
+    if (section === 'content') await this.loadContentData();
+    if (section === 'audit') await this.loadAuditData(1);
+    if (section === 'reporting') await this.loadReportingData();
+    if (section === 'notifications') await this.loadNotificationData();
   }
 
   protected hasAuthenticatedSession(): boolean {
     return this.portalApi.hasAuthenticatedSession();
   }
 
-  protected accessibleApplications(): readonly ApplicationCard[] {
-    if (!this.portalApi.hasAuthenticatedSession()) return this.applications;
-    return this.applications.filter(application => this.portalApi.hasPermission(application.accessPermission));
-  }
-
   protected async connectLocalSession(): Promise<void> {
-    if (this.securityLoading) return;
+    if (this.portalApi.hasAuthenticatedSession() || this.securityLoading) return;
+
     this.securityLoading = true;
     this.securityError = undefined;
     this.securitySuccess = undefined;
     try {
       const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
       this.portalApi.setAccessToken(session.accessToken);
-      this.securitySuccess = `${session.displayName} conectado · ${session.role} · tenant ${session.tenantId}`;
-      await this.loadSecurityData();
-    } catch {
+      this.localAdminSession = session;
+      this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
+    } catch (error: unknown) {
       this.portalApi.clearAccessToken();
-      this.securityError = 'No fue posible iniciar la sesión SuperAdmin local.';
+      this.securityError = error instanceof Error
+        ? error.message
+        : 'No fue posible iniciar la sesión SuperAdmin local.';
     } finally {
       this.securityLoading = false;
     }
@@ -292,10 +335,12 @@ export class AppComponent {
 
   protected async clearLocalSession(): Promise<void> {
     this.portalApi.clearAccessToken();
+    this.localAdminSession = undefined;
+    this.securityApplication = undefined;
     try {
       await firstValueFrom(this.portalApi.clearLocalSuperAdminSession());
     } catch {
-      // Local logout is best-effort; in-memory credentials are already cleared.
+      // The in-memory credential is already cleared; cookie cleanup is best-effort.
     }
     this.securityUsers = [];
     this.securityRoles = [];
@@ -1391,28 +1436,98 @@ export class AppComponent {
     return this.modules.filter((module) => this.probeResult(module).state === state).length;
   }
 
-  protected openApplication(application: ApplicationCard): void {
-    if (!application.webPath) return;
+  protected async openApplication(application: ApplicationCard): Promise<void> {
     if (!this.portalApi.hasAuthenticatedSession()) {
-      this.securityError = 'Inicia la sesión SuperAdmin local para abrir aplicaciones integradas.';
-      this.activeSection = 'security';
-      return;
-    }
-    if (!this.portalApi.hasPermission(application.accessPermission)) {
-      this.securityError = `La sesión actual no tiene el permiso ${application.accessPermission}.`;
-      this.activeSection = 'security';
-      return;
+      await this.connectLocalSession();
+      if (!this.portalApi.hasAuthenticatedSession()) return;
     }
 
-    const target = new URL(application.webPath, window.location.origin).toString();
     this.workspaceApplication = application;
-    this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+    this.workspaceUrl = undefined;
+    this.workspaceProbeState = 'checking';
+    this.workspaceProbeStatus = undefined;
+    this.workspaceDataText = '';
+    this.workspaceDataError = undefined;
     this.activeSection = 'applications';
+
+    if (application.uiMode === 'iframe' && application.webPath) {
+      const target = new URL(application.webPath, window.location.origin).toString();
+      this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+    }
+
+    const module = this.modules.find(candidate => candidate.gatewayPath === application.path);
+    if (module) {
+      const result = await this.probeModule(module);
+      this.workspaceProbeState = result.state;
+      this.workspaceProbeStatus = result.status;
+    } else {
+      this.workspaceProbeState = 'unavailable';
+    }
+
+    await this.refreshWorkspaceData();
+  }
+
+  protected async refreshWorkspaceData(): Promise<void> {
+    const application = this.workspaceApplication;
+    if (!application || !this.portalApi.hasAuthenticatedSession() || this.workspaceDataLoading) return;
+
+    this.workspaceDataLoading = true;
+    this.workspaceDataError = undefined;
+    try {
+      const data = await firstValueFrom(this.portalApi.loadApplicationSurface(application.dataPath));
+      this.workspaceDataText = JSON.stringify(data, null, 2) ?? String(data);
+    } catch (error: unknown) {
+      this.workspaceDataText = '';
+      this.workspaceDataError = error instanceof Error
+        ? error.message
+        : `No fue posible cargar ${application.dataPath}.`;
+    } finally {
+      this.workspaceDataLoading = false;
+    }
+  }
+
+  protected manageApplicationSecurity(application?: ApplicationCard): void {
+    this.securityApplication = application;
+    if (application) {
+      const permissionParts = application.accessPermission.split('.');
+      if (permissionParts.at(-1) === '*') {
+        this.securityCheckResourceKey = permissionParts.slice(0, -1).join('.');
+        this.securityCheckAction = '*';
+      } else {
+        this.securityCheckResourceKey = permissionParts.slice(0, -1).join('.');
+        this.securityCheckAction = permissionParts.at(-1) ?? '';
+      }
+      this.activeSecurityTab = 'permissions';
+    }
+    this.selectSection('security');
+  }
+
+  protected applicationAuthorized(application: ApplicationCard): boolean {
+    return this.localAdminSession?.permissions.includes(application.accessPermission) ?? false;
+  }
+
+  protected applicationIntegrationLabel(application: ApplicationCard): string {
+    return application.uiMode === 'iframe' ? 'UI embebida' : 'Módulo Portal / API';
+  }
+
+  protected manageApplicationMenu(application: ApplicationCard): void {
+    this.menuModuleCode = application.moduleCode;
+    this.selectSection('menus');
+  }
+
+  protected manageApplicationConfiguration(application: ApplicationCard): void {
+    this.configurationScope = 2;
+    this.configurationModuleCode = application.moduleCode;
+    this.selectSection('configuration');
   }
 
   protected closeWorkspace(): void {
     this.workspaceApplication = undefined;
     this.workspaceUrl = undefined;
+    this.workspaceProbeState = 'idle';
+    this.workspaceProbeStatus = undefined;
+    this.workspaceDataText = '';
+    this.workspaceDataError = undefined;
   }
 
   protected async selectModule(module: ShellModule): Promise<void> {
@@ -1441,21 +1556,23 @@ export class AppComponent {
     this.moduleProbeResults.set(module.label, { state: 'checking' });
 
     try {
-      const response = await fetch(module.probePath, {
-        method: 'GET',
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { 'X-Correlation-ID': `portal-shell-${crypto.randomUUID()}` }
-      });
+      const response = await firstValueFrom(this.portalApi.probe(module.probePath));
       const result: ModuleProbeResult = {
-        state: response.ok ? 'available' : response.status === 401 || response.status === 403 ? 'protected' : 'unavailable',
+        state: response.ok ? 'available' : 'unavailable',
         status: response.status,
         checkedAt: new Date()
       };
       this.moduleProbeResults.set(module.label, result);
       return result;
-    } catch {
-      const result: ModuleProbeResult = { state: 'unavailable', checkedAt: new Date() };
+    } catch (error: unknown) {
+      const status = typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: number }).status)
+        : undefined;
+      const result: ModuleProbeResult = {
+        state: status === 401 || status === 403 ? 'protected' : 'unavailable',
+        status,
+        checkedAt: new Date()
+      };
       this.moduleProbeResults.set(module.label, result);
       return result;
     }

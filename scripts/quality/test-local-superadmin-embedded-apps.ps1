@@ -25,7 +25,7 @@ foreach ($marker in @(
     'SameSite = SameSiteMode.Strict',
     'EnsureLocalSuperAdminAsync',
     'UserRole.Create',
-    'RolePermission.Create',
+    'Permissions.AsNoTracking()',
     'MaxAge = TimeSpan.FromMinutes(10)',
     '/api/security/local-session/logout'
 )) {
@@ -35,7 +35,7 @@ if ($session -match '(?i)(secret|password)s*=s*"[^"]+"') { throw 'Local SuperAdm
 
 Assert-Contains $auth 'portal_local_session' 'Portal JWT authentication accepts the local HttpOnly session cookie'
 Assert-Contains $gateway '"security-local-session"' 'Gateway exposes the local session bootstrap without the protected catch-all'
-Assert-Contains $gateway '"AuthorizationPolicy": "crm.access"' 'CRM route is governed by crm.access'
+Assert-Contains $gateway '"AuthorizationPolicy": "crm.*"' 'CRM route is governed by crm wildcard permission'
 Assert-Contains $gateway '"AuthorizationPolicy": "financial.*"' 'Financiero route is governed by financial wildcard permission'
 Assert-Contains $gateway '"AuthorizationPolicy": "hr.employees.view"' 'HR route is governed by HR permission'
 Assert-Contains $gateway '"AuthorizationPolicy": "historiaspaolin.channels.view"' 'Historias route is governed by Historias permission'
@@ -59,13 +59,13 @@ Assert-Contains $nginx 'location /apps/crm/' 'Nginx serves embedded CRM'
 Assert-Contains $nginx 'location /apps/financial/' 'Nginx serves embedded Financiero'
 
 if ([int]$registry.version -ne 2) { throw 'Consumer registry must use schema version 2.' }
-$embedded = @($registry.consumers | Where-Object { $_.uiMode -eq 'embedded' })
+$embedded = @($registry.consumers | Where-Object { $_.uiMode -eq 'iframe' })
 if ($embedded.Count -ne 2) { throw 'Exactly two consumers must be web embedded in the current baseline.' }
 if (@($embedded.code | Sort-Object) -join ',' -ne 'CRM,FINANCIAL') { throw 'Only CRM and FINANCIAL may advertise embedded UI in this baseline.' }
 foreach ($consumer in $embedded) {
     if (-not ([string]$consumer.webPath).StartsWith('/apps/')) { throw "$($consumer.code) webPath must remain under /apps." }
 }
-if (@($registry.consumers | Where-Object { $_.uiMode -eq 'api-only' -and $_.webPath }).Count -ne 0) { throw 'API-only consumers must not advertise webPath.' }
+if (@($registry.consumers | Where-Object { $_.uiMode -eq 'native' -and $_.webPath }).Count -ne 0) { throw 'Native API consumers must not advertise webPath.' }
 
 Assert-Contains $api 'createLocalSuperAdminSession()' 'Portal API client requests local SuperAdmin session'
 Assert-Contains $api 'clearLocalSuperAdminSession()' 'Portal API client revokes local SuperAdmin session'

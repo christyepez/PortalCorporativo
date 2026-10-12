@@ -14,45 +14,70 @@ public static class LocalAdminSessionEndpoints
     public const string CookieName = "portal_local_session";
     private const string LocalAdminEmail = "superadmin@portal.local";
 
-    private static readonly (string ResourceKey, string ResourceName, string PermissionCode, string Action)[] ConsumerSecurity =
-    [
-        ("crm", "CRM", PortalPermissions.CrmAccess, "access"),
-        ("financial", "Financiero", PortalPermissions.FinancialAll, "all"),
-        ("hr.employees", "Talento Humano", PortalPermissions.HrEmployeesView, "view"),
-        ("hr.employees", "Talento Humano", PortalPermissions.HrEmployeesManage, "manage"),
-        ("historiaspaolin.channels", "HistoriasPaolin", PortalPermissions.HistoriasPaolinChannelsView, "view")
-    ];
-
     public static IEndpointRouteBuilder MapLocalAdminSessionEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/security/local-session", async (
             IConfiguration configuration,
-            SecurityDbContext db,
+            SecurityDbContext dbContext,
             HttpContext context,
-            CancellationToken ct) =>
+            CancellationToken cancellationToken) =>
         {
             if (!configuration.GetValue<bool>("PortalLocalAdmin:Enabled"))
+            {
                 return Results.NotFound();
+            }
 
             var secret = configuration["Jwt:Secret"];
             var issuer = configuration["Jwt:Issuer"];
             var audience = configuration["Jwt:Audience"];
             if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
-                return Results.Problem("Local JWT configuration is incomplete.", statusCode: StatusCodes.Status503ServiceUnavailable);
+            {
+                return Results.Problem(
+                    "Local JWT configuration is incomplete.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
 
-            var user = await EnsureLocalSuperAdminAsync(db, ct);
+            var localAdmin = await EnsureLocalSuperAdminAsync(dbContext, cancellationToken);
+            var superAdminRoleId = await dbContext.Roles
+                .AsNoTracking()
+                .Where(role =>
+                    role.TenantId == TenantIds.Default &&
+                    role.NormalizedName == "SUPERADMIN")
+                .Select(role => role.Id)
+                .SingleAsync(cancellationToken);
+
+            var permissionCodes = await (
+                from assignment in dbContext.RolePermissions.AsNoTracking()
+                join permission in dbContext.Permissions.AsNoTracking()
+                    on assignment.PermissionId equals permission.Id
+                where assignment.TenantId == TenantIds.Default &&
+                      assignment.RoleId == superAdminRoleId &&
+                      permission.TenantId == TenantIds.Default
+                orderby permission.Code
+                select permission.Code)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            if (permissionCodes.Count == 0)
+            {
+                return Results.Problem(
+                    "SuperAdmin has no permissions assigned.",
+                    statusCode: StatusCodes.Status503ServiceUnavailable);
+            }
+
             var now = DateTimeOffset.UtcNow;
             var expires = now.AddMinutes(10);
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(JwtRegisteredClaimNames.Sub, localAdmin.Id.ToString()),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
                 new("tenant_id", TenantIds.Default),
-                new(ClaimTypes.Name, user.Name),
-                new(ClaimTypes.Email, user.Email),
+                new(ClaimTypes.Name, localAdmin.Name),
+                new(ClaimTypes.Email, localAdmin.Email),
                 new(ClaimTypes.Role, "SuperAdmin")
             };
-            claims.AddRange(PortalPermissions.All.Select(permission => new Claim(PortalPermissions.ClaimType, permission)));
+            claims.AddRange(permissionCodes.Select(permission =>
+                new Claim(PortalPermissions.ClaimType, permission)));
 
             var credentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
@@ -83,17 +108,20 @@ public static class LocalAdminSessionEndpoints
             {
                 accessToken = encoded,
                 expiresAtUtc = expires,
-                user = user.Email,
-                displayName = user.Name,
+                user = localAdmin.Email,
+                displayName = localAdmin.Name,
                 role = "SuperAdmin",
-                tenantId = TenantIds.Default
+                tenantId = TenantIds.Default,
+                permissions = permissionCodes
             });
         }).AllowAnonymous();
 
         endpoints.MapPost("/api/security/local-session/logout", (IConfiguration configuration, HttpContext context) =>
         {
             if (!configuration.GetValue<bool>("PortalLocalAdmin:Enabled"))
+            {
                 return Results.NotFound();
+            }
 
             context.Response.Cookies.Delete(CookieName, new CookieOptions
             {
@@ -104,73 +132,44 @@ public static class LocalAdminSessionEndpoints
                 Path = "/"
             });
             context.Response.Headers.CacheControl = "no-store";
+            context.Response.Headers.Pragma = "no-cache";
             return Results.NoContent();
         }).AllowAnonymous();
 
         return endpoints;
     }
 
-    private static async Task<User> EnsureLocalSuperAdminAsync(SecurityDbContext db, CancellationToken ct)
+    private static async Task<User> EnsureLocalSuperAdminAsync(SecurityDbContext dbContext, CancellationToken cancellationToken)
     {
-        var user = await db.Users.SingleOrDefaultAsync(
-            x => x.TenantId == TenantIds.Default && x.NormalizedEmail == LocalAdminEmail.ToUpperInvariant(),
-            ct);
+        var user = await dbContext.Users.SingleOrDefaultAsync(
+            user => user.TenantId == TenantIds.Default &&
+                    user.NormalizedEmail == LocalAdminEmail.ToUpperInvariant(),
+            cancellationToken);
 
         if (user is null)
         {
             user = User.Create(TenantIds.Default, LocalAdminEmail, "Local SuperAdmin");
-            db.Users.Add(user);
-            await db.SaveChangesAsync(ct);
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var role = await db.Roles.SingleAsync(
-            x => x.TenantId == TenantIds.Default && x.NormalizedName == "SUPERADMIN",
-            ct);
+        var role = await dbContext.Roles.SingleAsync(
+            role => role.TenantId == TenantIds.Default &&
+                    role.NormalizedName == "SUPERADMIN",
+            cancellationToken);
 
-        var assigned = await db.UserRoles.AnyAsync(
-            x => x.TenantId == TenantIds.Default && x.UserId == user.Id && x.RoleId == role.Id,
-            ct);
+        var assigned = await dbContext.UserRoles.AnyAsync(
+            assignment => assignment.TenantId == TenantIds.Default &&
+                          assignment.UserId == user.Id &&
+                          assignment.RoleId == role.Id,
+            cancellationToken);
 
         if (!assigned)
         {
-            db.UserRoles.Add(UserRole.Create(TenantIds.Default, user.Id, role.Id));
+            dbContext.UserRoles.Add(UserRole.Create(TenantIds.Default, user.Id, role.Id));
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        foreach (var definition in ConsumerSecurity)
-        {
-            var resource = await db.Resources.SingleOrDefaultAsync(
-                x => x.TenantId == TenantIds.Default && x.Key == definition.ResourceKey,
-                ct);
-            if (resource is null)
-            {
-                resource = Resource.Create(TenantIds.Default, definition.ResourceKey, definition.ResourceName);
-                db.Resources.Add(resource);
-            }
-
-            var permission = await db.Permissions.SingleOrDefaultAsync(
-                x => x.TenantId == TenantIds.Default && x.Code == definition.PermissionCode,
-                ct);
-            if (permission is null)
-            {
-                permission = Permission.Create(
-                    TenantIds.Default,
-                    definition.PermissionCode,
-                    definition.ResourceKey,
-                    definition.Action);
-                db.Permissions.Add(permission);
-                await db.SaveChangesAsync(ct);
-            }
-
-            var rolePermissionExists = await db.RolePermissions.AnyAsync(
-                x => x.TenantId == TenantIds.Default && x.RoleId == role.Id && x.PermissionId == permission.Id,
-                ct);
-            if (!rolePermissionExists)
-            {
-                db.RolePermissions.Add(RolePermission.Create(TenantIds.Default, role.Id, permission.Id));
-            }
-        }
-
-        await db.SaveChangesAsync(ct);
         return user;
     }
 }

@@ -4,10 +4,9 @@
     {
       "name": "CRM",
       "code": "CRM",
+      "moduleCode": "crm",
       "description": "Gestión comercial y clientes.",
       "status": "Integrado · Web embebida",
-      "uiMode": "embedded",
-      "webPath": "/apps/crm/",
       "service": "crm-api",
       "route": "crm",
       "healthRoute": "crm-health",
@@ -16,15 +15,18 @@
       "internalAddress": "http://crm-api:8080/",
       "protectedSmoke": "/api/crm/readiness",
       "probePath": "/api/crm/health/ready",
-      "smokePermission": "crm.access"
+      "smokePermission": "crm.*",
+      "accessPermission": "crm.*",
+      "uiMode": "iframe",
+      "webPort": null,
+      "webPath": "/apps/crm/"
     },
     {
       "name": "Financiero",
       "code": "FINANCIAL",
+      "moduleCode": "financial",
       "description": "Operación financiera y presupuestaria.",
       "status": "Integrado · Web embebida",
-      "uiMode": "embedded",
-      "webPath": "/apps/financial/",
       "service": "financial-api",
       "route": "financial",
       "healthRoute": "financial-health",
@@ -33,15 +35,18 @@
       "internalAddress": "http://financial-api:8080/",
       "protectedSmoke": "/api/financial/accounts",
       "probePath": "/api/financial/health/ready",
-      "smokePermission": "financial.*"
+      "smokePermission": "financial.*",
+      "accessPermission": "financial.*",
+      "uiMode": "iframe",
+      "webPort": null,
+      "webPath": "/apps/financial/"
     },
     {
       "name": "Talento Humano",
       "code": "HR",
+      "moduleCode": "hr",
       "description": "Gestión de personas y colaboradores.",
-      "status": "Integrado · API",
-      "uiMode": "api-only",
-      "webPath": null,
+      "status": "Integrado · Módulo API",
       "service": "hr-api",
       "route": "hr",
       "healthRoute": "hr-health",
@@ -50,15 +55,18 @@
       "internalAddress": "http://hr-api:8080/",
       "protectedSmoke": "/api/hr/employees",
       "probePath": "/api/hr/health/ready",
-      "smokePermission": "hr.employees.view"
+      "smokePermission": "hr.employees.view",
+      "accessPermission": "hr.employees.view",
+      "uiMode": "native",
+      "webPort": null,
+      "webPath": null
     },
     {
       "name": "HistoriasPaolin",
       "code": "HISTORIAS",
+      "moduleCode": "historiaspaolin",
       "description": "Aplicación integrada mediante Gateway.",
-      "status": "Integrado · API",
-      "uiMode": "api-only",
-      "webPath": null,
+      "status": "Integrado · Módulo API",
       "service": "historiaspaolin-api",
       "route": "historiaspaolin",
       "healthRoute": "historiaspaolin-health",
@@ -67,7 +75,11 @@
       "internalAddress": "http://historiaspaolin-api:8080/",
       "protectedSmoke": "/api/historiaspaolin/api/channels",
       "probePath": "/api/historiaspaolin/health/ready",
-      "smokePermission": "historiaspaolin.channels.view"
+      "smokePermission": "historiaspaolin.channels.view",
+      "accessPermission": "historiaspaolin.channels.view",
+      "uiMode": "native",
+      "webPort": null,
+      "webPath": null
     }
   ]
 }

@@ -12,6 +12,21 @@ const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-reg
 test('integrated consumers are sourced from the governed registry', () => {
   assert.equal(consumerRegistry.version, 2);
   assert.deepEqual(consumerRegistry.consumers.map((consumer) => consumer.code).sort(), ['CRM', 'FINANCIAL', 'HISTORIAS', 'HR']);
+  for (const consumer of consumerRegistry.consumers) {
+    assert.match(consumer.gatewayPath, /^\/api\//);
+    assert.ok(consumer.moduleCode);
+    assert.ok(consumer.accessPermission);
+    assert.ok(['native', 'iframe'].includes(consumer.uiMode));
+    if (consumer.uiMode === 'iframe') {
+      assert.match(consumer.webPath, /^\/apps\/[^/]+\/$/);
+    } else {
+      assert.equal(consumer.webPath, null);
+    }
+  }
+  assert.deepEqual(
+    consumerRegistry.consumers.filter((consumer) => consumer.uiMode === 'iframe').map((consumer) => consumer.code).sort(),
+    ['CRM', 'FINANCIAL']
+  );
   assert.match(component, /consumerRegistry\.consumers\.map/);
   assert.doesNotMatch(template, /Registrar aplicación/);
 });
@@ -54,18 +69,18 @@ test('template keeps basic navigation and content accessibility invariants', () 
   assert.match(template, /aria-live="polite"/);
 });
 
-test('shell supports functional module selection and same-origin availability probes', () => {
+test('shell supports authenticated functional module selection and availability probes', () => {
   assert.match(component, /selectedModule:\s*ShellModule\s*=\s*this\.modules\[0\]/);
   assert.match(component, /async selectModule\(module:\s*ShellModule\)/);
   assert.match(component, /async refreshModuleHealth\(\)/);
   assert.match(component, /Promise\.all\(this\.modules\.filter/);
-  assert.match(component, /fetch\(module\.probePath/);
-  assert.match(component, /credentials:\s*'same-origin'/);
-  assert.match(component, /response\.status === 401 \|\| response\.status === 403/);
+  assert.match(apiService, /probe\(path:\s*string\)/);
+  assert.match(apiService, /observe:\s*'response'/);
+  assert.match(component, /portalApi\.probe\(module\.probePath\)/);
+  assert.match(component, /status === 401 \|\| status === 403/);
   assert.match(template, /Actualizar estado/);
   assert.match(template, /probeCount\('available'\)/);
   assert.match(template, /data-state/);
-  assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
 test('security administration uses an ephemeral session and supports managed assignments', () => {
@@ -87,7 +102,12 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(apiService, /createLocalSuperAdminSession\(\)/);
   assert.match(apiService, /\/security\/local-session/);
   assert.match(apiService, /clearLocalSuperAdminSession\(\)/);
+  assert.match(apiService, /\/security\/local-session\/logout/);
+  assert.match(component, /implements OnInit/);
+  assert.match(component, /ngOnInit\(\)/);
+  assert.match(component, /initializeLocalPortal\(\)/);
   assert.match(component, /portalApi\.setAccessToken\(session\.accessToken\)/);
+  assert.match(component, /localAdminSession\s*=\s*session/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
     assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
   }
@@ -96,7 +116,9 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /Asignar permiso/);
   assert.match(template, /Evaluar permiso/);
   assert.match(template, /SuperAdmin local/);
-  assert.match(template, /Entrar como SuperAdmin local/);
+  assert.match(template, /No necesitas usuario, clave ni copiar\/pegar tokens/);
+  assert.match(template, /localAdminSession\.displayName/);
+  assert.match(template, /localAdminSession\.role/);
   assert.doesNotMatch(template, /Pega un token local|JWT local efímero/);
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
@@ -233,21 +255,30 @@ test('administrative shell exposes the central management sections', () => {
   assert.match(template, /Administración central/);
 });
 
-test('applications open inside the Portal workspace instead of a new browser tab', () => {
-  assert.match(component, /consumer\.webPath \?\? undefined/);
-  assert.match(component, /accessPermission:\s*consumer\.smokePermission/);
-  assert.match(component, /accessibleApplications\(\)/);
-  assert.match(component, /portalApi\.hasPermission\(application\.accessPermission\)/);
-  assert.match(apiService, /hasPermission\(requiredPermission:\s*string\)/);
-  assert.match(apiService, /payload\['permission'\]/);
-  assert.match(component, /portalApi\.hasAuthenticatedSession\(\)/);
-  assert.match(component, /activeSection = 'security'/);
+test('applications open inside governed Portal workspaces', () => {
+  assert.match(component, /workspaceApplication\?:\s*ApplicationCard/);
+  assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
+  assert.match(component, /workspaceProbeState/);
+  assert.match(component, /loadApplicationSurface\(application\.dataPath\)/);
+  assert.match(component, /manageApplicationSecurity\(application\?:\s*ApplicationCard\)/);
+  assert.match(component, /applicationAuthorized\(application:\s*ApplicationCard\)/);
+  assert.match(component, /applicationIntegrationLabel\(application:\s*ApplicationCard\)/);
+  assert.match(component, /manageApplicationMenu\(application:/);
+  assert.match(component, /manageApplicationConfiguration\(application:/);
   assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);
-  assert.match(template, /workspaceUrl/);
+  assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
+  assert.match(component, /activeSection\s*=\s*'applications'/);
+  assert.match(template, /Aplicación integrada/);
+  assert.match(template, /Integración gobernada por Portal/);
+  assert.match(template, /Permisos y roles/);
+  assert.match(template, /SuperAdmin autorizado/);
+  assert.match(component, /'Módulo Portal \/ API'/);
+  assert.match(template, /Actualizar datos protegidos/);
   assert.match(template, /<iframe/);
-  assert.match(template, /Abrir en Portal/);
-  assert.match(template, /API integrada/);
-  assert.doesNotMatch(component, /window\.open/);
+  assert.match(template, /\[src\]="workspaceUrl"/);
+  assert.match(template, /Volver a aplicaciones/);
+  assert.doesNotMatch(component, /if \(!application\.port\) return/);
+  assert.doesNotMatch(component, /window\.open\(/);
 });
 
 test('shell source avoids direct external hosts and browser token persistence', () => {

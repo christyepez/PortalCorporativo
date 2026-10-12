@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -282,32 +282,25 @@ export interface LocalAdminSession {
   readonly displayName: string;
   readonly role: string;
   readonly tenantId: string;
+  readonly permissions: string[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class PortalApiService {
   private accessToken: string | null = null;
-  private permissionClaims = new Set<string>();
 
   constructor(private readonly http: HttpClient) {}
 
   setAccessToken(token: string | null): void {
     this.accessToken = token?.trim() || null;
-    this.permissionClaims = this.accessToken ? this.readPermissionClaims(this.accessToken) : new Set<string>();
   }
 
   clearAccessToken(): void {
     this.accessToken = null;
-    this.permissionClaims.clear();
   }
 
   hasAuthenticatedSession(): boolean {
     return this.accessToken !== null;
-  }
-
-  hasPermission(requiredPermission: string): boolean {
-    if (!this.accessToken) return false;
-    return this.permissionClaims.has(requiredPermission);
   }
 
   createLocalSuperAdminSession(): Observable<LocalAdminSession> {
@@ -316,6 +309,14 @@ export class PortalApiService {
 
   clearLocalSuperAdminSession(): Observable<void> {
     return this.http.post<void>(`${environment.apiBasePath}/security/local-session/logout`, {});
+  }
+
+  probe(path: string): Observable<HttpResponse<unknown>> {
+    return this.http.get(path, { headers: this.headers(), observe: 'response' });
+  }
+
+  loadApplicationSurface(path: string): Observable<unknown> {
+    return this.http.get(path, { headers: this.headers() });
   }
 
   loadUsers(): Observable<SecurityUser[]> {
@@ -524,19 +525,5 @@ export class PortalApiService {
 
   private headers(): HttpHeaders {
     return this.accessToken ? new HttpHeaders({ Authorization: `Bearer ${this.accessToken}` }) : new HttpHeaders();
-  }
-
-  private readPermissionClaims(token: string): Set<string> {
-    try {
-      const payloadPart = token.split('.')[1];
-      if (!payloadPart) return new Set<string>();
-      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payloadPart.length / 4) * 4, '=');
-      const payload = JSON.parse(atob(normalized)) as Record<string, unknown>;
-      const raw = payload['permission'];
-      const permissions = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
-      return new Set(permissions.filter((value): value is string => typeof value === 'string'));
-    } catch {
-      return new Set<string>();
-    }
   }
 }

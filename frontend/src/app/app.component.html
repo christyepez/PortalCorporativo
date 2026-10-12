@@ -9,6 +9,11 @@
     </div>
     <div class="topbar__meta">
       <span class="tenant">Tenant: {{ currentTenant }}</span>
+      @if (localAdminSession) {
+        <span class="status">{{ localAdminSession.displayName }} · {{ localAdminSession.role }}</span>
+      } @else {
+        <span class="status">{{ sessionInitializing ? 'Conectando SuperAdmin…' : 'SuperAdmin local no conectado' }}</span>
+      }
       <span class="status">{{ readiness }}</span>
     </div>
   </header>
@@ -53,51 +58,100 @@
             <div><p class="eyebrow">Acceso rápido</p><h3>Aplicaciones</h3></div>
           </div>
           <div class="application-grid">
-            @for (app of accessibleApplications(); track app.code) {
+            @for (app of applications; track app.code) {
               <article class="application-card">
                 <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
                 <div><h4>{{ app.name }}</h4><p>{{ app.description }}</p></div>
                 <div class="application-card__footer">
                   <span class="pill">{{ app.status }}</span>
-                  @if (app.webPath) {
-                    <button type="button" class="link-button" (click)="openApplication(app)">Abrir</button>
-                  } @else {
-                    <span class="muted">Gateway</span>
-                  }
+                  <span class="pill">{{ applicationIntegrationLabel(app) }}</span>
+                  <span class="pill">{{ applicationAuthorized(app) ? 'SuperAdmin autorizado' : 'Permiso requerido' }}</span>
+                  <button type="button" class="link-button" (click)="openApplication(app)">Abrir en Portal</button>
                 </div>
               </article>
             }
           </div>
         </section>
       }      @if (activeSection === 'applications') {
-        @if (workspaceApplication && workspaceUrl) {
+        @if (workspaceApplication) {
           <section class="workspace-shell" aria-label="Área de trabajo de aplicación">
             <header class="workspace-shell__header">
               <div>
-                <p class="eyebrow">Aplicación embebida</p>
+                <p class="eyebrow">Aplicación integrada</p>
                 <h2>{{ workspaceApplication.name }}</h2>
-                <span class="code">{{ workspaceApplication.code }}</span>
+                <span class="code">{{ workspaceApplication.code }} · {{ workspaceApplication.accessPermission }}</span>
               </div>
               <button type="button" class="secondary" (click)="closeWorkspace()">Volver a aplicaciones</button>
             </header>
-            <div class="workspace-shell__frame">
-              <iframe
-                [src]="workspaceUrl"
-                [title]="workspaceApplication.name"
-                referrerpolicy="same-origin"
-                allow="clipboard-read; clipboard-write">
-              </iframe>
-            </div>
+
+            @if (workspaceUrl) {
+              <div class="workspace-shell__frame">
+                <iframe
+                  [src]="workspaceUrl"
+                  [title]="workspaceApplication.name"
+                  referrerpolicy="same-origin"
+                  allow="clipboard-read; clipboard-write">
+                </iframe>
+              </div>
+            } @else {
+              <div class="workspace-native">
+                <div class="workspace-native__summary">
+                  <div>
+                    <p class="eyebrow">Integración gobernada por Portal</p>
+                    <h3>{{ workspaceApplication.name }} opera detrás del API Gateway</h3>
+                    <p>El runtime actual no publica un frontend web independiente para esta aplicación. Portal concentra la sesión SuperAdmin, permisos, navegación, parámetros, health y el acceso a su superficie protegida.</p>
+                  </div>
+                  <span class="probe-state" [attr.data-state]="workspaceProbeState">
+                    @switch (workspaceProbeState) {
+                      @case ('checking') { Verificando… }
+                      @case ('available') { Disponible }
+                      @case ('protected') { Protegida }
+                      @case ('unavailable') { No disponible }
+                      @default { Sin verificar }
+                    }
+                  </span>
+                </div>
+
+                <div class="workspace-native__grid">
+                  <article><span>Gateway</span><strong>{{ workspaceApplication.path }}</strong></article>
+                  <article><span>Permiso</span><strong>{{ workspaceApplication.accessPermission }}</strong></article>
+                  <article><span>Health</span><strong>{{ workspaceApplication.probePath }}</strong></article>
+                  <article><span>HTTP</span><strong>{{ workspaceProbeStatus ?? '—' }}</strong></article>
+                </div>
+
+                <div class="workspace-native__actions">
+                  <button type="button" class="secondary" (click)="manageApplicationSecurity(workspaceApplication)">Permisos y roles</button>
+                  <button type="button" class="secondary" (click)="manageApplicationMenu(workspaceApplication)">Menú</button>
+                  <button type="button" class="secondary" (click)="manageApplicationConfiguration(workspaceApplication)">Parámetros</button>
+                  <button type="button" class="secondary" (click)="selectSection('operations')">Operaciones</button>
+                  <button type="button" class="primary" [disabled]="workspaceDataLoading" (click)="refreshWorkspaceData()">
+                    {{ workspaceDataLoading ? 'Cargando…' : 'Actualizar datos protegidos' }}
+                  </button>
+                </div>
+
+                @if (workspaceDataError) {
+                  <div class="inline-message inline-message--error" role="alert">{{ workspaceDataError }}</div>
+                }
+                @if (workspaceDataText) {
+                  <section class="workspace-native__data">
+                    <div class="section-heading">
+                      <div><p class="eyebrow">Superficie protegida</p><h3>{{ workspaceApplication.dataPath }}</h3></div>
+                    </div>
+                    <pre>{{ workspaceDataText }}</pre>
+                  </section>
+                }
+              </div>
+            }
           </section>
         } @else {
           <section class="section-block">
             <div class="section-heading">
               <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
-              <span class="pill">{{ accessibleApplications().length }} disponibles</span>
+              <span class="pill">{{ applications.length }} integradas</span>
             </div>
-            <p class="lead">El listado proviene del registro gobernado del Portal. Las nuevas integraciones se incorporan mediante el consumer onboarding gate y no desde una acción local de esta pantalla.</p>
+            <p class="lead">Todas las aplicaciones usan Portal Security y el API Gateway. Cuando una aplicación publica una UI web, Portal puede embeberla; cuando sólo publica APIs, Portal muestra una superficie nativa gobernada con health, permisos, parámetros, menú y datos protegidos.</p>
             <div class="application-grid application-grid--wide">
-              @for (app of accessibleApplications(); track app.code) {
+              @for (app of applications; track app.code) {
                 <article class="application-card">
                   <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
                   <div>
@@ -107,12 +161,9 @@
                   </div>
                   <div class="application-card__footer">
                     <span class="pill">{{ app.status }}</span>
-                    @if (app.webPath) {
-                      <button type="button" class="primary compact" (click)="openApplication(app)">Abrir en Portal</button>
-                    } @else {
-                      <span class="muted">API integrada · {{ app.gatewayPath }}</span>
-                    }
+                    <button type="button" class="primary compact" (click)="openApplication(app)">Abrir en Portal</button>
                   </div>
+                  <small class="muted">{{ app.path }} · {{ app.accessPermission }}</small>
                 </article>
               }
             </div>
@@ -124,6 +175,9 @@
         <section class="section-block">
           <div class="section-heading">
             <div><p class="eyebrow">Seguridad centralizada</p><h2>Usuarios, roles y permisos</h2></div>
+            @if (securityApplication) {
+              <span class="pill">Contexto: {{ securityApplication.name }} · {{ securityApplication.accessPermission }}</span>
+            }
             @if (hasAuthenticatedSession()) {
               <div class="session-actions">
                 <button type="button" class="secondary" [disabled]="securityLoading" (click)="loadSecurityData()">Recargar</button>
@@ -136,7 +190,7 @@
             <div class="toolbar session-toolbar">
               <div>
                 <strong>SuperAdmin local</strong>
-                <span class="muted">Sesión efímera de PROD-local. Security crea la identidad, aplica el rol SuperAdmin y habilita el acceso centralizado a las aplicaciones.</span>
+                <span class="muted">Portal inicia automáticamente una sesión efímera desde Security DB. No necesitas usuario, clave ni copiar/pegar tokens.</span>
               </div>
               <button type="button" class="primary" [disabled]="securityLoading" (click)="connectLocalSession()">
                 {{ securityLoading ? 'Conectando…' : 'Entrar como SuperAdmin local' }}

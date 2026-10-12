@@ -57,17 +57,14 @@ jobs:
           repository: christyepez/Financiero
           ref: 748f0980c69ab8a6b73b317f24c90ddfd598f724
           path: Financiero
-      - name: Build Portal web with embedded consumer UIs
+      - name: Build Portal web with embedded CRM and Financiero
         working-directory: PortalCorporativo
-        env:
-          SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
-          REDIS_PASSWORD: portal-local-redis
-          MINIO_ROOT_USER: portal-local
-          MINIO_ROOT_PASSWORD: portal-local-minio
-          JWT_SECRET: portal-local-ci-placeholder-secret-32chars
-          CRM_REPO_PATH: ../CRM
-          FINANCIERO_REPO_PATH: ../Financiero
-        run: docker compose -f docker-compose.yml -f docker-compose.prod-local.yml build portal-web
+        run: >
+          docker buildx build
+          --build-context crm_source=../CRM/frontend/crm-web
+          --build-context financial_source=../Financiero/frontend/financiero-web
+          -f frontend/Dockerfile.prod
+          frontend
 
   production-preflight:
     runs-on: ubuntu-latest
@@ -84,9 +81,6 @@ jobs:
       - name: Validate Portal consumer expansion contract
         shell: pwsh
         run: ./scripts/quality/test-consumer-expansion-gate.ps1
-      - name: Validate local SuperAdmin embedded apps contract
-        shell: pwsh
-        run: ./scripts/quality/test-local-superadmin-embedded-apps.ps1
 
   crm-runtime-pilot-readiness-gate:
     runs-on: ubuntu-latest
@@ -132,6 +126,9 @@ jobs:
       - name: Validate PROD-local operations status contract
         shell: pwsh
         run: ./scripts/quality/test-prod-local-operations-status.ps1
+      - name: Validate local SuperAdmin application integration
+        shell: pwsh
+        run: ./scripts/quality/test-local-superadmin-app-integration.ps1
       - name: Validate PROD-local Compose overlay
         env:
           SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
