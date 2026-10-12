@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -305,6 +305,10 @@ export class PortalApiService {
 
   createLocalSuperAdminSession(): Observable<LocalAdminSession> {
     return this.http.post<LocalAdminSession>(`${environment.apiBasePath}/security/local-session`, {});
+  }
+
+  probe(path: string): Observable<HttpResponse<unknown>> {
+    return this.http.get(path, { headers: this.headers(), observe: 'response' });
   }
 
   loadApplicationSurface(path: string): Observable<unknown> {

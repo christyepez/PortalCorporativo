@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import consumerRegistry from '../../config/consumer-registry.json';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -49,11 +49,25 @@ interface ApplicationCard {
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(
     private readonly sanitizer: DomSanitizer,
     private readonly portalApi: PortalApiService
   ) {}
+
+  ngOnInit(): void {
+    void this.initializeLocalPortal();
+  }
+
+  private async initializeLocalPortal(): Promise<void> {
+    this.sessionInitializing = true;
+    try {
+      await this.connectLocalSession();
+      await this.refreshModuleHealth();
+    } finally {
+      this.sessionInitializing = false;
+    }
+  }
 
   protected readonly title = 'Portal Corporativo';
   protected readonly readiness = environment.shellReadiness;
@@ -120,6 +134,9 @@ export class AppComponent {
   protected moduleProbeStatus?: number;
   protected readonly moduleProbeResults = new Map<string, ModuleProbeResult>();
   protected operationsRefreshing = false;
+  protected sessionInitializing = false;
+  protected localAdminSession?: LocalAdminSession;
+  protected securityApplication?: ApplicationCard;
   protected securityLoading = false;
   protected securityError?: string;
   protected activeSecurityTab: SecurityTab = 'users';
@@ -302,6 +319,7 @@ export class AppComponent {
     try {
       const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
       this.portalApi.setAccessToken(session.accessToken);
+      this.localAdminSession = session;
       this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
     } catch (error: unknown) {
       this.portalApi.clearAccessToken();
@@ -315,6 +333,8 @@ export class AppComponent {
 
   protected clearLocalSession(): void {
     this.portalApi.clearAccessToken();
+    this.localAdminSession = undefined;
+    this.securityApplication = undefined;
     this.securityUsers = [];
     this.securityRoles = [];
     this.securityPermissions = [];
@@ -1459,8 +1479,28 @@ export class AppComponent {
     }
   }
 
-  protected manageApplicationSecurity(): void {
+  protected manageApplicationSecurity(application?: ApplicationCard): void {
+    this.securityApplication = application;
+    if (application) {
+      const permissionParts = application.accessPermission.split('.');
+      if (permissionParts.at(-1) === '*') {
+        this.securityCheckResourceKey = permissionParts.slice(0, -1).join('.');
+        this.securityCheckAction = '*';
+      } else {
+        this.securityCheckResourceKey = permissionParts.slice(0, -1).join('.');
+        this.securityCheckAction = permissionParts.at(-1) ?? '';
+      }
+      this.activeSecurityTab = 'permissions';
+    }
     this.selectSection('security');
+  }
+
+  protected applicationAuthorized(application: ApplicationCard): boolean {
+    return this.localAdminSession?.permissions.includes(application.accessPermission) ?? false;
+  }
+
+  protected applicationIntegrationLabel(application: ApplicationCard): string {
+    return application.uiMode === 'iframe' ? 'UI embebida' : 'Módulo Portal / API';
   }
 
   protected manageApplicationMenu(application: ApplicationCard): void {
@@ -1509,21 +1549,23 @@ export class AppComponent {
     this.moduleProbeResults.set(module.label, { state: 'checking' });
 
     try {
-      const response = await fetch(module.probePath, {
-        method: 'GET',
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { 'X-Correlation-ID': `portal-shell-${crypto.randomUUID()}` }
-      });
+      const response = await firstValueFrom(this.portalApi.probe(module.probePath));
       const result: ModuleProbeResult = {
-        state: response.ok ? 'available' : response.status === 401 || response.status === 403 ? 'protected' : 'unavailable',
+        state: response.ok ? 'available' : 'unavailable',
         status: response.status,
         checkedAt: new Date()
       };
       this.moduleProbeResults.set(module.label, result);
       return result;
-    } catch {
-      const result: ModuleProbeResult = { state: 'unavailable', checkedAt: new Date() };
+    } catch (error: unknown) {
+      const status = typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: number }).status)
+        : undefined;
+      const result: ModuleProbeResult = {
+        state: status === 401 || status === 403 ? 'protected' : 'unavailable',
+        status,
+        checkedAt: new Date()
+      };
       this.moduleProbeResults.set(module.label, result);
       return result;
     }
