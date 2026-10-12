@@ -312,6 +312,24 @@ test('applications open inside governed Portal workspaces', () => {
   assert.doesNotMatch(component, /window\.open\(/);
 });
 
+test('expanded application workspaces expose financial accounting and HR lifecycle', () => {
+  const financial = consumerRegistry.consumers.find(consumer => consumer.code === 'FINANCIAL');
+  const crm = consumerRegistry.consumers.find(consumer => consumer.code === 'CRM');
+  assert.ok(financial);
+  assert.ok(crm);
+  for (const route of ['accounting/accounts', 'accounting/journal-entries', 'accounting/fiscal-years', 'accounting/fiscal-periods']) {
+    assert.ok(financial.menuItems.some(item => item.route === route), `Missing financial route ${route}`);
+  }
+  assert.ok(crm.menuItems.some(item => item.route === 'foundation/leads'));
+  assert.match(apiService, /updateHrEmployee\(id:\s*string,\s*request:\s*UpdateHrEmployee\)/);
+  assert.match(apiService, /setHrEmployeeActive\(id:\s*string,\s*active:\s*boolean\)/);
+  assert.match(component, /beginEditHrEmployee\(row:\s*Record<string, unknown>\)/);
+  assert.match(component, /toggleHrEmployeeActive\(row:\s*Record<string, unknown>\)/);
+  assert.match(template, /Editar empleado/);
+  assert.match(template, /Desactivar/);
+  assert.match(template, /Activar/);
+});
+
 test('shell source avoids direct external hosts and browser token persistence', () => {
   assert.doesNotMatch(component, /https?:\/\//);
   assert.doesNotMatch(component, /localStorage|sessionStorage/);
