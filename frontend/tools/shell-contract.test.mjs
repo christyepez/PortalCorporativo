@@ -10,8 +10,14 @@ const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.u
 const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-registry.json', import.meta.url), 'utf8'));
 
 test('integrated consumers are sourced from the governed registry', () => {
-  assert.equal(consumerRegistry.version, 1);
+  assert.equal(consumerRegistry.version, 2);
   assert.deepEqual(consumerRegistry.consumers.map((consumer) => consumer.code).sort(), ['CRM', 'FINANCIAL', 'HISTORIAS', 'HR']);
+  for (const consumer of consumerRegistry.consumers) {
+    assert.match(consumer.gatewayPath, /^\/api\//);
+    assert.ok(consumer.moduleCode);
+    assert.ok(consumer.accessPermission);
+    assert.ok(['native', 'iframe'].includes(consumer.uiMode));
+  }
   assert.match(component, /consumerRegistry\.consumers\.map/);
   assert.doesNotMatch(template, /Registrar aplicación/);
 });
@@ -84,7 +90,9 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(component, /async assignSecurityPermissionToRole\(\)/);
   assert.match(component, /async loadSecurityUserPermissions\(\)/);
   assert.match(component, /async checkSecurityPermission\(\)/);
-  assert.match(component, /portalApi\.setAccessToken\(token\)/);
+  assert.match(apiService, /createLocalSuperAdminSession\(\)/);
+  assert.match(apiService, /\/security\/local-session/);
+  assert.match(component, /portalApi\.setAccessToken\(session\.accessToken\)/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
     assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
   }
@@ -92,8 +100,9 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /Asignar rol/);
   assert.match(template, /Asignar permiso/);
   assert.match(template, /Evaluar permiso/);
-  assert.match(template, /JWT local efímero/);
-  assert.match(template, /El token permanece sólo en memoria/);
+  assert.match(template, /SuperAdmin local/);
+  assert.match(template, /No necesitas copiar ni pegar tokens/);
+  assert.doesNotMatch(template, /Pega un token local|JWT local efímero/);
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
 
@@ -229,14 +238,24 @@ test('administrative shell exposes the central management sections', () => {
   assert.match(template, /Administración central/);
 });
 
-test('applications open inside the Portal workspace instead of a new browser tab', () => {
+test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /workspaceApplication\?:\s*ApplicationCard/);
   assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
+  assert.match(component, /workspaceProbeState/);
+  assert.match(component, /loadApplicationSurface\(application\.dataPath\)/);
+  assert.match(component, /manageApplicationSecurity\(\)/);
+  assert.match(component, /manageApplicationMenu\(application:/);
+  assert.match(component, /manageApplicationConfiguration\(application:/);
   assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
   assert.match(component, /activeSection\s*=\s*'applications'/);
+  assert.match(template, /Aplicación integrada/);
+  assert.match(template, /Integración gobernada por Portal/);
+  assert.match(template, /Permisos y roles/);
+  assert.match(template, /Actualizar datos protegidos/);
   assert.match(template, /<iframe/);
   assert.match(template, /\[src\]="workspaceUrl"/);
   assert.match(template, /Volver a aplicaciones/);
+  assert.doesNotMatch(component, /if \(!application\.port\) return/);
   assert.doesNotMatch(component, /window\.open\(/);
 });
 
