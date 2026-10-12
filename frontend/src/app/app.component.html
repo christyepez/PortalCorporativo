@@ -24,12 +24,28 @@
       <nav class="sidebar__nav">
         @for (item of navigation; track item.id) {
           <button type="button"
-                  [class.active]="activeSection === item.id"
+                  [class.active]="activeSection === item.id && !workspaceApplication"
                   (click)="selectSection(item.id)">
             <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-copy">
               <strong>{{ item.label }}</strong>
               <small>{{ item.description }}</small>
+            </span>
+          </button>
+        }
+      </nav>
+
+      <div class="sidebar__title sidebar__title--apps">Aplicaciones</div>
+      <nav class="sidebar__nav sidebar__apps" aria-label="Aplicaciones integradas">
+        @for (app of applications; track app.code) {
+          <button type="button"
+                  [class.active]="workspaceApplication?.code === app.code"
+                  [disabled]="!applicationAuthorized(app)"
+                  (click)="openApplication(app)">
+            <span class="nav-icon">{{ app.name.charAt(0) }}</span>
+            <span class="nav-copy">
+              <strong>{{ app.name }}</strong>
+              <small>{{ applicationIntegrationLabel(app) }}</small>
             </span>
           </button>
         }
@@ -81,8 +97,31 @@
                 <h2>{{ workspaceApplication.name }}</h2>
                 <span class="code">{{ workspaceApplication.code }} · {{ workspaceApplication.accessPermission }}</span>
               </div>
-              <button type="button" class="secondary" (click)="closeWorkspace()">Volver a aplicaciones</button>
+              <div class="workspace-shell__header-actions">
+                <span class="probe-state" [attr.data-state]="workspaceProbeState">
+                  @switch (workspaceProbeState) {
+                    @case ('checking') { Verificando… }
+                    @case ('available') { Disponible }
+                    @case ('protected') { Protegida }
+                    @case ('unavailable') { No disponible }
+                    @default { Sin verificar }
+                  }
+                </span>
+                <button type="button" class="secondary" (click)="manageApplicationSecurity(workspaceApplication)">Seguridad</button>
+                <button type="button" class="secondary" (click)="manageApplicationConfiguration(workspaceApplication)">Parámetros</button>
+                <button type="button" class="secondary" (click)="closeWorkspace()">Cerrar aplicación</button>
+              </div>
             </header>
+
+            <nav class="workspace-app-menu" [attr.aria-label]="'Menú de ' + workspaceApplication.name">
+              @for (item of visibleApplicationMenu(workspaceApplication); track item.label) {
+                <button type="button"
+                        [class.active]="workspaceMenuItem?.label === item.label"
+                        (click)="selectWorkspaceMenuItem(item)">
+                  {{ item.label }}
+                </button>
+              }
+            </nav>
 
             @if (workspaceUrl) {
               <div class="workspace-shell__frame">
@@ -97,49 +136,70 @@
               <div class="workspace-native">
                 <div class="workspace-native__summary">
                   <div>
-                    <p class="eyebrow">Integración gobernada por Portal</p>
-                    <h3>{{ workspaceApplication.name }} opera detrás del API Gateway</h3>
-                    <p>El runtime actual no publica un frontend web independiente para esta aplicación. Portal concentra la sesión SuperAdmin, permisos, navegación, parámetros, health y el acceso a su superficie protegida.</p>
+                    <p class="eyebrow">{{ workspaceApplication.name }}</p>
+                    <h3>{{ workspaceMenuItem?.label || 'Resumen' }}</h3>
+                    <p>Vista funcional integrada al Portal con sesión, permisos y navegación centralizados.</p>
                   </div>
-                  <span class="probe-state" [attr.data-state]="workspaceProbeState">
-                    @switch (workspaceProbeState) {
-                      @case ('checking') { Verificando… }
-                      @case ('available') { Disponible }
-                      @case ('protected') { Protegida }
-                      @case ('unavailable') { No disponible }
-                      @default { Sin verificar }
-                    }
-                  </span>
-                </div>
-
-                <div class="workspace-native__grid">
-                  <article><span>Gateway</span><strong>{{ workspaceApplication.path }}</strong></article>
-                  <article><span>Permiso</span><strong>{{ workspaceApplication.accessPermission }}</strong></article>
-                  <article><span>Health</span><strong>{{ workspaceApplication.probePath }}</strong></article>
-                  <article><span>HTTP</span><strong>{{ workspaceProbeStatus ?? '—' }}</strong></article>
-                </div>
-
-                <div class="workspace-native__actions">
-                  <button type="button" class="secondary" (click)="manageApplicationSecurity(workspaceApplication)">Permisos y roles</button>
-                  <button type="button" class="secondary" (click)="manageApplicationMenu(workspaceApplication)">Menú</button>
-                  <button type="button" class="secondary" (click)="manageApplicationConfiguration(workspaceApplication)">Parámetros</button>
-                  <button type="button" class="secondary" (click)="selectSection('operations')">Operaciones</button>
                   <button type="button" class="primary" [disabled]="workspaceDataLoading" (click)="refreshWorkspaceData()">
-                    {{ workspaceDataLoading ? 'Cargando…' : 'Actualizar datos protegidos' }}
+                    {{ workspaceDataLoading ? 'Cargando…' : 'Actualizar' }}
                   </button>
                 </div>
 
                 @if (workspaceDataError) {
                   <div class="inline-message inline-message--error" role="alert">{{ workspaceDataError }}</div>
                 }
-                @if (workspaceDataText) {
+
+                @if (workspaceDataLoading) {
+                  <div class="empty-state compact-state"><h3>Cargando {{ workspaceMenuItem?.label || workspaceApplication.name }}…</h3></div>
+                } @else if (workspaceDataRows.length > 0) {
                   <section class="workspace-native__data">
                     <div class="section-heading">
-                      <div><p class="eyebrow">Superficie protegida</p><h3>{{ workspaceApplication.dataPath }}</h3></div>
+                      <div>
+                        <p class="eyebrow">Datos de la aplicación</p>
+                        <h3>{{ workspaceDataRows.length }} registros</h3>
+                      </div>
+                      <span class="code">{{ workspaceMenuItem?.dataPath || workspaceApplication.dataPath }}</span>
+                    </div>
+                    <div class="workspace-data-table__scroll">
+                      <table class="workspace-data-table">
+                        <thead>
+                          <tr>
+                            @for (column of workspaceDataColumns; track column) {
+                              <th>{{ column }}</th>
+                            }
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (row of workspaceDataRows; track $index) {
+                            <tr>
+                              @for (column of workspaceDataColumns; track column) {
+                                <td>{{ formatWorkspaceCell(row[column]) }}</td>
+                              }
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                } @else if (workspaceDataText) {
+                  <section class="workspace-native__data">
+                    <div class="section-heading">
+                      <div><p class="eyebrow">Resultado</p><h3>{{ workspaceMenuItem?.label || workspaceApplication.name }}</h3></div>
+                      <span class="code">{{ workspaceMenuItem?.dataPath || workspaceApplication.dataPath }}</span>
                     </div>
                     <pre>{{ workspaceDataText }}</pre>
                   </section>
                 }
+
+                <details class="workspace-native__technical">
+                  <summary>Información técnica</summary>
+                  <div class="workspace-native__grid">
+                    <article><span>Gateway</span><strong>{{ workspaceApplication.path }}</strong></article>
+                    <article><span>Permiso</span><strong>{{ workspaceMenuItem?.permission || workspaceApplication.accessPermission }}</strong></article>
+                    <article><span>Health</span><strong>{{ workspaceApplication.probePath }}</strong></article>
+                    <article><span>HTTP</span><strong>{{ workspaceProbeStatus ?? '—' }}</strong></article>
+                  </div>
+                </details>
               </div>
             }
           </section>

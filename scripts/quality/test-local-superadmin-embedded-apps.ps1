@@ -58,7 +58,7 @@ foreach ($marker in @(
 Assert-Contains $nginx 'location /apps/crm/' 'Nginx serves embedded CRM'
 Assert-Contains $nginx 'location /apps/financial/' 'Nginx serves embedded Financiero'
 
-if ([int]$registry.version -ne 2) { throw 'Consumer registry must use schema version 2.' }
+if ([int]$registry.version -ne 3) { throw 'Consumer registry must use schema version 3.' }
 $embedded = @($registry.consumers | Where-Object { $_.uiMode -eq 'iframe' })
 if ($embedded.Count -ne 2) { throw 'Exactly two consumers must be web embedded in the current baseline.' }
 if (@($embedded.code | Sort-Object) -join ',' -ne 'CRM,FINANCIAL') { throw 'Only CRM and FINANCIAL may advertise embedded UI in this baseline.' }
@@ -69,7 +69,9 @@ if (@($registry.consumers | Where-Object { $_.uiMode -eq 'native' -and $_.webPat
 
 Assert-Contains $api 'createLocalSuperAdminSession()' 'Portal API client requests local SuperAdmin session'
 Assert-Contains $api 'clearLocalSuperAdminSession()' 'Portal API client revokes local SuperAdmin session'
-Assert-Contains $component 'new URL(application.webPath, window.location.origin)' 'Embedded app URLs are same-origin Portal paths'
+Assert-Contains $component 'updateWorkspaceUrl(application: ApplicationCard, item?: ApplicationMenuItem)' 'Embedded app URLs are governed by application menu routes'
+Assert-Contains $component 'publishPortalShellContext(application: ApplicationCard)' 'Portal publishes shared shell context to embedded apps'
+Assert-Contains $template 'workspace-app-menu' 'Portal renders an application-owned submenu in the embedded workspace'
 Assert-Contains $template 'Entrar como SuperAdmin local' 'Security UI exposes local SuperAdmin bootstrap'
 if ($template -match 'Pega un token local|JWT local efímero') { throw 'Manual JWT input must not return to the Security UI.' }
 if ($api -match 'localStorage|sessionStorage') { throw 'Browser credentials must not be persisted.' }

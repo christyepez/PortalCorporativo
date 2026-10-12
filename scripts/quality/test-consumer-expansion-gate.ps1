@@ -31,7 +31,7 @@ $apiClient = Get-Content $apiClientPath -Raw
 $registry = Get-Content $registryPath -Raw | ConvertFrom-Json
 $consumers = @($registry.consumers)
 
-Assert-True ($registry.version -eq 2) 'Consumer registry schema version is supported'
+Assert-True ($registry.version -eq 3) 'Consumer registry schema version is supported'
 Assert-True ($consumers.Count -eq 4) 'Consumer registry contains exactly four approved consumers'
 $approvedCodes = @('CRM','FINANCIAL','HR','HISTORIAS')
 Assert-SameSet $consumers.code $approvedCodes 'Consumer registry contains exactly the approved consumer codes'
@@ -63,6 +63,8 @@ foreach ($consumer in $consumers) {
         Assert-True ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) native API module has no fake web path"
     }
     Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.moduleCode)) "$($consumer.name) module code is governed"
+    Assert-True (@($consumer.menuItems).Count -gt 0) "$($consumer.name) exposes an application menu"
+    Assert-True (@($consumer.menuItems | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.label) -or [string]::IsNullOrWhiteSpace([string]$_.permission) }).Count -eq 0) "$($consumer.name) menu items are governed by label and permission"
     Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.accessPermission)) "$($consumer.name) access permission is governed"
     Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
     Assert-True ($consumer.probePath.StartsWith("$($consumer.gatewayPath)/health/")) "$($consumer.name) health probe stays inside its health boundary"

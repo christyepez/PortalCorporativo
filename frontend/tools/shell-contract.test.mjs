@@ -10,13 +10,15 @@ const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.u
 const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-registry.json', import.meta.url), 'utf8'));
 
 test('integrated consumers are sourced from the governed registry', () => {
-  assert.equal(consumerRegistry.version, 2);
+  assert.equal(consumerRegistry.version, 3);
   assert.deepEqual(consumerRegistry.consumers.map((consumer) => consumer.code).sort(), ['CRM', 'FINANCIAL', 'HISTORIAS', 'HR']);
   for (const consumer of consumerRegistry.consumers) {
     assert.match(consumer.gatewayPath, /^\/api\//);
     assert.ok(consumer.moduleCode);
     assert.ok(consumer.accessPermission);
     assert.ok(['native', 'iframe'].includes(consumer.uiMode));
+    assert.ok(Array.isArray(consumer.menuItems) && consumer.menuItems.length > 0);
+    assert.ok(consumer.menuItems.every((item) => item.label && item.permission));
     if (consumer.uiMode === 'iframe') {
       assert.match(consumer.webPath, /^\/apps\/[^/]+\/$/);
     } else {
@@ -257,26 +259,30 @@ test('administrative shell exposes the central management sections', () => {
 
 test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /workspaceApplication\?:\s*ApplicationCard/);
+  assert.match(component, /workspaceMenuItem\?:\s*ApplicationMenuItem/);
   assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
   assert.match(component, /workspaceProbeState/);
-  assert.match(component, /loadApplicationSurface\(application\.dataPath\)/);
+  assert.match(component, /const dataPath = this\.workspaceMenuItem\?\.dataPath \?\? application\.dataPath/);
+  assert.match(component, /visibleApplicationMenu\(application:\s*ApplicationCard\)/);
+  assert.match(component, /selectWorkspaceMenuItem\(item:\s*ApplicationMenuItem\)/);
+  assert.match(component, /publishPortalShellContext\(application:\s*ApplicationCard\)/);
   assert.match(component, /manageApplicationSecurity\(application\?:\s*ApplicationCard\)/);
   assert.match(component, /applicationAuthorized\(application:\s*ApplicationCard\)/);
   assert.match(component, /applicationIntegrationLabel\(application:\s*ApplicationCard\)/);
   assert.match(component, /manageApplicationMenu\(application:/);
   assert.match(component, /manageApplicationConfiguration\(application:/);
-  assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);
+  assert.match(component, /new URL\(/);
   assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
   assert.match(component, /activeSection\s*=\s*'applications'/);
   assert.match(template, /Aplicación integrada/);
-  assert.match(template, /Integración gobernada por Portal/);
-  assert.match(template, /Permisos y roles/);
+  assert.match(template, /workspace-app-menu/);
+  assert.match(template, /Vista funcional integrada al Portal/);
   assert.match(template, /SuperAdmin autorizado/);
-  assert.match(component, /'Módulo Portal \/ API'/);
-  assert.match(template, /Actualizar datos protegidos/);
+  assert.match(component, /'Vista integrada Portal'/);
   assert.match(template, /<iframe/);
   assert.match(template, /\[src\]="workspaceUrl"/);
-  assert.match(template, /Volver a aplicaciones/);
+  assert.match(template, /workspace-data-table/);
+  assert.match(template, /Cerrar aplicación/);
   assert.doesNotMatch(component, /if \(!application\.port\) return/);
   assert.doesNotMatch(component, /window\.open\(/);
 });

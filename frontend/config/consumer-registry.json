@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "consumers": [
     {
       "name": "CRM",
@@ -19,7 +19,21 @@
       "accessPermission": "crm.*",
       "uiMode": "iframe",
       "webPort": null,
-      "webPath": "/apps/crm/"
+      "webPath": "/apps/crm/",
+      "menuItems": [
+        { "label": "Inicio", "route": "", "permission": "crm.*", "order": 10 },
+        { "label": "Leads", "route": "foundation/leads/qualification", "permission": "crm.*", "order": 20 },
+        { "label": "Cuentas", "route": "foundation/accounts", "permission": "crm.*", "order": 30 },
+        { "label": "Contactos", "route": "foundation/contacts", "permission": "crm.*", "order": 40 },
+        { "label": "Actividades", "route": "foundation/activities", "permission": "crm.*", "order": 50 },
+        { "label": "Oportunidades", "route": "foundation/opportunities", "permission": "crm.*", "order": 60 },
+        { "label": "Campañas", "route": "foundation/campaigns", "permission": "crm.*", "order": 70 },
+        { "label": "Segmentos", "route": "foundation/segments", "permission": "crm.*", "order": 80 },
+        { "label": "Casos", "route": "foundation/cases", "permission": "crm.*", "order": 90 },
+        { "label": "Customer 360", "route": "foundation/customer360", "permission": "crm.*", "order": 100 },
+        { "label": "Insights", "route": "foundation/insights", "permission": "crm.*", "order": 110 },
+        { "label": "Readiness", "route": "readiness", "permission": "crm.*", "order": 120 }
+      ]
     },
     {
       "name": "Financiero",
@@ -39,14 +53,23 @@
       "accessPermission": "financial.*",
       "uiMode": "iframe",
       "webPort": null,
-      "webPath": "/apps/financial/"
+      "webPath": "/apps/financial/",
+      "menuItems": [
+        { "label": "Dashboard", "route": "dashboard", "permission": "financial.electronicdocuments.read", "order": 10 },
+        { "label": "SRI readiness", "route": "sri-readiness", "permission": "financial.electronicdocuments.manage", "order": 20 },
+        { "label": "ATS readiness", "route": "ats-readiness", "permission": "financial.electronicdocuments.read", "order": 30 },
+        { "label": "Aprobaciones", "route": "external-approvals", "permission": "financial.electronicdocuments.manage", "order": 40 },
+        { "label": "Catálogos tributarios", "route": "tax-catalogs", "permission": "financial.electronicdocuments.read", "order": 50 },
+        { "label": "Compras", "route": "purchases", "permission": "financial.electronicdocuments.read", "order": 60 },
+        { "label": "Anulados", "route": "voided-documents", "permission": "financial.electronicdocuments.read", "order": 70 }
+      ]
     },
     {
       "name": "Talento Humano",
       "code": "HR",
       "moduleCode": "hr",
       "description": "Gestión de personas y colaboradores.",
-      "status": "Integrado · Módulo API",
+      "status": "Integrado · Vista Portal",
       "service": "hr-api",
       "route": "hr",
       "healthRoute": "hr-health",
@@ -59,14 +82,18 @@
       "accessPermission": "hr.employees.view",
       "uiMode": "native",
       "webPort": null,
-      "webPath": null
+      "webPath": null,
+      "menuItems": [
+        { "label": "Resumen", "dataPath": "/api/hr/health/ready", "permission": "hr.employees.view", "order": 10 },
+        { "label": "Empleados", "dataPath": "/api/hr/employees", "permission": "hr.employees.view", "order": 20 }
+      ]
     },
     {
       "name": "HistoriasPaolin",
       "code": "HISTORIAS",
       "moduleCode": "historiaspaolin",
-      "description": "Aplicación integrada mediante Gateway.",
-      "status": "Integrado · Módulo API",
+      "description": "Canales, episodios y operación editorial.",
+      "status": "Integrado · Vista Portal",
       "service": "historiaspaolin-api",
       "route": "historiaspaolin",
       "healthRoute": "historiaspaolin-health",
@@ -79,7 +106,11 @@
       "accessPermission": "historiaspaolin.channels.view",
       "uiMode": "native",
       "webPort": null,
-      "webPath": null
+      "webPath": null,
+      "menuItems": [
+        { "label": "Canales", "dataPath": "/api/historiaspaolin/api/channels", "permission": "historiaspaolin.channels.view", "order": 10 },
+        { "label": "Episodios", "dataPath": "/api/historiaspaolin/api/historiaspaolin/episodes", "permission": "historiaspaolin.episodes.view", "order": 20 }
+      ]
     }
   ]
 }

@@ -44,6 +44,9 @@ button, input, select, textarea { font: inherit; }
   border: 0; border-radius: 10px; padding: .72rem .78rem; background: transparent; color: #dce6f5; cursor: pointer;
 }
 .sidebar__nav button:hover, .sidebar__nav button.active { background: rgba(255,255,255,.11); color: #fff; }
+.sidebar__nav button:disabled { opacity: .45; cursor: not-allowed; }
+.sidebar__title--apps { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.1); }
+.sidebar__apps button { min-height: 54px; }
 .nav-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: rgba(255,255,255,.08); }
 .nav-copy { min-width: 0; display: grid; gap: .12rem; }
 .nav-copy strong { font-size: .9rem; }
@@ -123,9 +126,13 @@ button, input, select, textarea { font: inherit; }
 .module-panel__details { display: grid; gap: .5rem; align-content: start; }
 .module-panel__details span { color: #52627a; }
 .workspace-shell { min-height: calc(100vh - 132px); display: flex; flex-direction: column; }
-.workspace-shell__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; padding: .85rem 1rem; border: 1px solid #dde6f2; border-radius: 12px; background: #fff; }
+.workspace-shell__header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .65rem; padding: .85rem 1rem; border: 1px solid #dde6f2; border-radius: 12px; background: #fff; }
 .workspace-shell__header h2 { margin: 0 0 .2rem; }
-.workspace-shell__frame { flex: 1; min-height: 680px; border: 1px solid #d8e1ed; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(31,45,61,.05); }
+.workspace-shell__header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .55rem; }
+.workspace-app-menu { display: flex; gap: .4rem; overflow-x: auto; padding: .65rem; margin-bottom: .7rem; border: 1px solid #dde6f2; border-radius: 12px; background: #fff; }
+.workspace-app-menu button { flex: 0 0 auto; border: 1px solid transparent; border-radius: 8px; background: #f2f5f9; color: #52627a; padding: .55rem .78rem; font-weight: 750; cursor: pointer; }
+.workspace-app-menu button:hover, .workspace-app-menu button.active { border-color: #a8c0ff; background: #e9f0ff; color: #1f5eff; }
+.workspace-shell__frame { flex: 1; min-height: 720px; border: 1px solid #d8e1ed; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(31,45,61,.05); }
 .workspace-shell__frame iframe { width: 100%; height: 100%; min-height: 680px; border: 0; display: block; background: #fff; }
 .workspace-native { flex: 1; display: grid; align-content: start; gap: 1rem; padding: 1.25rem; border: 1px solid #d8e1ed; border-radius: 14px; background: #fff; box-shadow: 0 8px 24px rgba(31,45,61,.05); }
 .workspace-native__summary { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #edf1f6; }
@@ -138,6 +145,13 @@ button, input, select, textarea { font: inherit; }
 .workspace-native__actions { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; }
 .workspace-native__data { border: 1px solid #e3eaf3; border-radius: 12px; padding: 1rem; background: #f8fafc; }
 .workspace-native__data pre { margin: 0; max-height: 360px; overflow: auto; padding: .9rem; border-radius: 10px; background: #0f172a; color: #e2e8f0; font-size: .78rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.workspace-data-table__scroll { width: 100%; overflow: auto; }
+.workspace-data-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .82rem; }
+.workspace-data-table th, .workspace-data-table td { padding: .72rem .8rem; border-bottom: 1px solid #e7edf5; text-align: left; vertical-align: top; }
+.workspace-data-table th { position: sticky; top: 0; background: #f3f6fa; color: #52627a; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.workspace-data-table td { max-width: 340px; overflow-wrap: anywhere; }
+.workspace-native__technical { border-top: 1px solid #edf1f6; padding-top: .8rem; }
+.workspace-native__technical summary { cursor: pointer; color: #52627a; font-weight: 750; margin-bottom: .8rem; }
 
 .footer { padding: .9rem 1.5rem; background: #fff; border-top: 1px solid #dde6f2; color: #64748b; font-size: .78rem; }
 

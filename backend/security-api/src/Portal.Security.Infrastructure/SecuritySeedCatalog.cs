@@ -22,7 +22,8 @@ internal static class SecuritySeedCatalog
         new(Guid.Parse("20000000-0000-0000-0000-000000000010"), "portal.catalog", "Portal Catalog"),
         new(Guid.Parse("20000000-0000-0000-0000-000000000011"), "portal.content", "Portal Content"),
         new(Guid.Parse("20000000-0000-0000-0000-000000000012"), "portal.reporting", "Portal Reporting"),
-        new(Guid.Parse("20000000-0000-0000-0000-000000000013"), "portal.integration", "Portal Integration")
+        new(Guid.Parse("20000000-0000-0000-0000-000000000013"), "portal.integration", "Portal Integration"),
+        new(Guid.Parse("20000000-0000-0000-0000-000000000014"), "historiaspaolin.episodes", "HistoriasPaolin - Episodios")
     ];
 
     internal static readonly PermissionDefinition[] Permissions =
@@ -48,6 +49,7 @@ internal static class SecuritySeedCatalog
         new(Guid.Parse("30000000-0000-0000-0000-000000000019"), "portal.content.read", "portal.content", "read", true),
         new(Guid.Parse("30000000-0000-0000-0000-000000000020"), "portal.reporting.read", "portal.reporting", "read", true),
         new(Guid.Parse("30000000-0000-0000-0000-000000000021"), "portal.integration.manage", "portal.integration", "manage", true),
-        new(Guid.Parse("30000000-0000-0000-0000-000000000022"), "portal.integration.read", "portal.integration", "read", true)
+        new(Guid.Parse("30000000-0000-0000-0000-000000000022"), "portal.integration.read", "portal.integration", "read", true),
+        new(Guid.Parse("30000000-0000-0000-0000-000000000023"), "historiaspaolin.episodes.view", "historiaspaolin.episodes", "view", false)
     ];
 }

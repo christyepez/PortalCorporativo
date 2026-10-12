@@ -71,7 +71,7 @@ foreach ($permission in $corePortalPermissions) {
     Write-Host "PASS governed core Portal permission $permission"
 }
 
-$consumerPermissions = @('crm.*','financial.*','hr.employees.view','hr.employees.manage','historiaspaolin.channels.view')
+$consumerPermissions = @('crm.*','financial.*','hr.employees.view','hr.employees.manage','historiaspaolin.channels.view','historiaspaolin.episodes.view')
 foreach ($permission in $consumerPermissions) {
     if (-not $seedCatalog.Contains('"' + $permission + '"')) {
         throw "Security seed catalog missing consumer permission: $permission"
@@ -82,11 +82,12 @@ foreach ($marker in @('BootstrapGovernedSecurityAsync','SecuritySeedCatalog.Reso
     if (-not $initializer.Contains($marker)) { throw "Security initializer missing governed bootstrap marker: $marker" }
 }
 
-if ($registry.version -ne 2) { throw 'Consumer registry must use governed application surface version 2.' }
+if ($registry.version -ne 3) { throw 'Consumer registry must use governed application surface version 3.' }
 foreach ($consumer in $registry.consumers) {
     if ([string]::IsNullOrWhiteSpace([string]$consumer.moduleCode)) { throw "Consumer $($consumer.code) missing moduleCode." }
     if ([string]::IsNullOrWhiteSpace([string]$consumer.accessPermission)) { throw "Consumer $($consumer.code) missing accessPermission." }
     if ([string]::IsNullOrWhiteSpace([string]$consumer.protectedSmoke)) { throw "Consumer $($consumer.code) missing protected surface." }
+    if (@($consumer.menuItems).Count -eq 0) { throw "Consumer $($consumer.code) missing application menu." }
     if ([string]$consumer.uiMode -notin @('native','iframe')) { throw "Consumer $($consumer.code) has invalid uiMode." }
     if ([string]$consumer.uiMode -eq 'iframe') {
         if ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) { throw "Consumer $($consumer.code) iframe missing webPath." }
@@ -111,7 +112,9 @@ foreach ($marker in @(
     'probe(path: string)',
     'clearLocalSuperAdminSession()',
     'consumer.webPath',
-    'new URL(application.webPath, window.location.origin)',
+    'updateWorkspaceUrl(application: ApplicationCard, item?: ApplicationMenuItem)',
+    'visibleApplicationMenu(application: ApplicationCard)',
+    'publishPortalShellContext(application: ApplicationCard)',
     'manageApplicationSecurity(application?: ApplicationCard)',
     'applicationAuthorized(application: ApplicationCard)',
     'applicationIntegrationLabel(application: ApplicationCard)',
@@ -132,14 +135,14 @@ if ($component.Contains('sessionTokenInput')) {
 if (($component + $apiService) -match 'localStorage|sessionStorage') {
     throw 'Local administrative tokens must remain memory-only.'
 }
-if (-not $template.Contains('Integración gobernada por Portal') -or -not $template.Contains('Abrir en Portal')) {
-    throw 'Application workspace must be visible and governed in the Portal shell.'
+if (-not $template.Contains('workspace-app-menu') -or -not $template.Contains('Vista funcional integrada al Portal') -or -not $template.Contains('Abrir en Portal')) {
+    throw 'Application workspace must expose embedded navigation and functional Portal-native views.'
 }
 foreach ($marker in @('SuperAdmin autorizado','localAdminSession.displayName','localAdminSession.role')) {
     if (-not $template.Contains($marker)) { throw "Portal shell missing SuperAdmin governance marker: $marker" }
 }
-if (-not $component.Contains("'Módulo Portal / API'")) {
-    throw 'Portal component must identify native API applications explicitly.'
+if (-not $component.Contains("'Vista integrada Portal'")) {
+    throw 'Portal component must identify native applications as integrated Portal views.'
 }
 
 $embedded = @($registry.consumers | Where-Object { $_.uiMode -eq 'iframe' })

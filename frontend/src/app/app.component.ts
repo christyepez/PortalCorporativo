@@ -30,6 +30,14 @@ interface NavigationItem {
   readonly icon: string;
 }
 
+interface ApplicationMenuItem {
+  readonly label: string;
+  readonly route?: string;
+  readonly dataPath?: string;
+  readonly permission: string;
+  readonly order: number;
+}
+
 interface ApplicationCard {
   readonly name: string;
   readonly code: string;
@@ -43,6 +51,7 @@ interface ApplicationCard {
   readonly accessPermission: string;
   readonly uiMode: 'native' | 'iframe';
   readonly status: string;
+  readonly menuItems: ApplicationMenuItem[];
 }
 @Component({
   selector: 'portal-root',
@@ -65,9 +74,32 @@ export class AppComponent implements OnInit {
     try {
       await this.connectLocalSession();
       await this.refreshModuleHealth();
+      await this.openDeepLinkedApplication();
     } finally {
       this.sessionInitializing = false;
     }
+  }
+
+  private async openDeepLinkedApplication(): Promise<void> {
+    if (typeof window === 'undefined') return;
+
+    const params = new URL(window.location.href).searchParams;
+    const requestedCode = params.get('app')?.trim().toUpperCase();
+    if (!requestedCode) return;
+
+    const application = this.applications.find(candidate => candidate.code === requestedCode);
+    if (!application || !this.applicationAuthorized(application)) return;
+
+    await this.openApplication(application);
+
+    const requestedView = params.get('view')?.trim();
+    if (!requestedView) return;
+
+    const menuItem = this.visibleApplicationMenu(application).find(item =>
+      item.route === requestedView ||
+      item.label.toLowerCase() === requestedView.toLowerCase()
+    );
+    if (menuItem) await this.selectWorkspaceMenuItem(menuItem);
   }
 
   protected readonly title = 'Portal Corporativo';
@@ -101,7 +133,16 @@ export class AppComponent implements OnInit {
     dataPath: consumer.protectedSmoke,
     accessPermission: consumer.accessPermission,
     uiMode: consumer.uiMode as 'native' | 'iframe',
-    status: consumer.status
+    status: consumer.status,
+    menuItems: [...consumer.menuItems]
+      .map((item) => ({
+        label: item.label,
+        route: 'route' in item ? item.route : undefined,
+        dataPath: 'dataPath' in item ? item.dataPath : undefined,
+        permission: item.permission,
+        order: item.order
+      }))
+      .sort((a, b) => a.order - b.order)
   }));
 
   protected readonly modules: ShellModule[] = [
@@ -125,10 +166,13 @@ export class AppComponent implements OnInit {
 
   protected activeSection: AdminSection = 'dashboard';
   protected workspaceApplication?: ApplicationCard;
+  protected workspaceMenuItem?: ApplicationMenuItem;
   protected workspaceUrl?: SafeResourceUrl;
   protected workspaceProbeState: ModuleProbeState = 'idle';
   protected workspaceProbeStatus?: number;
   protected workspaceDataText = '';
+  protected workspaceDataRows: Record<string, unknown>[] = [];
+  protected workspaceDataColumns: string[] = [];
   protected workspaceDataLoading = false;
   protected workspaceDataError?: string;
   protected selectedModule: ShellModule = this.modules[0];
@@ -322,6 +366,7 @@ export class AppComponent implements OnInit {
       const session = await firstValueFrom(this.portalApi.createLocalSuperAdminSession());
       this.portalApi.setAccessToken(session.accessToken);
       this.localAdminSession = session;
+      if (this.workspaceApplication) this.publishPortalShellContext(this.workspaceApplication);
       this.securitySuccess = `${session.displayName} conectado · ${session.role} · ${session.permissions.length} permisos`;
     } catch (error: unknown) {
       this.portalApi.clearAccessToken();
@@ -336,6 +381,7 @@ export class AppComponent implements OnInit {
   protected async clearLocalSession(): Promise<void> {
     this.portalApi.clearAccessToken();
     this.localAdminSession = undefined;
+    this.clearPortalShellContext();
     this.securityApplication = undefined;
     try {
       await firstValueFrom(this.portalApi.clearLocalSuperAdminSession());
@@ -1443,17 +1489,15 @@ export class AppComponent implements OnInit {
     }
 
     this.workspaceApplication = application;
+    this.workspaceMenuItem = this.visibleApplicationMenu(application)[0] ?? application.menuItems[0];
     this.workspaceUrl = undefined;
     this.workspaceProbeState = 'checking';
     this.workspaceProbeStatus = undefined;
-    this.workspaceDataText = '';
-    this.workspaceDataError = undefined;
+    this.resetWorkspaceData();
     this.activeSection = 'applications';
 
-    if (application.uiMode === 'iframe' && application.webPath) {
-      const target = new URL(application.webPath, window.location.origin).toString();
-      this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
-    }
+    this.publishPortalShellContext(application);
+    this.updateWorkspaceUrl(application, this.workspaceMenuItem);
 
     const module = this.modules.find(candidate => candidate.gatewayPath === application.path);
     if (module) {
@@ -1464,6 +1508,26 @@ export class AppComponent implements OnInit {
       this.workspaceProbeState = 'unavailable';
     }
 
+    if (application.uiMode === 'native') {
+      await this.refreshWorkspaceData();
+    }
+  }
+
+  protected visibleApplicationMenu(application: ApplicationCard): ApplicationMenuItem[] {
+    return application.menuItems.filter(item => this.permissionGranted(item.permission));
+  }
+
+  protected async selectWorkspaceMenuItem(item: ApplicationMenuItem): Promise<void> {
+    const application = this.workspaceApplication;
+    if (!application || !this.permissionGranted(item.permission)) return;
+
+    this.workspaceMenuItem = item;
+    this.resetWorkspaceData();
+    if (application.uiMode === 'iframe') {
+      this.updateWorkspaceUrl(application, item);
+      return;
+    }
+
     await this.refreshWorkspaceData();
   }
 
@@ -1471,19 +1535,62 @@ export class AppComponent implements OnInit {
     const application = this.workspaceApplication;
     if (!application || !this.portalApi.hasAuthenticatedSession() || this.workspaceDataLoading) return;
 
+    const dataPath = this.workspaceMenuItem?.dataPath ?? application.dataPath;
     this.workspaceDataLoading = true;
     this.workspaceDataError = undefined;
     try {
-      const data = await firstValueFrom(this.portalApi.loadApplicationSurface(application.dataPath));
+      const data = await firstValueFrom(this.portalApi.loadApplicationSurface(dataPath));
       this.workspaceDataText = JSON.stringify(data, null, 2) ?? String(data);
+      this.updateWorkspaceStructuredData(data);
     } catch (error: unknown) {
-      this.workspaceDataText = '';
+      this.resetWorkspaceData();
       this.workspaceDataError = error instanceof Error
         ? error.message
-        : `No fue posible cargar ${application.dataPath}.`;
+        : `No fue posible cargar ${dataPath}.`;
     } finally {
       this.workspaceDataLoading = false;
     }
+  }
+
+  protected formatWorkspaceCell(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  private updateWorkspaceUrl(application: ApplicationCard, item?: ApplicationMenuItem): void {
+    if (application.uiMode !== 'iframe' || !application.webPath) {
+      this.workspaceUrl = undefined;
+      return;
+    }
+
+    const route = item?.route?.replace(/^\/+/, '') ?? '';
+    const target = new URL(`${application.webPath}${route}`, window.location.origin).toString();
+    this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
+  }
+
+  private updateWorkspaceStructuredData(data: unknown): void {
+    const collection = Array.isArray(data)
+      ? data
+      : this.isRecord(data) && Array.isArray(data['data'])
+        ? data['data']
+        : [];
+
+    this.workspaceDataRows = collection.filter((item): item is Record<string, unknown> => this.isRecord(item));
+    this.workspaceDataColumns = this.workspaceDataRows.length > 0
+      ? Object.keys(this.workspaceDataRows[0]).slice(0, 6)
+      : [];
+  }
+
+  private resetWorkspaceData(): void {
+    this.workspaceDataText = '';
+    this.workspaceDataRows = [];
+    this.workspaceDataColumns = [];
+    this.workspaceDataError = undefined;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
   protected manageApplicationSecurity(application?: ApplicationCard): void {
@@ -1503,11 +1610,99 @@ export class AppComponent implements OnInit {
   }
 
   protected applicationAuthorized(application: ApplicationCard): boolean {
-    return this.localAdminSession?.permissions.includes(application.accessPermission) ?? false;
+    return this.permissionGranted(application.accessPermission);
+  }
+
+  private permissionGranted(requiredPermission: string): boolean {
+    const permissions = this.localAdminSession?.permissions ?? [];
+    return permissions.some(permission =>
+      permission === requiredPermission ||
+      (permission.endsWith('.*') && requiredPermission.startsWith(permission.slice(0, -1)))
+    );
+  }
+
+  private publishPortalShellContext(application: ApplicationCard): void {
+    const session = this.localAdminSession;
+    if (!session || typeof window === 'undefined') return;
+
+    const menuItems = this.visibleApplicationMenu(application).map(item => ({
+      route: item.route ? `/${item.route.replace(/^\/+/, '')}` : '/',
+      title: item.label,
+      permission: item.permission,
+      order: item.order,
+      foundationOnly: true,
+      readOnly: true
+    }));
+
+    const shellContext = {
+      contractVersion: '1.0',
+      source: 'portal',
+      issuedAt: new Date().toISOString(),
+      expiresAt: session.expiresAtUtc,
+      capabilities: [`${application.moduleCode}.portal-embedded`, 'portal.security', 'portal.menu'],
+      warnings: [],
+      user: {
+        userId: session.user,
+        displayName: session.displayName,
+        roles: [session.role]
+      },
+      tenant: {
+        tenantId: session.tenantId,
+        tenantName: session.tenantId
+      },
+      permissions: {
+        permissions: session.permissions,
+        roles: [session.role]
+      },
+      menu: { items: menuItems },
+      notifications: {
+        channels: ['portal'],
+        delegatedToPortal: true
+      },
+      correlation: {
+        correlationId: globalThis.crypto?.randomUUID?.() ?? `portal-${Date.now()}`
+      },
+      environment: {
+        apiBaseUrl: '/api',
+        shellMode: 'portal-integrated',
+        production: true
+      },
+      featureFlags: {
+        showAtsXmlReadiness: true,
+        showExternalApprovals: true,
+        showPurchases: true,
+        showVoidedDocuments: true,
+        allowDevHeaders: false,
+        allowPurchaseCommands: false,
+        allowVoidedDocumentCommands: false,
+        allowExternalApprovalCommands: false,
+        allowEvidenceReferenceMetadata: false,
+        allowApprovalDecisionFoundation: false,
+        allowPortalContentFileEvidenceReferences: false,
+        allowPortalNotificationIntents: false,
+        allowNotificationSend: false,
+        allowEvidenceUpload: false,
+        allowProductizationReadiness: true,
+        allowProductiveActivation: false,
+        allowOfficialTaxFlows: false,
+        allowAtsOfficialActions: false,
+        allowSriSubmission: false,
+        allowXmlPreviewUi: false,
+        allowMutations: false
+      },
+      delegatedAuthToken: session.accessToken
+    };
+
+    (window as unknown as { __PORTAL_SHELL_CONTEXT__?: unknown }).__PORTAL_SHELL_CONTEXT__ = shellContext;
+  }
+
+  private clearPortalShellContext(): void {
+    if (typeof window === 'undefined') return;
+    delete (window as unknown as { __PORTAL_SHELL_CONTEXT__?: unknown }).__PORTAL_SHELL_CONTEXT__;
   }
 
   protected applicationIntegrationLabel(application: ApplicationCard): string {
-    return application.uiMode === 'iframe' ? 'UI embebida' : 'Módulo Portal / API';
+    return application.uiMode === 'iframe' ? 'Aplicación embebida' : 'Vista integrada Portal';
   }
 
   protected manageApplicationMenu(application: ApplicationCard): void {
@@ -1523,11 +1718,12 @@ export class AppComponent implements OnInit {
 
   protected closeWorkspace(): void {
     this.workspaceApplication = undefined;
+    this.workspaceMenuItem = undefined;
     this.workspaceUrl = undefined;
+    this.clearPortalShellContext();
     this.workspaceProbeState = 'idle';
     this.workspaceProbeStatus = undefined;
-    this.workspaceDataText = '';
-    this.workspaceDataError = undefined;
+    this.resetWorkspaceData();
   }
 
   protected async selectModule(module: ShellModule): Promise<void> {

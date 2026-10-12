@@ -28,6 +28,7 @@ public static class PortalPermissions
     public const string HrEmployeesView = "hr.employees.view";
     public const string HrEmployeesManage = "hr.employees.manage";
     public const string HistoriasPaolinChannelsView = "historiaspaolin.channels.view";
+    public const string HistoriasPaolinEpisodesView = "historiaspaolin.episodes.view";
 
     public static readonly string[] All =
     [
@@ -35,7 +36,7 @@ public static class PortalPermissions
         AuditRead, AuditWrite, NotificationManage, NotificationSend, NotificationRead,
         CatalogManage, CatalogRead, ContentManage, ContentRead, ReportingRead,
         IntegrationManage, IntegrationRead, CrmAll, FinancialAll,
-        HrEmployeesView, HrEmployeesManage, HistoriasPaolinChannelsView
+        HrEmployeesView, HrEmployeesManage, HistoriasPaolinChannelsView, HistoriasPaolinEpisodesView
     ];
 }
 
