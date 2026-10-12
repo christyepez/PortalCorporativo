@@ -84,7 +84,10 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(component, /async assignSecurityPermissionToRole\(\)/);
   assert.match(component, /async loadSecurityUserPermissions\(\)/);
   assert.match(component, /async checkSecurityPermission\(\)/);
-  assert.match(component, /portalApi\.setAccessToken\(token\)/);
+  assert.match(apiService, /createLocalSuperAdminSession\(\)/);
+  assert.match(apiService, /\/security\/local-session/);
+  assert.match(apiService, /clearLocalSuperAdminSession\(\)/);
+  assert.match(component, /portalApi\.setAccessToken\(session\.accessToken\)/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
     assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
   }
@@ -92,8 +95,9 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /Asignar rol/);
   assert.match(template, /Asignar permiso/);
   assert.match(template, /Evaluar permiso/);
-  assert.match(template, /JWT local efímero/);
-  assert.match(template, /El token permanece sólo en memoria/);
+  assert.match(template, /SuperAdmin local/);
+  assert.match(template, /Entrar como SuperAdmin local/);
+  assert.doesNotMatch(template, /Pega un token local|JWT local efímero/);
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
 
@@ -230,14 +234,13 @@ test('administrative shell exposes the central management sections', () => {
 });
 
 test('applications open inside the Portal workspace instead of a new browser tab', () => {
-  assert.match(component, /workspaceApplication\?:\s*ApplicationCard/);
-  assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
-  assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
-  assert.match(component, /activeSection\s*=\s*'applications'/);
+  assert.match(component, /consumer\.webPath \?\? undefined/);
+  assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);
+  assert.match(template, /workspaceUrl/);
   assert.match(template, /<iframe/);
-  assert.match(template, /\[src\]="workspaceUrl"/);
-  assert.match(template, /Volver a aplicaciones/);
-  assert.doesNotMatch(component, /window\.open\(/);
+  assert.match(template, /Abrir en Portal/);
+  assert.match(template, /API integrada/);
+  assert.doesNotMatch(component, /window\.open/);
 });
 
 test('shell source avoids direct external hosts and browser token persistence', () => {
