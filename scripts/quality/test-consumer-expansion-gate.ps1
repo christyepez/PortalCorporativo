@@ -45,7 +45,7 @@ foreach ($field in @('code','moduleCode','service','route','healthRoute','gatewa
     Assert-True (@($consumers.$field | Sort-Object -Unique).Count -eq $consumers.Count) "Consumer registry field '$field' is unique"
 }
 
-$coreRoutes = @('security-local-session','security','configuration','menu','audit','notification','catalog','content','integration','reporting')
+$coreRoutes = @('security-local-session','security-local-session-logout','security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $coreClusters = @('security','configuration','menu','audit','notification','catalog','content','integration','reporting')
 $expectedConsumerRoutes = @($consumers | ForEach-Object { $_.route; $_.healthRoute })
 $actualConsumerRoutes = @($gateway.ReverseProxy.Routes.PSObject.Properties.Name | Where-Object { $_ -notin $coreRoutes })
@@ -56,6 +56,12 @@ Assert-SameSet $actualConsumerClusters $consumers.cluster 'Gateway contains no u
 foreach ($consumer in $consumers) {
     Assert-True ($consumer.gatewayPath.StartsWith('/api/')) "$($consumer.name) Gateway path is under /api"
     Assert-True ($consumer.uiMode -in @('native','iframe')) "$($consumer.name) UI mode is governed"
+    if ($consumer.uiMode -eq 'iframe') {
+        Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) embedded UI has a web path"
+        Assert-True (([string]$consumer.webPath).StartsWith('/apps/') -and ([string]$consumer.webPath).EndsWith('/')) "$($consumer.name) embedded UI stays under /apps"
+    } else {
+        Assert-True ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) "$($consumer.name) native API module has no fake web path"
+    }
     Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.moduleCode)) "$($consumer.name) module code is governed"
     Assert-True (-not [string]::IsNullOrWhiteSpace([string]$consumer.accessPermission)) "$($consumer.name) access permission is governed"
     Assert-True ($consumer.protectedSmoke.StartsWith($consumer.gatewayPath)) "$($consumer.name) protected smoke stays inside its Gateway boundary"
@@ -67,7 +73,7 @@ foreach ($consumer in $consumers) {
 
     Assert-True ($null -ne $route) "$($consumer.name) application route exists"
     Assert-True ($route.ClusterId -eq $consumer.cluster) "$($consumer.name) application route targets the governed cluster"
-    Assert-True ($route.AuthorizationPolicy -eq 'default') "$($consumer.name) application route requires default authorization"
+    Assert-True ($route.AuthorizationPolicy -eq $consumer.accessPermission) "$($consumer.name) application route requires its governed Security permission"
     Assert-True ($route.Match.Path -eq "$($consumer.gatewayPath)/{**catch-all}") "$($consumer.name) application route uses exact governed Gateway prefix"
 
     Assert-True ($null -ne $health) "$($consumer.name) health route exists"
@@ -88,6 +94,9 @@ foreach ($consumer in $consumers) {
 }
 
 Assert-True ($shell.Contains('consumerRegistry.consumers')) 'Portal Shell applications and consumer health probes use the shared registry'
+$embeddedCodes = @($consumers | Where-Object { $_.uiMode -eq 'iframe' } | ForEach-Object { $_.code })
+Assert-SameSet $embeddedCodes @('CRM','FINANCIAL') 'Exactly CRM and Financiero expose embedded web UIs'
+Assert-True ($shell.Contains('consumer.webPath')) 'Portal Shell derives embedded application paths from the governed registry'
 Assert-True ($smoke.Contains('consumer-registry.json')) 'Authenticated smoke loads the governed consumer registry'
 Assert-True ($smoke.Contains('$consumer.probePath')) 'Authenticated smoke derives consumer health probes from the registry'
 Assert-True ($smoke.Contains('$consumer.protectedSmoke')) 'Authenticated smoke derives protected endpoints from the registry'

@@ -11,6 +11,9 @@ $localCompose = Get-Content -LiteralPath (Join-Path $root 'docker-compose.prod-l
 $component = Get-Content -LiteralPath (Join-Path $root 'frontend/src/app/app.component.ts') -Raw
 $template = Get-Content -LiteralPath (Join-Path $root 'frontend/src/app/app.component.html') -Raw
 $apiService = Get-Content -LiteralPath (Join-Path $root 'frontend/src/app/portal-api.service.ts') -Raw
+$authentication = Get-Content -LiteralPath (Join-Path $root 'backend/building-blocks/src/Portal.BuildingBlocks/PortalAuthentication.cs') -Raw
+$dockerfile = Get-Content -LiteralPath (Join-Path $root 'frontend/Dockerfile.prod') -Raw
+$nginx = Get-Content -LiteralPath (Join-Path $root 'frontend/nginx.prod.conf') -Raw
 $registry = Get-Content -LiteralPath (Join-Path $root 'frontend/config/consumer-registry.json') -Raw | ConvertFrom-Json
 
 $requiredEndpointMarkers = @(
@@ -21,7 +24,13 @@ $requiredEndpointMarkers = @(
     'PortalPermissions.ClaimType',
     'CacheControl',
     'no-store',
-    'AllowAnonymous'
+    'AllowAnonymous',
+    'portal_local_session',
+    'HttpOnly = true',
+    'SameSite = SameSiteMode.Strict',
+    'EnsureLocalSuperAdminAsync',
+    'UserRole.Create',
+    '/api/security/local-session/logout'
 )
 foreach ($marker in $requiredEndpointMarkers) {
     if (-not $endpoint.Contains($marker)) { throw "Local SuperAdmin endpoint missing marker: $marker" }
@@ -33,6 +42,12 @@ if (-not $program.Contains('MapLocalAdminSessionEndpoints')) {
 }
 if (-not $gateway.Contains('"security-local-session"') -or -not $gateway.Contains('/api/security/local-session')) {
     throw 'Gateway must expose the exact local SuperAdmin session route.'
+}
+if (-not $gateway.Contains('"security-local-session-logout"') -or -not $gateway.Contains('/api/security/local-session/logout')) {
+    throw 'Gateway must expose the exact local SuperAdmin logout route.'
+}
+if (-not $authentication.Contains('portal_local_session') -or -not $authentication.Contains('OnMessageReceived')) {
+    throw 'Portal JWT authentication must accept the local HttpOnly session cookie.'
 }
 if ($baseCompose.Contains('PortalLocalAdmin__Enabled')) {
     throw 'Local SuperAdmin must not be enabled in base Compose.'
@@ -58,6 +73,16 @@ foreach ($consumer in $registry.consumers) {
     if ([string]::IsNullOrWhiteSpace([string]$consumer.accessPermission)) { throw "Consumer $($consumer.code) missing accessPermission." }
     if ([string]::IsNullOrWhiteSpace([string]$consumer.protectedSmoke)) { throw "Consumer $($consumer.code) missing protected surface." }
     if ([string]$consumer.uiMode -notin @('native','iframe')) { throw "Consumer $($consumer.code) has invalid uiMode." }
+    if ([string]$consumer.uiMode -eq 'iframe') {
+        if ([string]::IsNullOrWhiteSpace([string]$consumer.webPath)) { throw "Consumer $($consumer.code) iframe missing webPath." }
+        if (-not ([string]$consumer.webPath).StartsWith('/apps/')) { throw "Consumer $($consumer.code) webPath must stay under /apps." }
+    } elseif (-not [string]::IsNullOrWhiteSpace([string]$consumer.webPath)) {
+        throw "Consumer $($consumer.code) native integration must not expose webPath."
+    }
+    $routePattern = '"' + [regex]::Escape([string]$consumer.route) + '"'
+    if (-not $gateway.Contains('"' + [string]$consumer.accessPermission + '"')) {
+        throw "Gateway missing governed Security policy for $($consumer.code): $($consumer.accessPermission)"
+    }
     Write-Host "PASS governed application $($consumer.code)"
 }
 
@@ -69,6 +94,9 @@ foreach ($marker in @(
     'initializeLocalPortal()',
     'localAdminSession',
     'probe(path: string)',
+    'clearLocalSuperAdminSession()',
+    'consumer.webPath',
+    'new URL(application.webPath, window.location.origin)',
     'manageApplicationSecurity(application?: ApplicationCard)',
     'applicationAuthorized(application: ApplicationCard)',
     'applicationIntegrationLabel(application: ApplicationCard)',
@@ -97,6 +125,31 @@ foreach ($marker in @('SuperAdmin autorizado','localAdminSession.displayName','l
 }
 if (-not $component.Contains("'Módulo Portal / API'")) {
     throw 'Portal component must identify native API applications explicitly.'
+}
+
+$embedded = @($registry.consumers | Where-Object { $_.uiMode -eq 'iframe' })
+if (($embedded.code | Sort-Object) -join ',' -ne 'CRM,FINANCIAL') {
+    throw 'Exactly CRM and FINANCIAL must expose embedded UIs in the current baseline.'
+}
+foreach ($marker in @(
+    'additional_contexts:',
+    'crm_source:',
+    'financial_source:'
+)) {
+    if (-not $localCompose.Contains($marker)) { throw "PROD-local embedded build missing marker: $marker" }
+}
+foreach ($marker in @(
+    'COPY --from=crm_source',
+    'COPY --from=financial_source',
+    'pnpm exec ng build --base-href /apps/crm/',
+    'pnpm exec ng build --configuration production --base-href /apps/financial/',
+    '/usr/share/nginx/html/apps/crm',
+    '/usr/share/nginx/html/apps/financial'
+)) {
+    if (-not $dockerfile.Contains($marker)) { throw "Portal web embedded image missing marker: $marker" }
+}
+foreach ($marker in @('location /apps/crm/','location /apps/financial/')) {
+    if (-not $nginx.Contains($marker)) { throw "Nginx embedded app route missing marker: $marker" }
 }
 
 Write-Host 'PORTAL_LOCAL_SUPERADMIN_APP_INTEGRATION_GATE_PASS'

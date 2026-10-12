@@ -41,6 +41,31 @@ jobs:
       - run: npm run test
       - run: npm run lint
 
+  embedded-web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: PortalCorporativo
+      - uses: actions/checkout@v4
+        with:
+          repository: christyepez/CRM
+          ref: 5b2a4f7445cc16b8bcb670160132a61fa84c1358
+          path: CRM
+      - uses: actions/checkout@v4
+        with:
+          repository: christyepez/Financiero
+          ref: 748f0980c69ab8a6b73b317f24c90ddfd598f724
+          path: Financiero
+      - name: Build Portal web with embedded CRM and Financiero
+        working-directory: PortalCorporativo
+        run: >
+          docker buildx build
+          --build-context crm_source=../CRM/frontend/crm-web
+          --build-context financial_source=../Financiero/frontend/financiero-web
+          -f frontend/Dockerfile.prod
+          frontend
+
   production-preflight:
     runs-on: ubuntu-latest
     steps:

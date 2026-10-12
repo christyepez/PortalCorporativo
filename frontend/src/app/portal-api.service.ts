@@ -307,6 +307,10 @@ export class PortalApiService {
     return this.http.post<LocalAdminSession>(`${environment.apiBasePath}/security/local-session`, {});
   }
 
+  clearLocalSuperAdminSession(): Observable<void> {
+    return this.http.post<void>(`${environment.apiBasePath}/security/local-session/logout`, {});
+  }
+
   probe(path: string): Observable<HttpResponse<unknown>> {
     return this.http.get(path, { headers: this.headers(), observe: 'response' });
   }

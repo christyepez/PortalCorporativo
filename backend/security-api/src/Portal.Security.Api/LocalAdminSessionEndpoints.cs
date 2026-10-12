@@ -11,6 +11,9 @@ namespace Portal.Security.Api;
 
 public static class LocalAdminSessionEndpoints
 {
+    public const string CookieName = "portal_local_session";
+    private const string LocalAdminEmail = "superadmin@portal.local";
+
     public static IEndpointRouteBuilder MapLocalAdminSessionEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/security/local-session", async (
@@ -34,20 +37,14 @@ public static class LocalAdminSessionEndpoints
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
 
+            var localAdmin = await EnsureLocalSuperAdminAsync(dbContext, cancellationToken);
             var superAdminRoleId = await dbContext.Roles
                 .AsNoTracking()
                 .Where(role =>
                     role.TenantId == TenantIds.Default &&
                     role.NormalizedName == "SUPERADMIN")
                 .Select(role => role.Id)
-                .SingleOrDefaultAsync(cancellationToken);
-
-            if (superAdminRoleId == Guid.Empty)
-            {
-                return Results.Problem(
-                    "SuperAdmin role is not initialized.",
-                    statusCode: StatusCodes.Status503ServiceUnavailable);
-            }
+                .SingleAsync(cancellationToken);
 
             var permissionCodes = await (
                 from assignment in dbContext.RolePermissions.AsNoTracking()
@@ -72,10 +69,11 @@ public static class LocalAdminSessionEndpoints
             var expires = now.AddMinutes(10);
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, "portal-local-superadmin"),
+                new(JwtRegisteredClaimNames.Sub, localAdmin.Id.ToString()),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
                 new("tenant_id", TenantIds.Default),
-                new(ClaimTypes.Name, "Local SuperAdmin"),
+                new(ClaimTypes.Name, localAdmin.Name),
+                new(ClaimTypes.Email, localAdmin.Email),
                 new(ClaimTypes.Role, "SuperAdmin")
             };
             claims.AddRange(permissionCodes.Select(permission =>
@@ -93,21 +91,85 @@ public static class LocalAdminSessionEndpoints
                 expires.UtcDateTime,
                 credentials);
 
+            var encoded = new JwtSecurityTokenHandler().WriteToken(token);
+            context.Response.Cookies.Append(CookieName, encoded, new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Secure = context.Request.IsHttps,
+                IsEssential = true,
+                Path = "/",
+                MaxAge = TimeSpan.FromMinutes(10)
+            });
             context.Response.Headers.CacheControl = "no-store";
             context.Response.Headers.Pragma = "no-cache";
 
             return Results.Ok(new
             {
-                accessToken = new JwtSecurityTokenHandler().WriteToken(token),
+                accessToken = encoded,
                 expiresAtUtc = expires,
-                user = "superadmin@portal.local",
-                displayName = "Local SuperAdmin",
+                user = localAdmin.Email,
+                displayName = localAdmin.Name,
                 role = "SuperAdmin",
                 tenantId = TenantIds.Default,
                 permissions = permissionCodes
             });
         }).AllowAnonymous();
 
+        endpoints.MapPost("/api/security/local-session/logout", (IConfiguration configuration, HttpContext context) =>
+        {
+            if (!configuration.GetValue<bool>("PortalLocalAdmin:Enabled"))
+            {
+                return Results.NotFound();
+            }
+
+            context.Response.Cookies.Delete(CookieName, new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict,
+                Secure = context.Request.IsHttps,
+                IsEssential = true,
+                Path = "/"
+            });
+            context.Response.Headers.CacheControl = "no-store";
+            context.Response.Headers.Pragma = "no-cache";
+            return Results.NoContent();
+        }).AllowAnonymous();
+
         return endpoints;
+    }
+
+    private static async Task<User> EnsureLocalSuperAdminAsync(SecurityDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.SingleOrDefaultAsync(
+            user => user.TenantId == TenantIds.Default &&
+                    user.NormalizedEmail == LocalAdminEmail.ToUpperInvariant(),
+            cancellationToken);
+
+        if (user is null)
+        {
+            user = User.Create(TenantIds.Default, LocalAdminEmail, "Local SuperAdmin");
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var role = await dbContext.Roles.SingleAsync(
+            role => role.TenantId == TenantIds.Default &&
+                    role.NormalizedName == "SUPERADMIN",
+            cancellationToken);
+
+        var assigned = await dbContext.UserRoles.AnyAsync(
+            assignment => assignment.TenantId == TenantIds.Default &&
+                          assignment.UserId == user.Id &&
+                          assignment.RoleId == role.Id,
+            cancellationToken);
+
+        if (!assigned)
+        {
+            dbContext.UserRoles.Add(UserRole.Create(TenantIds.Default, user.Id, role.Id));
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return user;
     }
 }

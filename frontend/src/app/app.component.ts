@@ -36,6 +36,7 @@ interface ApplicationCard {
   readonly moduleCode: string;
   readonly description: string;
   readonly port?: number;
+  readonly webPath?: string;
   readonly path: string;
   readonly probePath: string;
   readonly dataPath: string;
@@ -94,6 +95,7 @@ export class AppComponent implements OnInit {
     moduleCode: consumer.moduleCode,
     description: consumer.description,
     port: consumer.webPort ?? undefined,
+    webPath: consumer.webPath ?? undefined,
     path: consumer.gatewayPath,
     probePath: consumer.probePath,
     dataPath: consumer.protectedSmoke,
@@ -331,10 +333,15 @@ export class AppComponent implements OnInit {
     }
   }
 
-  protected clearLocalSession(): void {
+  protected async clearLocalSession(): Promise<void> {
     this.portalApi.clearAccessToken();
     this.localAdminSession = undefined;
     this.securityApplication = undefined;
+    try {
+      await firstValueFrom(this.portalApi.clearLocalSuperAdminSession());
+    } catch {
+      // The in-memory credential is already cleared; cookie cleanup is best-effort.
+    }
     this.securityUsers = [];
     this.securityRoles = [];
     this.securityPermissions = [];
@@ -1443,8 +1450,8 @@ export class AppComponent implements OnInit {
     this.workspaceDataError = undefined;
     this.activeSection = 'applications';
 
-    if (application.uiMode === 'iframe' && application.port) {
-      const target = `${window.location.protocol}//${window.location.hostname}:${application.port}/`;
+    if (application.uiMode === 'iframe' && application.webPath) {
+      const target = new URL(application.webPath, window.location.origin).toString();
       this.workspaceUrl = this.sanitizer.bypassSecurityTrustResourceUrl(target);
     }
 
