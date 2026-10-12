@@ -11,7 +11,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=crm_source . .
 RUN printf 'packages:\n  - "."\nallowBuilds:\n  esbuild: true\n' > pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
-RUN pnpm run build -- --base-href /apps/crm/
+RUN pnpm exec ng build --base-href /apps/crm/
 
 FROM node:20-alpine AS financial-build
 WORKDIR /app
@@ -19,7 +19,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 COPY --from=financial_source . .
 RUN printf 'packages:\n  - "."\nallowBuilds:\n  esbuild: true\n' > pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
-RUN pnpm run build -- --configuration production --base-href /apps/financial/
+RUN pnpm exec ng build --configuration production --base-href /apps/financial/
 
 FROM nginx:1.27-alpine
 COPY nginx.prod.conf /etc/nginx/conf.d/default.conf

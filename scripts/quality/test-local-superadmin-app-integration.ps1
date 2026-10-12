@@ -148,8 +148,8 @@ foreach ($marker in @(
 foreach ($marker in @(
     'COPY --from=crm_source',
     'COPY --from=financial_source',
-    'pnpm run build -- --base-href /apps/crm/',
-    'pnpm run build -- --configuration production --base-href /apps/financial/',
+    'pnpm exec ng build --base-href /apps/crm/',
+    'pnpm exec ng build --configuration production --base-href /apps/financial/',
     '/usr/share/nginx/html/apps/crm',
     '/usr/share/nginx/html/apps/financial'
 )) {
