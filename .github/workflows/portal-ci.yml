@@ -56,6 +56,9 @@ jobs:
       - name: Validate Portal consumer expansion contract
         shell: pwsh
         run: ./scripts/quality/test-consumer-expansion-gate.ps1
+      - name: Validate local SuperAdmin embedded apps contract
+        shell: pwsh
+        run: ./scripts/quality/test-local-superadmin-embedded-apps.ps1
 
   crm-runtime-pilot-readiness-gate:
     runs-on: ubuntu-latest
