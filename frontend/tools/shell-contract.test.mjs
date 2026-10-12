@@ -17,7 +17,16 @@ test('integrated consumers are sourced from the governed registry', () => {
     assert.ok(consumer.moduleCode);
     assert.ok(consumer.accessPermission);
     assert.ok(['native', 'iframe'].includes(consumer.uiMode));
+    if (consumer.uiMode === 'iframe') {
+      assert.match(consumer.webPath, /^\/apps\/[^/]+\/$/);
+    } else {
+      assert.equal(consumer.webPath, null);
+    }
   }
+  assert.deepEqual(
+    consumerRegistry.consumers.filter((consumer) => consumer.uiMode === 'iframe').map((consumer) => consumer.code).sort(),
+    ['CRM', 'FINANCIAL']
+  );
   assert.match(component, /consumerRegistry\.consumers\.map/);
   assert.doesNotMatch(template, /Registrar aplicación/);
 });
@@ -92,6 +101,8 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(component, /async checkSecurityPermission\(\)/);
   assert.match(apiService, /createLocalSuperAdminSession\(\)/);
   assert.match(apiService, /\/security\/local-session/);
+  assert.match(apiService, /clearLocalSuperAdminSession\(\)/);
+  assert.match(apiService, /\/security\/local-session\/logout/);
   assert.match(component, /implements OnInit/);
   assert.match(component, /ngOnInit\(\)/);
   assert.match(component, /initializeLocalPortal\(\)/);
@@ -254,6 +265,7 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /applicationIntegrationLabel\(application:\s*ApplicationCard\)/);
   assert.match(component, /manageApplicationMenu\(application:/);
   assert.match(component, /manageApplicationConfiguration\(application:/);
+  assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);
   assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
   assert.match(component, /activeSection\s*=\s*'applications'/);
   assert.match(template, /Aplicación integrada/);
