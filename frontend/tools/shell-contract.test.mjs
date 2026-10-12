@@ -235,6 +235,8 @@ test('administrative shell exposes the central management sections', () => {
 
 test('applications open inside the Portal workspace instead of a new browser tab', () => {
   assert.match(component, /consumer\.webPath \?\? undefined/);
+  assert.match(component, /portalApi\.hasAuthenticatedSession\(\)/);
+  assert.match(component, /activeSection = 'security'/);
   assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);
   assert.match(template, /workspaceUrl/);
   assert.match(template, /<iframe/);
