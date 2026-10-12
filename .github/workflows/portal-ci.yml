@@ -50,12 +50,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: christyepez/CRM
-          ref: e92953b4b518a95a65d768416b9ffbdb30756a53
+          ref: 2017181a18cc716c30dde9551e846c4187374786
           path: CRM
       - uses: actions/checkout@v4
         with:
           repository: christyepez/Financiero
-          ref: a55abc9028f2842e89b56582b1b15677ad4229e0
+          ref: 0a66a212519df8fdafc5bb3b7b32a19156152881
           path: Financiero
       - name: Build Portal web with embedded CRM and Financiero
         working-directory: PortalCorporativo
