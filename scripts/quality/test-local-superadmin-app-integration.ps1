@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $gateway = Get-Content -LiteralPath (Join-Path $root 'backend/api-gateway/src/Portal.ApiGateway/appsettings.json') -Raw
+$gatewayProgram = Get-Content -LiteralPath (Join-Path $root 'backend/api-gateway/src/Portal.ApiGateway/Program.cs') -Raw
 $program = Get-Content -LiteralPath (Join-Path $root 'backend/security-api/src/Portal.Security.Api/Program.cs') -Raw
 $endpoint = Get-Content -LiteralPath (Join-Path $root 'backend/security-api/src/Portal.Security.Api/LocalAdminSessionEndpoints.cs') -Raw
 $seedCatalog = Get-Content -LiteralPath (Join-Path $root 'backend/security-api/src/Portal.Security.Infrastructure/SecuritySeedCatalog.cs') -Raw
@@ -48,6 +49,12 @@ if (-not $gateway.Contains('"security-local-session-logout"') -or -not $gateway.
 }
 if (-not $authentication.Contains('portal_local_session') -or -not $authentication.Contains('OnMessageReceived')) {
     throw 'Portal JWT authentication must accept the local HttpOnly session cookie.'
+}
+foreach ($marker in @('portal_local_session','Headers.Authorization','Bearer {localSessionToken}','UseAuthentication()','MapReverseProxy()')) {
+    if (-not $gatewayProgram.Contains($marker)) { throw "Gateway downstream forwarding missing marker: $marker" }
+}
+if ($gatewayProgram.IndexOf('portal_local_session') -gt $gatewayProgram.IndexOf('UseAuthentication()')) {
+    throw 'Gateway must translate the local session cookie before authentication and proxying.'
 }
 if ($baseCompose.Contains('PortalLocalAdmin__Enabled')) {
     throw 'Local SuperAdmin must not be enabled in base Compose.'
