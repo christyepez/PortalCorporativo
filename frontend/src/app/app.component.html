@@ -107,10 +107,10 @@
                   </div>
                   <div class="application-card__footer">
                     <span class="pill">{{ app.status }}</span>
-                    @if (app.port) {
+                    @if (app.webPath) {
                       <button type="button" class="primary compact" (click)="openApplication(app)">Abrir en Portal</button>
                     } @else {
-                      <span class="muted">{{ app.path }}</span>
+                      <span class="muted">API integrada · {{ app.gatewayPath }}</span>
                     }
                   </div>
                 </article>
@@ -134,15 +134,13 @@
 
           @if (!hasAuthenticatedSession()) {
             <div class="toolbar session-toolbar">
-              <label>JWT local efímero
-                <input type="password"
-                       autocomplete="off"
-                       [value]="sessionTokenInput"
-                       (input)="sessionTokenInput = $any($event.target).value"
-                       placeholder="Pega un token local con portal.security.manage">
-              </label>
-              <button type="button" class="primary" (click)="connectLocalSession()">Conectar sesión</button>
-              <span class="muted">El token permanece sólo en memoria y se pierde al recargar la página.</span>
+              <div>
+                <strong>SuperAdmin local</strong>
+                <span class="muted">Sesión efímera de PROD-local. Security crea la identidad, aplica el rol SuperAdmin y habilita el acceso centralizado a las aplicaciones.</span>
+              </div>
+              <button type="button" class="primary" [disabled]="securityLoading" (click)="connectLocalSession()">
+                {{ securityLoading ? 'Conectando…' : 'Entrar como SuperAdmin local' }}
+              </button>
             </div>
           } @else {
             <div class="metrics security-summary">
