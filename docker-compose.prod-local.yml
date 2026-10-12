@@ -252,6 +252,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      additional_contexts:
+        crm_source: ${CRM_REPO_PATH:-../CRM}/frontend/crm-web
+        financial_source: ${FINANCIERO_REPO_PATH:-../Financiero}/frontend/financiero-web
     restart: unless-stopped
     ports:
       - "127.0.0.1:${PORTAL_WEB_PORT:-4200}:80"
