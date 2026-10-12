@@ -235,6 +235,11 @@ test('administrative shell exposes the central management sections', () => {
 
 test('applications open inside the Portal workspace instead of a new browser tab', () => {
   assert.match(component, /consumer\.webPath \?\? undefined/);
+  assert.match(component, /accessPermission:\s*consumer\.smokePermission/);
+  assert.match(component, /accessibleApplications\(\)/);
+  assert.match(component, /portalApi\.hasPermission\(application\.accessPermission\)/);
+  assert.match(apiService, /hasPermission\(requiredPermission:\s*string\)/);
+  assert.match(apiService, /payload\['permission'\]/);
   assert.match(component, /portalApi\.hasAuthenticatedSession\(\)/);
   assert.match(component, /activeSection = 'security'/);
   assert.match(component, /new URL\(application\.webPath, window\.location\.origin\)/);

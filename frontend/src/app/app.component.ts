@@ -36,6 +36,7 @@ interface ApplicationCard {
   readonly description: string;
   readonly gatewayPath: string;
   readonly webPath?: string;
+  readonly accessPermission: string;
   readonly uiMode: 'embedded' | 'api-only';
   readonly status: string;
 }
@@ -76,6 +77,7 @@ export class AppComponent {
     description: consumer.description,
     gatewayPath: consumer.gatewayPath,
     webPath: consumer.webPath ?? undefined,
+    accessPermission: consumer.smokePermission,
     uiMode: consumer.uiMode as 'embedded' | 'api-only',
     status: consumer.status
   }));
@@ -263,6 +265,11 @@ export class AppComponent {
 
   protected hasAuthenticatedSession(): boolean {
     return this.portalApi.hasAuthenticatedSession();
+  }
+
+  protected accessibleApplications(): readonly ApplicationCard[] {
+    if (!this.portalApi.hasAuthenticatedSession()) return this.applications;
+    return this.applications.filter(application => this.portalApi.hasPermission(application.accessPermission));
   }
 
   protected async connectLocalSession(): Promise<void> {
@@ -1388,6 +1395,11 @@ export class AppComponent {
     if (!application.webPath) return;
     if (!this.portalApi.hasAuthenticatedSession()) {
       this.securityError = 'Inicia la sesión SuperAdmin local para abrir aplicaciones integradas.';
+      this.activeSection = 'security';
+      return;
+    }
+    if (!this.portalApi.hasPermission(application.accessPermission)) {
+      this.securityError = `La sesión actual no tiene el permiso ${application.accessPermission}.`;
       this.activeSection = 'security';
       return;
     }

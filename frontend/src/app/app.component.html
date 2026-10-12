@@ -53,7 +53,7 @@
             <div><p class="eyebrow">Acceso rápido</p><h3>Aplicaciones</h3></div>
           </div>
           <div class="application-grid">
-            @for (app of applications; track app.code) {
+            @for (app of accessibleApplications(); track app.code) {
               <article class="application-card">
                 <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
                 <div><h4>{{ app.name }}</h4><p>{{ app.description }}</p></div>
@@ -93,11 +93,11 @@
           <section class="section-block">
             <div class="section-heading">
               <div><p class="eyebrow">Contenedor corporativo</p><h2>Aplicaciones</h2></div>
-              <span class="pill">{{ applications.length }} registradas</span>
+              <span class="pill">{{ accessibleApplications().length }} disponibles</span>
             </div>
             <p class="lead">El listado proviene del registro gobernado del Portal. Las nuevas integraciones se incorporan mediante el consumer onboarding gate y no desde una acción local de esta pantalla.</p>
             <div class="application-grid application-grid--wide">
-              @for (app of applications; track app.code) {
+              @for (app of accessibleApplications(); track app.code) {
                 <article class="application-card">
                   <div class="application-card__icon">{{ app.name.charAt(0) }}</div>
                   <div>
