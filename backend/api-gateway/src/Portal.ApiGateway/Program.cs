@@ -3,7 +3,7 @@ using Portal.BuildingBlocks;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddPortalFoundation("Portal.ApiGateway");
 builder.Services.AddPortalJwtAuthentication(builder.Configuration);
-builder.Services.AddAuthorization();
+builder.Services.AddPortalPermissionAuthorization();
 builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 var app = builder.Build();
