@@ -92,8 +92,11 @@ if (($component + $apiService) -match 'localStorage|sessionStorage') {
 if (-not $template.Contains('Integración gobernada por Portal') -or -not $template.Contains('Abrir en Portal')) {
     throw 'Application workspace must be visible and governed in the Portal shell.'
 }
-foreach ($marker in @('SuperAdmin autorizado','Módulo Portal / API','localAdminSession.displayName','localAdminSession.role')) {
+foreach ($marker in @('SuperAdmin autorizado','localAdminSession.displayName','localAdminSession.role')) {
     if (-not $template.Contains($marker)) { throw "Portal shell missing SuperAdmin governance marker: $marker" }
+}
+if (-not $component.Contains("'Módulo Portal / API'")) {
+    throw 'Portal component must identify native API applications explicitly.'
 }
 
 Write-Host 'PORTAL_LOCAL_SUPERADMIN_APP_INTEGRATION_GATE_PASS'
