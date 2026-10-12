@@ -32,6 +32,24 @@ export interface SecurityResource {
   readonly name: string;
 }
 
+export interface HrEmployee {
+  readonly id: string;
+  readonly employeeCode: string;
+  readonly fullName: string;
+  readonly email: string;
+  readonly position: string;
+  readonly department: string;
+  readonly isActive: boolean;
+}
+
+export interface CreateHrEmployee {
+  readonly employeeCode: string;
+  readonly fullName: string;
+  readonly email: string;
+  readonly position: string;
+  readonly department: string;
+}
+
 export interface UserPermissionsResponse {
   readonly userId: string;
   readonly permissions: string[];
@@ -317,6 +335,10 @@ export class PortalApiService {
 
   loadApplicationSurface(path: string): Observable<unknown> {
     return this.http.get(path, { headers: this.headers() });
+  }
+
+  createHrEmployee(request: CreateHrEmployee): Observable<HrEmployee> {
+    return this.http.post<HrEmployee>(`${environment.apiBasePath}/hr/employees`, request, { headers: this.headers() });
   }
 
   loadUsers(): Observable<SecurityUser[]> {

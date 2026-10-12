@@ -3,7 +3,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../environments/environment';
 import consumerRegistry from '../../config/consumer-registry.json';
-import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
+import { AuditEvent, AuditSummary, CatalogEntry, ConfigurationItem, ContentDocument, CreateCatalogEntry, CreateConfigurationItem, CreateContentDocument, CreateHrEmployee, CreateMenuItem, CreateNotificationTemplate, InboxProcessedStatus, LocalAdminSession, MenuItem, NotificationMessage, NotificationRequest, NotificationTemplate, OutboxMessageStatus, OutboxStatus, PortalApiService, ReportDefinition, ReportExecution, ScheduleNotificationRequest, SecurityPermission, SecurityResource, SecurityRole, SecurityUser, UpdateCatalogEntry, UpdateConfigurationItem, UpdateContentMetadata, UpdateMenuItem, UpdateNotificationTemplate } from './portal-api.service';
 
 interface ShellModule {
   readonly label: string;
@@ -174,6 +174,13 @@ export class AppComponent implements OnInit {
   protected workspaceDataColumns: string[] = [];
   protected workspaceDataLoading = false;
   protected workspaceDataError?: string;
+  protected hrEmployeeCode = '';
+  protected hrFullName = '';
+  protected hrEmail = '';
+  protected hrPosition = '';
+  protected hrDepartment = '';
+  protected hrSaving = false;
+  protected hrSuccess?: string;
   protected selectedModule: ShellModule = this.modules[0];
   protected moduleProbeState: ModuleProbeState = 'idle';
   protected moduleProbeStatus?: number;
@@ -1574,6 +1581,57 @@ export class AppComponent implements OnInit {
         : `No fue posible cargar ${dataPath}.`;
     } finally {
       this.workspaceDataLoading = false;
+    }
+  }
+
+  protected isHrWorkspace(): boolean {
+    return this.workspaceApplication?.code === 'HR';
+  }
+
+  protected hrActiveEmployees(): number {
+    return this.workspaceDataRows.filter(row => row['isActive'] === true).length;
+  }
+
+  protected hrDepartmentCount(): number {
+    return new Set(
+      this.workspaceDataRows
+        .map(row => String(row['department'] ?? '').trim())
+        .filter(Boolean)
+    ).size;
+  }
+
+  protected async createHrEmployee(): Promise<void> {
+    if (!this.isHrWorkspace() || this.hrSaving) return;
+
+    const request: CreateHrEmployee = {
+      employeeCode: this.hrEmployeeCode.trim(),
+      fullName: this.hrFullName.trim(),
+      email: this.hrEmail.trim().toLowerCase(),
+      position: this.hrPosition.trim(),
+      department: this.hrDepartment.trim()
+    };
+
+    if (!request.employeeCode || !request.fullName || !request.email || !request.position || !request.department) {
+      this.workspaceDataError = 'Completa código, nombre, email, cargo y departamento.';
+      return;
+    }
+
+    this.hrSaving = true;
+    this.hrSuccess = undefined;
+    this.workspaceDataError = undefined;
+    try {
+      const created = await firstValueFrom(this.portalApi.createHrEmployee(request));
+      this.hrEmployeeCode = '';
+      this.hrFullName = '';
+      this.hrEmail = '';
+      this.hrPosition = '';
+      this.hrDepartment = '';
+      this.hrSuccess = `Empleado ${created.fullName} creado correctamente.`;
+      await this.refreshWorkspaceData();
+    } catch (error: unknown) {
+      this.workspaceDataError = error instanceof Error ? error.message : 'No fue posible crear el empleado.';
+    } finally {
+      this.hrSaving = false;
     }
   }
 

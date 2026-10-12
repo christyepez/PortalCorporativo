@@ -200,6 +200,63 @@
 
                 @if (workspaceDataLoading) {
                   <div class="empty-state compact-state"><h3>Cargando {{ workspaceMenuItem?.label || workspaceApplication.name }}…</h3></div>
+                } @else if (isHrWorkspace()) {
+                  <section class="hr-dashboard">
+                    <div class="metrics">
+                      <article><strong>{{ workspaceDataRows.length }}</strong><span>Colaboradores</span></article>
+                      <article><strong>{{ hrActiveEmployees() }}</strong><span>Activos</span></article>
+                      <article><strong>{{ hrDepartmentCount() }}</strong><span>Departamentos</span></article>
+                      <article><strong>{{ workspaceDataRows.length - hrActiveEmployees() }}</strong><span>Inactivos</span></article>
+                    </div>
+
+                    @if (workspaceMenuItem?.label === 'Nuevo empleado') {
+                      <section class="module-panel">
+                        <div>
+                          <p class="eyebrow">Talento Humano</p>
+                          <h3>Nuevo empleado</h3>
+                          <p>El alta usa el permiso <span class="code">hr.employees.manage</span> y se registra por el API gobernado.</p>
+                        </div>
+                        <div class="module-panel__details">
+                          <label>Código<input type="text" [value]="hrEmployeeCode" (input)="hrEmployeeCode = $any($event.target).value" placeholder="EMP-001"></label>
+                          <label>Nombre completo<input type="text" [value]="hrFullName" (input)="hrFullName = $any($event.target).value" placeholder="Nombre Apellido"></label>
+                          <label>Email<input type="email" [value]="hrEmail" (input)="hrEmail = $any($event.target).value" placeholder="colaborador@empresa.com"></label>
+                          <label>Cargo<input type="text" [value]="hrPosition" (input)="hrPosition = $any($event.target).value" placeholder="Analista"></label>
+                          <label>Departamento<input type="text" [value]="hrDepartment" (input)="hrDepartment = $any($event.target).value" placeholder="Tecnología"></label>
+                          <button type="button" class="primary" [disabled]="hrSaving" (click)="createHrEmployee()">{{ hrSaving ? 'Guardando…' : 'Crear empleado' }}</button>
+                          @if (hrSuccess) { <div class="inline-message" role="status">{{ hrSuccess }}</div> }
+                        </div>
+                      </section>
+                    }
+
+                    <section class="workspace-native__data">
+                      <div class="section-heading">
+                        <div>
+                          <p class="eyebrow">Colaboradores</p>
+                          <h3>Directorio de empleados</h3>
+                        </div>
+                        <span class="code">/api/hr/employees</span>
+                      </div>
+                      <div class="admin-grid-wrap">
+                        <table class="admin-grid" aria-label="Empleados de Talento Humano">
+                          <thead><tr><th>Código</th><th>Nombre</th><th>Email</th><th>Cargo</th><th>Departamento</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            @for (row of workspaceDataRows; track row['id']) {
+                              <tr>
+                                <td class="code">{{ row['employeeCode'] }}</td>
+                                <td><strong>{{ row['fullName'] }}</strong></td>
+                                <td>{{ row['email'] }}</td>
+                                <td>{{ row['position'] }}</td>
+                                <td>{{ row['department'] }}</td>
+                                <td><span class="pill">{{ row['isActive'] ? 'Activo' : 'Inactivo' }}</span></td>
+                              </tr>
+                            } @empty {
+                              <tr><td colspan="6">No hay empleados registrados.</td></tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  </section>
                 } @else if (workspaceDataRows.length > 0) {
                   <section class="workspace-native__data">
                     <div class="section-heading">
