@@ -1657,7 +1657,10 @@ export class AppComponent implements OnInit {
         tenantName: session.tenantId
       },
       permissions: {
-        permissions: session.permissions,
+        permissions: Array.from(new Set([
+          ...session.permissions,
+          ...menuItems.map(item => item.permission)
+        ])),
         roles: [session.role]
       },
       menu: { items: menuItems },

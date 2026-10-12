@@ -8,6 +8,8 @@ const apiService = readFileSync(new URL('../src/app/portal-api.service.ts', impo
 const environment = readFileSync(new URL('../src/environments/environment.ts', import.meta.url), 'utf8');
 const angular = JSON.parse(readFileSync(new URL('../angular.json', import.meta.url), 'utf8'));
 const consumerRegistry = JSON.parse(readFileSync(new URL('../config/consumer-registry.json', import.meta.url), 'utf8'));
+const embeddedContextBridge = readFileSync(new URL('../embedded-context-bridge.js', import.meta.url), 'utf8');
+const productionDockerfile = readFileSync(new URL('../Dockerfile.prod', import.meta.url), 'utf8');
 
 test('integrated consumers are sourced from the governed registry', () => {
   assert.equal(consumerRegistry.version, 3);
@@ -266,6 +268,12 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /visibleApplicationMenu\(application:\s*ApplicationCard\)/);
   assert.match(component, /selectWorkspaceMenuItem\(item:\s*ApplicationMenuItem\)/);
   assert.match(component, /publishPortalShellContext\(application:\s*ApplicationCard\)/);
+  assert.match(component, /\.\.\.menuItems\.map\(item => item\.permission\)/);
+  assert.match(embeddedContextBridge, /window\.parent\.__PORTAL_SHELL_CONTEXT__/);
+  assert.match(embeddedContextBridge, /window\.__PORTAL_SHELL_CONTEXT__/);
+  assert.match(productionDockerfile, /embedded-context-bridge\.js/);
+  assert.match(productionDockerfile, /apps\/crm\/index\.html/);
+  assert.match(productionDockerfile, /apps\/financial\/index\.html/);
   assert.match(component, /manageApplicationSecurity\(application\?:\s*ApplicationCard\)/);
   assert.match(component, /applicationAuthorized\(application:\s*ApplicationCard\)/);
   assert.match(component, /applicationIntegrationLabel\(application:\s*ApplicationCard\)/);
