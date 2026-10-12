@@ -60,18 +60,18 @@ test('template keeps basic navigation and content accessibility invariants', () 
   assert.match(template, /aria-live="polite"/);
 });
 
-test('shell supports functional module selection and same-origin availability probes', () => {
+test('shell supports authenticated functional module selection and availability probes', () => {
   assert.match(component, /selectedModule:\s*ShellModule\s*=\s*this\.modules\[0\]/);
   assert.match(component, /async selectModule\(module:\s*ShellModule\)/);
   assert.match(component, /async refreshModuleHealth\(\)/);
   assert.match(component, /Promise\.all\(this\.modules\.filter/);
-  assert.match(component, /fetch\(module\.probePath/);
-  assert.match(component, /credentials:\s*'same-origin'/);
-  assert.match(component, /response\.status === 401 \|\| response\.status === 403/);
+  assert.match(apiService, /probe\(path:\s*string\)/);
+  assert.match(apiService, /observe:\s*'response'/);
+  assert.match(component, /portalApi\.probe\(module\.probePath\)/);
+  assert.match(component, /status === 401 \|\| status === 403/);
   assert.match(template, /Actualizar estado/);
   assert.match(template, /probeCount\('available'\)/);
   assert.match(template, /data-state/);
-  assert.doesNotMatch(component, /Authorization\s*:/);
 });
 
 test('security administration uses an ephemeral session and supports managed assignments', () => {
@@ -92,7 +92,11 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(component, /async checkSecurityPermission\(\)/);
   assert.match(apiService, /createLocalSuperAdminSession\(\)/);
   assert.match(apiService, /\/security\/local-session/);
+  assert.match(component, /implements OnInit/);
+  assert.match(component, /ngOnInit\(\)/);
+  assert.match(component, /initializeLocalPortal\(\)/);
   assert.match(component, /portalApi\.setAccessToken\(session\.accessToken\)/);
+  assert.match(component, /localAdminSession\s*=\s*session/);
   for (const tab of ['users', 'roles', 'permissions', 'resources']) {
     assert.match(template, new RegExp(`selectSecurityTab\\('${tab}'\\)`));
   }
@@ -101,7 +105,9 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /Asignar permiso/);
   assert.match(template, /Evaluar permiso/);
   assert.match(template, /SuperAdmin local/);
-  assert.match(template, /No necesitas copiar ni pegar tokens/);
+  assert.match(template, /No necesitas usuario, clave ni copiar\/pegar tokens/);
+  assert.match(template, /localAdminSession\.displayName/);
+  assert.match(template, /localAdminSession\.role/);
   assert.doesNotMatch(template, /Pega un token local|JWT local efímero/);
   assert.doesNotMatch(apiService, /localStorage|sessionStorage/);
 });
@@ -243,7 +249,9 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(component, /workspaceUrl\?:\s*SafeResourceUrl/);
   assert.match(component, /workspaceProbeState/);
   assert.match(component, /loadApplicationSurface\(application\.dataPath\)/);
-  assert.match(component, /manageApplicationSecurity\(\)/);
+  assert.match(component, /manageApplicationSecurity\(application\?:\s*ApplicationCard\)/);
+  assert.match(component, /applicationAuthorized\(application:\s*ApplicationCard\)/);
+  assert.match(component, /applicationIntegrationLabel\(application:\s*ApplicationCard\)/);
   assert.match(component, /manageApplicationMenu\(application:/);
   assert.match(component, /manageApplicationConfiguration\(application:/);
   assert.match(component, /bypassSecurityTrustResourceUrl\(target\)/);
@@ -251,6 +259,8 @@ test('applications open inside governed Portal workspaces', () => {
   assert.match(template, /Aplicación integrada/);
   assert.match(template, /Integración gobernada por Portal/);
   assert.match(template, /Permisos y roles/);
+  assert.match(template, /SuperAdmin autorizado/);
+  assert.match(template, /Módulo Portal \/ API/);
   assert.match(template, /Actualizar datos protegidos/);
   assert.match(template, /<iframe/);
   assert.match(template, /\[src\]="workspaceUrl"/);
