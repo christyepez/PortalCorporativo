@@ -24,4 +24,118 @@ public sealed class SecurityPermissionChecker(IHttpClientFactory clients,IHttpCo
 public sealed class StructuredMenuRecorder(ILogger<StructuredMenuRecorder> log):IMenuChangeRecorder{public Task RecordAsync(string a,string id,object p,string c,CancellationToken ct){log.LogInformation("Menu change {Action} {EntityId} {CorrelationId} {@Payload}",a,id,c,p);return Task.CompletedTask;}}
 public static class MenuDependencyInjection
 {public static IServiceCollection AddMenuFoundation(this IServiceCollection s,IConfiguration c){var db=c.GetConnectionString("MenuDb")??throw new InvalidOperationException("MenuDb is required.");s.AddDbContext<MenuDbContext>(x=>x.UseSqlServer(db));s.AddScoped<IMenuStore,EfMenuStore>();s.AddScoped<IPermissionChecker,SecurityPermissionChecker>();s.AddScoped<IMenuChangeRecorder,StructuredMenuRecorder>();s.AddScoped<MenuService>();s.AddHttpContextAccessor();s.AddHttpClient("security",x=>x.BaseAddress=new(c["Security:BaseUrl"]??"http://security-api:8080"));if(c.GetValue<bool>("Menu:InitializeDatabase"))s.AddHostedService<Initializer>();return s;}}
-internal sealed class Initializer(IServiceProvider s):IHostedService{public async Task StartAsync(CancellationToken c){await using var scope=s.CreateAsyncScope();await scope.ServiceProvider.GetRequiredService<MenuDbContext>().Database.EnsureCreatedAsync(c);}public Task StopAsync(CancellationToken c)=>Task.CompletedTask;}
+internal sealed class Initializer(IServiceProvider services) : IHostedService
+{
+    private sealed record DefaultMenu(string ModuleCode, string Name, IReadOnlyCollection<DefaultItem> Items);
+    private sealed record DefaultItem(
+        string Code,
+        string Label,
+        string Route,
+        int Order,
+        string ResourceKey,
+        string PermissionCode,
+        string? MetadataJson = null);
+
+    private static readonly DefaultMenu[] ApplicationMenus =
+    [
+        new("crm", "CRM", new DefaultItem[]
+        {
+            new("home", "Inicio", "", 10, "crm", "crm.*"),
+            new("leads", "Leads", "foundation/leads", 20, "crm", "crm.*"),
+            new("accounts", "Cuentas", "foundation/accounts", 30, "crm", "crm.*"),
+            new("contacts", "Contactos", "foundation/contacts", 40, "crm", "crm.*"),
+            new("activities", "Actividades", "foundation/activities", 50, "crm", "crm.*"),
+            new("opportunities", "Oportunidades", "foundation/opportunities", 60, "crm", "crm.*"),
+            new("campaigns", "Campañas", "foundation/campaigns", 70, "crm", "crm.*"),
+            new("segments", "Segmentos", "foundation/segments", 80, "crm", "crm.*"),
+            new("cases", "Casos", "foundation/cases", 90, "crm", "crm.*"),
+            new("interactions", "Interacciones", "foundation/interactions", 100, "crm", "crm.*"),
+            new("notes", "Notas", "foundation/notes", 110, "crm", "crm.*"),
+            new("pipelines", "Pipelines", "foundation/pipelines", 120, "crm", "crm.*"),
+            new("documents", "Documentos", "foundation/documents", 130, "crm", "crm.*"),
+            new("tags", "Etiquetas", "foundation/tags", 140, "crm", "crm.*"),
+            new("assignments", "Asignaciones", "foundation/assignments", 150, "crm", "crm.*"),
+            new("customer360", "Customer 360", "foundation/customer360", 160, "crm", "crm.*"),
+            new("insights", "Insights", "foundation/insights", 170, "crm", "crm.*"),
+            new("readiness", "Readiness", "readiness", 180, "crm", "crm.*")
+        }),
+        new("financial", "Financiero", new DefaultItem[]
+        {
+            new("dashboard", "Dashboard", "dashboard", 10, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("sri-readiness", "SRI readiness", "sri-readiness", 20, "financial.electronicdocuments", "financial.electronicdocuments.manage"),
+            new("ats-readiness", "ATS readiness", "ats-readiness", 30, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("external-approvals", "Aprobaciones", "external-approvals", 40, "financial.electronicdocuments", "financial.electronicdocuments.manage"),
+            new("tax-catalogs", "Catálogos tributarios", "tax-catalogs", 50, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("purchases", "Compras", "purchases", 60, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("voided-documents", "Anulados", "voided-documents", 70, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("chart-of-accounts", "Plan de cuentas", "accounting/accounts", 80, "financial.chartofaccounts", "financial.chartofaccounts.read"),
+            new("journal-entries", "Asientos contables", "accounting/journal-entries", 90, "financial.journalentries", "financial.journalentries.read"),
+            new("fiscal-years", "Años fiscales", "accounting/fiscal-years", 100, "financial.fiscalyears", "financial.fiscalyears.read"),
+            new("fiscal-periods", "Períodos fiscales", "accounting/fiscal-periods", 110, "financial.fiscalperiods", "financial.fiscalperiods.read")
+        }),
+        new("hr", "Talento Humano", new DefaultItem[]
+        {
+            new("summary", "Resumen", "/api/hr/employees", 10, "hr.employees", "hr.employees.view", "{\"dataPath\":\"/api/hr/employees\"}"),
+            new("employees", "Empleados", "/api/hr/employees", 20, "hr.employees", "hr.employees.view", "{\"dataPath\":\"/api/hr/employees\"}"),
+            new("new-employee", "Nuevo empleado", "/api/hr/employees", 30, "hr.employees", "hr.employees.manage", "{\"dataPath\":\"/api/hr/employees\"}")
+        }),
+        new("historiaspaolin", "HistoriasPaolin", new DefaultItem[]
+        {
+            new("channels", "Canales", "/api/historiaspaolin/api/channels", 10, "historiaspaolin.channels", "historiaspaolin.channels.view", "{\"dataPath\":\"/api/historiaspaolin/api/channels\"}"),
+            new("episodes", "Episodios", "/api/historiaspaolin/api/historiaspaolin/episodes", 20, "historiaspaolin.episodes", "historiaspaolin.episodes.view", "{\"dataPath\":\"/api/historiaspaolin/api/historiaspaolin/episodes\"}")
+        })
+    ];
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<MenuDbContext>();
+        await db.Database.EnsureCreatedAsync(cancellationToken);
+        await BootstrapApplicationMenusAsync(db, cancellationToken);
+    }
+
+    private static async Task BootstrapApplicationMenusAsync(MenuDbContext db, CancellationToken cancellationToken)
+    {
+        const string tenantId = "default";
+
+        foreach (var definition in ApplicationMenus)
+        {
+            var menu = await db.Menus.SingleOrDefaultAsync(
+                x => x.TenantId == tenantId && x.ModuleCode == definition.ModuleCode,
+                cancellationToken);
+
+            if (menu is null)
+            {
+                menu = MenuDefinition.Create(tenantId, definition.ModuleCode, definition.Name);
+                db.Menus.Add(menu);
+                await db.SaveChangesAsync(cancellationToken);
+            }
+
+            var existingCodes = (await db.Items
+                .AsNoTracking()
+                .Where(x => x.MenuId == menu.Id)
+                .Select(x => x.Code)
+                .ToListAsync(cancellationToken))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in definition.Items.Where(x => !existingCodes.Contains(x.Code)))
+            {
+                db.Items.Add(MenuItem.Create(
+                    menu.Id,
+                    null,
+                    item.Code,
+                    item.Label,
+                    item.Route,
+                    null,
+                    item.Order,
+                    item.ResourceKey,
+                    item.PermissionCode,
+                    item.MetadataJson));
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
