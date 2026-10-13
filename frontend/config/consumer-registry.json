@@ -216,6 +216,30 @@
           "route": "accounting/fiscal-periods",
           "permission": "financial.fiscalperiods.read",
           "order": 110
+        },
+        {
+          "label": "Documentos electrónicos",
+          "route": "operations/electronic-documents",
+          "permission": "financial.electronicdocuments.read",
+          "order": 120
+        },
+        {
+          "label": "Reporting tributario",
+          "route": "operations/tax-reporting",
+          "permission": "financial.electronicdocuments.read",
+          "order": 130
+        },
+        {
+          "label": "Cola tributaria",
+          "route": "operations/tax-action-queue",
+          "permission": "financial.electronicdocuments.read",
+          "order": 140
+        },
+        {
+          "label": "Revisión tributaria",
+          "route": "operations/tax-legal-review",
+          "permission": "financial.electronicdocuments.read",
+          "order": 150
         }
       ]
     },
