@@ -10,6 +10,13 @@
         </div>
       </div>
 
+      <div class="login-local-credentials" role="note" aria-label="Credenciales PROD local por defecto">
+        <span>Credenciales PROD-local por defecto</span>
+        <strong>superadmin@portal.local</strong>
+        <code>PortalAdmin1234!</code>
+        <small>Si <span class="code">.env.portal.local</span> sobrescribe <span class="code">PORTAL_LOCAL_ADMIN_EMAIL</span> o <span class="code">PORTAL_LOCAL_ADMIN_PASSWORD</span>, usa esos valores.</small>
+      </div>
+
       <form class="login-form" (submit)="$event.preventDefault(); connectLocalSession()">
         <label>Usuario
           <input type="email"
