@@ -143,6 +143,8 @@ export class AppComponent implements OnInit {
       .sort((a, b) => a.order - b.order)
   }));
 
+  private readonly governedApplicationMenus = new Map<string, ApplicationMenuItem[]>();
+
   protected readonly modules: ShellModule[] = [
     { label: 'Security', status: 'Portal Core', enabled: true, gatewayPath: '/api/security', probePath: '/api/security/users/00000000-0000-0000-0000-000000000000' },
     { label: 'Configuration', status: 'Portal Core', enabled: true, gatewayPath: '/api/configuration', probePath: '/api/configuration/scopes/0' },
@@ -1459,6 +1461,7 @@ export class AppComponent implements OnInit {
         }]));
         this.menuSuccess = `Elemento ${response.data.label} actualizado.`;
       }
+      this.invalidateGovernedApplicationMenu(this.menuModuleCode);
       await this.loadMenuData();
       this.beginCreateMenuItem();
     } catch (error: unknown) {
@@ -1475,6 +1478,7 @@ export class AppComponent implements OnInit {
     try {
       const response = await firstValueFrom(this.portalApi.setMenuItemActive(item.id, !item.isActive));
       this.menuSuccess = `${response.data.label} quedó ${response.data.isActive ? 'activo' : 'inactivo'}.`;
+      this.invalidateGovernedApplicationMenu(this.menuModuleCode);
       await this.loadMenuData();
     } catch (error: unknown) {
       this.menuError = error instanceof Error ? error.message : 'No fue posible cambiar el estado del elemento.';
@@ -1520,6 +1524,8 @@ export class AppComponent implements OnInit {
       if (!this.portalApi.hasAuthenticatedSession()) return;
     }
 
+    await this.loadGovernedApplicationMenu(application);
+
     this.workspaceApplication = application;
     this.sidebarCollapsed = true;
     this.workspaceMenuItem = this.visibleApplicationMenu(application)[0] ?? application.menuItems[0];
@@ -1547,7 +1553,80 @@ export class AppComponent implements OnInit {
   }
 
   protected visibleApplicationMenu(application: ApplicationCard): ApplicationMenuItem[] {
-    return application.menuItems.filter(item => this.permissionGranted(item.permission));
+    const source = this.governedApplicationMenus.get(application.code) ?? application.menuItems;
+    return source.filter(item => this.permissionGranted(item.permission));
+  }
+
+  private async loadGovernedApplicationMenu(application: ApplicationCard): Promise<void> {
+    if (!this.portalApi.hasAuthenticatedSession()) return;
+
+    try {
+      const response = await firstValueFrom(this.portalApi.loadMenu(application.moduleCode));
+      const governedItems = (response.data ?? [])
+        .filter(item => item.isActive)
+        .map(item => this.toApplicationMenuItem(application, item))
+        .filter((item): item is ApplicationMenuItem => item !== undefined)
+        .sort((a, b) => a.order - b.order);
+
+      if (governedItems.length > 0) {
+        this.governedApplicationMenus.set(application.code, governedItems);
+      } else {
+        this.governedApplicationMenus.delete(application.code);
+      }
+    } catch {
+      this.governedApplicationMenus.delete(application.code);
+    }
+  }
+
+  private toApplicationMenuItem(application: ApplicationCard, item: MenuItem): ApplicationMenuItem | undefined {
+    const permission = item.permissionCode?.trim() || application.accessPermission;
+    const route = item.route?.trim() ?? '';
+    const metadata = this.parseMenuMetadata(item.metadataJson);
+
+    if (application.uiMode === 'native') {
+      const fallback = application.menuItems.find(candidate =>
+        candidate.label.toLowerCase() === item.label.toLowerCase() ||
+        candidate.route === route ||
+        candidate.dataPath === route
+      );
+      const dataPath = typeof metadata?.['dataPath'] === 'string'
+        ? String(metadata['dataPath']).trim()
+        : route.startsWith('/api/')
+          ? route
+          : fallback?.dataPath;
+
+      if (!dataPath) return undefined;
+      return {
+        label: item.label,
+        dataPath,
+        permission,
+        order: item.order
+      };
+    }
+
+    let normalizedRoute = route;
+    const webPath = application.webPath ?? '';
+    if (webPath && normalizedRoute.startsWith(webPath)) {
+      normalizedRoute = normalizedRoute.slice(webPath.length);
+    }
+    normalizedRoute = normalizedRoute.replace(/^\/+/, '');
+
+    return {
+      label: item.label,
+      route: normalizedRoute,
+      permission,
+      order: item.order
+    };
+  }
+
+  private parseMenuMetadata(metadataJson?: string | null): Record<string, unknown> | undefined {
+    if (!metadataJson?.trim()) return undefined;
+    try {
+      const parsed = JSON.parse(metadataJson);
+      return this.isRecord(parsed) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   protected async selectWorkspaceMenuItem(item: ApplicationMenuItem): Promise<void> {
@@ -1845,6 +1924,11 @@ export class AppComponent implements OnInit {
   protected manageApplicationMenu(application: ApplicationCard): void {
     this.menuModuleCode = application.moduleCode;
     this.selectSection('menus');
+  }
+
+  private invalidateGovernedApplicationMenu(moduleCode: string): void {
+    const application = this.applications.find(candidate => candidate.moduleCode === moduleCode.trim().toLowerCase());
+    if (application) this.governedApplicationMenus.delete(application.code);
   }
 
   protected manageApplicationConfiguration(application: ApplicationCard): void {
