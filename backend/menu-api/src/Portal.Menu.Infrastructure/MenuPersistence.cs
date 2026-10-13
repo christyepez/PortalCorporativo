@@ -40,7 +40,7 @@ internal sealed class Initializer(IServiceProvider services) : IHostedService
     [
         new("crm", "CRM", new DefaultItem[]
         {
-            new("home", "Inicio", "", 10, "crm", "crm.*"),
+            new("home", "Inicio", "/", 10, "crm", "crm.*"),
             new("leads", "Leads", "foundation/leads", 20, "crm", "crm.*"),
             new("accounts", "Cuentas", "foundation/accounts", 30, "crm", "crm.*"),
             new("contacts", "Contactos", "foundation/contacts", 40, "crm", "crm.*"),
