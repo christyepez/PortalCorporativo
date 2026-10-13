@@ -42,6 +42,35 @@ $ids = @(& docker @composeArgs ps -q)
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 if ($ids.Count -eq 0) { throw 'No portalcorporativo containers are running.' }
 
+function Get-PublishedLocalBaseUrl {
+    param(
+        [string]$ContainerName,
+        [string]$ContainerPort
+    )
+
+    $inspect = (& docker inspect $ContainerName | ConvertFrom-Json)[0]
+    $bindings = $inspect.HostConfig.PortBindings
+    $property = $bindings.PSObject.Properties[$ContainerPort]
+    if ($null -eq $property -or @($property.Value).Count -eq 0) {
+        throw "No published binding found for $ContainerName $ContainerPort."
+    }
+
+    $binding = @($property.Value)[0]
+    $hostPort = [string]$binding.HostPort
+    if ([string]::IsNullOrWhiteSpace($hostPort)) {
+        throw "Published binding for $ContainerName $ContainerPort has no host port."
+    }
+
+    return "http://127.0.0.1:$hostPort"
+}
+
+$gatewayBaseUrl = Get-PublishedLocalBaseUrl -ContainerName 'portalcorporativo-api-gateway-1' -ContainerPort '8080/tcp'
+$webBaseUrl = Get-PublishedLocalBaseUrl -ContainerName 'portalcorporativo-portal-web-1' -ContainerPort '80/tcp'
+$seqBaseUrl = Get-PublishedLocalBaseUrl -ContainerName 'portalcorporativo-seq-1' -ContainerPort '80/tcp'
+Write-Host "CHECK resolvedGatewayBaseUrl=$gatewayBaseUrl"
+Write-Host "CHECK resolvedWebBaseUrl=$webBaseUrl"
+Write-Host "CHECK resolvedSeqBaseUrl=$seqBaseUrl"
+
 $failures = @()
 $rows = @(& docker inspect --format '{{.Name}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}|{{.RestartCount}}' @ids)
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -94,7 +123,7 @@ if ($ScanLogs) {
     }
 
     try {
-        & (Join-Path $root 'scripts\local\prod-local-observability.ps1')
+        & (Join-Path $root 'scripts\local\prod-local-observability.ps1') -GatewayBaseUrl $gatewayBaseUrl -SeqBaseUrl $seqBaseUrl
     }
     catch {
         Write-Host "FAIL observability=$($_.Exception.Message)"
@@ -110,7 +139,7 @@ if (-not $SkipSmoke) {
             [Environment]::SetEnvironmentVariable($_.Substring(0,$idx).Trim(),$_.Substring($idx+1).Trim(),'Process')
         }
     }
-    & (Join-Path $root 'scripts\smoke\prod-local-smoke.ps1')
+    & (Join-Path $root 'scripts\smoke\prod-local-smoke.ps1') -GatewayBaseUrl $gatewayBaseUrl -WebBaseUrl $webBaseUrl
     if ($LASTEXITCODE -ne 0) { $failures += 'authenticatedSmoke=failed' }
 }
 
