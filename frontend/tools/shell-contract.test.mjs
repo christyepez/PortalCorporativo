@@ -128,6 +128,10 @@ test('security administration uses an ephemeral session and supports managed ass
   assert.match(template, /autocomplete="username"/);
   assert.match(template, /autocomplete="current-password"/);
   assert.match(template, /loginSubmitting/);
+  assert.match(template, /Credenciales PROD-local por defecto/);
+  assert.match(template, /superadmin@portal\.local/);
+  assert.match(template, /PortalAdmin1234!/);
+  assert.match(template, /PORTAL_LOCAL_ADMIN_PASSWORD/);
   assert.match(template, /class="admin-grid"/);
   assert.match(template, /aria-label="Usuarios de seguridad"/);
   assert.match(template, /aria-label="Roles de seguridad"/);
