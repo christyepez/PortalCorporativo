@@ -51,10 +51,10 @@ function Assert-CleanMainAndSync {
             throw "$Name must be on main before PROD-local deploy. Current branch: $branch"
         }
 
-        git fetch --prune origin
+        git fetch --prune origin | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "${Name}: git fetch failed." }
 
-        git pull --ff-only origin main
+        git pull --ff-only origin main | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "${Name}: git pull --ff-only failed." }
 
         $head = (git rev-parse HEAD).Trim()
