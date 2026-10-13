@@ -321,7 +321,16 @@ test('expanded application workspaces expose financial accounting and HR lifecyc
   const crm = consumerRegistry.consumers.find(consumer => consumer.code === 'CRM');
   assert.ok(financial);
   assert.ok(crm);
-  for (const route of ['accounting/accounts', 'accounting/journal-entries', 'accounting/fiscal-years', 'accounting/fiscal-periods']) {
+  for (const route of [
+    'accounting/accounts',
+    'accounting/journal-entries',
+    'accounting/fiscal-years',
+    'accounting/fiscal-periods',
+    'operations/electronic-documents',
+    'operations/tax-reporting',
+    'operations/tax-action-queue',
+    'operations/tax-legal-review'
+  ]) {
     assert.ok(financial.menuItems.some(item => item.route === route), `Missing financial route ${route}`);
   }
   assert.ok(crm.menuItems.some(item => item.route === 'foundation/leads'));
