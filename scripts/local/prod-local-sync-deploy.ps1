@@ -107,8 +107,10 @@ try {
     }
 
     Write-Host 'PORTAL_PROD_LOCAL_SYNC_DEPLOY_PASS'
-    Write-Host 'Portal:  http://127.0.0.1:4200/'
-    Write-Host 'Gateway: http://127.0.0.1:8080/'
+    $portalPort = (& docker port portalcorporativo-portal-web-1 80/tcp | Select-Object -First 1).Trim()
+    $gatewayPort = (& docker port portalcorporativo-api-gateway-1 8080/tcp | Select-Object -First 1).Trim()
+    Write-Host ("Portal:  http://" + ($portalPort -replace '^0\.0\.0\.0:|^\[::\]:','127.0.0.1:'))
+    Write-Host ("Gateway: http://" + ($gatewayPort -replace '^0\.0\.0\.0:|^\[::\]:','127.0.0.1:'))
 }
 finally {
     Pop-Location
