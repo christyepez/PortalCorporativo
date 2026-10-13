@@ -33,6 +33,10 @@ foreach ($token in @(
     Assert-Contains $token "Missing governed menu bootstrap token: $token"
 }
 
+if ($source -match 'new\("[^"]+",\s*"[^"]+",\s*"",') {
+    throw 'Governed application menu bootstrap must not contain empty routes.'
+}
+
 if ($source -match 'ExecuteDelete|RemoveRange|db\.Items\.Remove|db\.Menus\.Remove') {
     throw 'Governed menu bootstrap must not delete administrator-managed menu data.'
 }
