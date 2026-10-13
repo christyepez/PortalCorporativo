@@ -40,22 +40,22 @@ function Assert-CleanMainAndSync {
     Push-Location $Path
     try {
         $status = @(git status --porcelain)
-        if ($LASTEXITCODE -ne 0) { throw "$Name: git status failed." }
+        if ($LASTEXITCODE -ne 0) { throw "${Name}: git status failed." }
         if ($status.Count -gt 0) {
             throw "$Name has local changes. Commit/stash them before PROD-local deploy."
         }
 
         $branch = (git branch --show-current).Trim()
-        if ($LASTEXITCODE -ne 0) { throw "$Name: cannot determine current branch." }
+        if ($LASTEXITCODE -ne 0) { throw "${Name}: cannot determine current branch." }
         if ($branch -ne 'main') {
             throw "$Name must be on main before PROD-local deploy. Current branch: $branch"
         }
 
         git fetch --prune origin
-        if ($LASTEXITCODE -ne 0) { throw "$Name: git fetch failed." }
+        if ($LASTEXITCODE -ne 0) { throw "${Name}: git fetch failed." }
 
         git pull --ff-only origin main
-        if ($LASTEXITCODE -ne 0) { throw "$Name: git pull --ff-only failed." }
+        if ($LASTEXITCODE -ne 0) { throw "${Name}: git pull --ff-only failed." }
 
         $head = (git rev-parse HEAD).Trim()
         $originHead = (git rev-parse origin/main).Trim()

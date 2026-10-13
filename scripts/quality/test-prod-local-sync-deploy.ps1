@@ -2,6 +2,15 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $script = Get-Content -LiteralPath (Join-Path $root 'scripts\local\prod-local-sync-deploy.ps1') -Raw
 
+$parseErrors = $null
+[void][System.Management.Automation.Language.Parser]::ParseFile(
+    (Join-Path $root 'scripts\local\prod-local-sync-deploy.ps1'),
+    [ref]$null,
+    [ref]$parseErrors)
+if ($parseErrors.Count -gt 0) {
+    throw "PROD-local sync/deploy PowerShell parse failed: $($parseErrors -join '; ')"
+}
+
 function Assert-Contains([string]$Text,[string]$Expected,[string]$Message) {
     if (-not $Text.Contains($Expected)) { throw $Message }
 }
