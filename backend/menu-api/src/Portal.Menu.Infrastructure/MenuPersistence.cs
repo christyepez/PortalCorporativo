@@ -111,11 +111,12 @@ internal sealed class Initializer(IServiceProvider services) : IHostedService
                 await db.SaveChangesAsync(cancellationToken);
             }
 
-            var existingCodes = await db.Items
+            var existingCodes = (await db.Items
                 .AsNoTracking()
                 .Where(x => x.MenuId == menu.Id)
                 .Select(x => x.Code)
-                .ToHashSetAsync(cancellationToken);
+                .ToListAsync(cancellationToken))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var item in definition.Items.Where(x => !existingCodes.Contains(x.Code)))
             {
