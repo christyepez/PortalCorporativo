@@ -132,6 +132,9 @@ jobs:
       - name: Validate one-command PROD-local sync and deploy
         shell: pwsh
         run: ./scripts/quality/test-prod-local-sync-deploy.ps1
+      - name: Validate governed application menu bootstrap
+        shell: pwsh
+        run: ./scripts/quality/test-governed-app-menu-bootstrap.ps1
       - name: Validate PROD-local Compose overlay
         env:
           SQLSERVER_SA_PASSWORD: Portal_Local_Only_12345!
