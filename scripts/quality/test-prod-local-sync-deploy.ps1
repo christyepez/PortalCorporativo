@@ -17,8 +17,8 @@ function Assert-Contains([string]$Text,[string]$Expected,[string]$Message) {
 
 foreach ($token in @(
     'git status --porcelain',
-    'git fetch --prune origin',
-    'git pull --ff-only origin main',
+    'git fetch --prune origin | Out-Host',
+    'git pull --ff-only origin main | Out-Host',
     'git rev-parse origin/main',
     "DefaultName 'CRM'",
     "DefaultName 'Financiero'",
