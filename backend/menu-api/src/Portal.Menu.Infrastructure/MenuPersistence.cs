@@ -71,7 +71,11 @@ internal sealed class Initializer(IServiceProvider services) : IHostedService
             new("chart-of-accounts", "Plan de cuentas", "accounting/accounts", 80, "financial.chartofaccounts", "financial.chartofaccounts.read"),
             new("journal-entries", "Asientos contables", "accounting/journal-entries", 90, "financial.journalentries", "financial.journalentries.read"),
             new("fiscal-years", "Años fiscales", "accounting/fiscal-years", 100, "financial.fiscalyears", "financial.fiscalyears.read"),
-            new("fiscal-periods", "Períodos fiscales", "accounting/fiscal-periods", 110, "financial.fiscalperiods", "financial.fiscalperiods.read")
+            new("fiscal-periods", "Períodos fiscales", "accounting/fiscal-periods", 110, "financial.fiscalperiods", "financial.fiscalperiods.read"),
+            new("electronic-documents", "Documentos electrónicos", "operations/electronic-documents", 120, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("tax-reporting", "Reporting tributario", "operations/tax-reporting", 130, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("tax-action-queue", "Cola tributaria", "operations/tax-action-queue", 140, "financial.electronicdocuments", "financial.electronicdocuments.read"),
+            new("tax-legal-review", "Revisión tributaria", "operations/tax-legal-review", 150, "financial.electronicdocuments", "financial.electronicdocuments.read")
         }),
         new("hr", "Talento Humano", new DefaultItem[]
         {
