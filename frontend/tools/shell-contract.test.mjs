@@ -334,6 +334,20 @@ test('expanded application workspaces expose financial accounting and HR lifecyc
   assert.match(template, /Activar/);
 });
 
+test('runtime application navigation prefers governed Menu API with registry fallback', () => {
+  assert.match(component, /governedApplicationMenus\s*=\s*new Map/);
+  assert.match(component, /await this\.loadGovernedApplicationMenu\(application\)/);
+  assert.match(component, /portalApi\.loadMenu\(application\.moduleCode\)/);
+  assert.match(component, /filter\(item => item\.isActive\)/);
+  assert.match(component, /this\.governedApplicationMenus\.get\(application\.code\) \?\? application\.menuItems/);
+  assert.match(component, /toApplicationMenuItem\(application:\s*ApplicationCard,\s*item:\s*MenuItem\)/);
+  assert.match(component, /parseMenuMetadata\(metadataJson\?:\s*string \| null\)/);
+  assert.match(component, /metadata\?\.\['dataPath'\]/);
+  assert.match(component, /invalidateGovernedApplicationMenu\(this\.menuModuleCode\)/);
+  assert.match(template, /manageApplicationMenu\(workspaceApplication\)/);
+  assert.match(template, />Menú<\/button>/);
+});
+
 test('shell source avoids direct external hosts and browser token persistence', () => {
   assert.doesNotMatch(component, /https?:\/\//);
   assert.doesNotMatch(component, /localStorage|sessionStorage/);
