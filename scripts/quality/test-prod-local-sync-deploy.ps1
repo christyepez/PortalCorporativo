@@ -26,13 +26,21 @@ foreach ($token in @(
     "DefaultName 'AppTTHH'",
     'prod-local-up.ps1',
     '-Build -SkipVerify',
+    'prod-local-restart-snapshot.ps1',
+    'RestartBaselineFile',
+    'portal-restarts-sync-',
+    'empty-first-deploy',
     'prod-local-verify.ps1',
-    '-ScanLogs',
+    '-RestartBaselineFile $restartBaselinePath -ScanLogs',
     'PORTAL_PROD_LOCAL_SYNC_DEPLOY_PASS',
     'docker port portalcorporativo-portal-web-1 80/tcp',
     'docker port portalcorporativo-api-gateway-1 8080/tcp'
 )) {
     Assert-Contains $script $token "Missing PROD-local sync/deploy token: $token"
+}
+
+if (-not $script.Contains('Remove-Item -LiteralPath $restartBaselinePath -Force -ErrorAction SilentlyContinue')) {
+    throw 'PROD-local sync/deploy must clean up the temporary restart baseline.'
 }
 
 if ($script -match 'git\s+reset\s+--hard|git\s+clean\s+-fd|git\s+checkout\s+-f') {
