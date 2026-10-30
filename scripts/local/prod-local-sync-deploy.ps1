@@ -92,7 +92,30 @@ Write-Host '--- Repository baseline ---'
 $heads.GetEnumerator() | ForEach-Object { Write-Host ("{0}={1}" -f $_.Key,$_.Value) }
 
 Push-Location $PortalRepo
+$restartBaselinePath = Join-Path ([IO.Path]::GetTempPath()) ("portal-restarts-sync-{0}.json" -f [guid]::NewGuid())
 try {
+    if (-not $SkipVerify) {
+        $composeArgs = @('compose','-p','portalcorporativo')
+        foreach ($file in $EnvFile) {
+            $path = if ([IO.Path]::IsPathRooted($file)) { $file } else { Join-Path $PortalRepo $file }
+            $composeArgs += @('--env-file', $path)
+        }
+        $composeArgs += @(
+            '-f',(Join-Path $PortalRepo 'docker-compose.yml'),
+            '-f',(Join-Path $PortalRepo 'docker-compose.prod-local.yml')
+        )
+
+        $runningIds = @(& docker @($composeArgs + @('ps','-q')))
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        if ($runningIds.Count -gt 0) {
+            & (Join-Path $PortalRepo 'scripts\local\prod-local-restart-snapshot.ps1') -EnvFile $EnvFile -Output $restartBaselinePath
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        } else {
+            '{}' | Set-Content -LiteralPath $restartBaselinePath -Encoding UTF8
+            Write-Host "CHECK restartBaseline empty-first-deploy"
+        }
+    }
+
     if (-not $SkipBuild) {
         & (Join-Path $PortalRepo 'scripts\local\prod-local-up.ps1') -EnvFile $EnvFile -Build -SkipVerify
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -102,7 +125,7 @@ try {
     }
 
     if (-not $SkipVerify) {
-        & (Join-Path $PortalRepo 'scripts\local\prod-local-verify.ps1') -EnvFile $EnvFile -ScanLogs
+        & (Join-Path $PortalRepo 'scripts\local\prod-local-verify.ps1') -EnvFile $EnvFile -RestartBaselineFile $restartBaselinePath -ScanLogs
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 
@@ -113,5 +136,6 @@ try {
     Write-Host ("Gateway: http://" + ($gatewayPort -replace '^0\.0\.0\.0:|^\[::\]:','127.0.0.1:'))
 }
 finally {
+    Remove-Item -LiteralPath $restartBaselinePath -Force -ErrorAction SilentlyContinue
     Pop-Location
 }
